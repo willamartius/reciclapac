@@ -32,5 +32,7 @@ jobs:
         run: npm install
       - name: Verificar sintaxe JavaScript
         run: node --check src/index.js
+      - name: Executar testes automatizados
+        run: npm test
       - name: Validar build do Worker
         run: npx wrangler deploy --dry-run

@@ -5,6 +5,13 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const FIREBASE_JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 
+class HttpError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -39,16 +46,25 @@ function constantTimeEqual(a, b) {
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
+function parseAllowedOrigins(env) {
+  return (env.APP_ORIGIN || "")
+    .split(",")
+    .map(o => o.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+}
 function originAllowed(request, env) {
-  return request.headers.get("Origin") === env.APP_ORIGIN;
+  const origin = request.headers.get("Origin");
+  if (!origin) return false;
+  return parseAllowedOrigins(env).includes(origin);
 }
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin");
   const headers = { "Vary": "Origin" };
-  if (origin && origin === env.APP_ORIGIN) {
+  if (origin && parseAllowedOrigins(env).includes(origin)) {
     headers["Access-Control-Allow-Origin"] = origin;
     headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type";
     headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS";
+    headers["Access-Control-Max-Age"] = "86400";
   }
   return headers;
 }
@@ -74,27 +90,32 @@ async function decryptJson(serialized, env) {
 }
 async function verifyFirebaseIdToken(token, env) {
   const parts = token.split(".");
-  if (parts.length !== 3) throw new Error("Token Firebase inválido.");
-  const header = JSON.parse(new TextDecoder().decode(b64urlToBytes(parts[0])));
-  const claims = JSON.parse(new TextDecoder().decode(b64urlToBytes(parts[1])));
+  if (parts.length !== 3) throw new HttpError(401, "Token Firebase inválido.");
+  let header, claims;
+  try {
+    header = JSON.parse(new TextDecoder().decode(b64urlToBytes(parts[0])));
+    claims = JSON.parse(new TextDecoder().decode(b64urlToBytes(parts[1])));
+  } catch (e) {
+    throw new HttpError(401, "Token Firebase inválido.");
+  }
   const now = Math.floor(Date.now() / 1000);
-  if (header.alg !== "RS256" || !header.kid) throw new Error("Assinatura do token Firebase inválida.");
+  if (header.alg !== "RS256" || !header.kid) throw new HttpError(401, "Assinatura do token Firebase inválida.");
   if (claims.aud !== FIREBASE_PROJECT_ID || claims.iss !== `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`
       || typeof claims.sub !== "string" || !claims.sub
       || !Number.isSafeInteger(claims.exp) || claims.exp <= now
       || !Number.isSafeInteger(claims.iat) || claims.iat > now + 60
-      || !Number.isSafeInteger(claims.auth_time) || claims.auth_time > now) {
-    throw new Error("Token Firebase expirado ou destinado a outro projeto.");
+      || !Number.isSafeInteger(claims.auth_time) || claims.auth_time > now + 60) {
+    throw new HttpError(401, "Token Firebase expirado ou destinado a outro projeto.");
   }
   const jwksResponse = await fetch(FIREBASE_JWKS_URL, { cf: { cacheTtl: 3600, cacheEverything: true } });
-  if (!jwksResponse.ok) throw new Error("Não foi possível validar a assinatura Firebase.");
+  if (!jwksResponse.ok) throw new HttpError(502, "Não foi possível validar a assinatura Firebase.");
   const jwks = await jwksResponse.json();
   const jwk = jwks.keys.find(item => item.kid === header.kid);
-  if (!jwk) throw new Error("Chave de assinatura Firebase não encontrada.");
+  if (!jwk) throw new HttpError(401, "Chave de assinatura Firebase não encontrada.");
   const key = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
   const signed = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
   const valid = await crypto.subtle.verify({ name: "RSASSA-PKCS1-v1_5" }, key, b64urlToBytes(parts[2]), signed);
-  if (!valid) throw new Error("Assinatura do token Firebase inválida.");
+  if (!valid) throw new HttpError(401, "Assinatura do token Firebase inválida.");
   return claims;
 }
 function firebaseDocumentUrl(path) {
@@ -110,7 +131,7 @@ async function requireAdmin(idToken, env) {
   const claims = await verifyFirebaseIdToken(idToken, env);
   const roleDoc = await firebaseGet(`reciclar-apac-roles/${encodeURIComponent(claims.sub)}`, idToken);
   if (!roleDoc || roleDoc.fields?.role?.stringValue !== "admin") {
-    throw new Error("Apenas administradores do Reciclapac podem usar esta integração.");
+    throw new HttpError(403, "Apenas administradores do Reciclapac podem usar esta integração.");
   }
   return { uid: claims.sub, claims };
 }
@@ -139,7 +160,7 @@ async function saveDriveLink(uid, link, idToken) {
 }
 function bearerToken(request) {
   const value = request.headers.get("Authorization") || "";
-  if (!value.startsWith("Bearer ")) throw new Error("Entre novamente no Reciclapac.");
+  if (!value.startsWith("Bearer ")) throw new HttpError(401, "Entre novamente no Reciclapac.");
   return value.slice(7);
 }
 async function googleTokenRequest(params, env) {
@@ -152,9 +173,9 @@ async function googleTokenRequest(params, env) {
   if (!response.ok) throw new Error(result.error_description || result.error || "Falha na autorização Google.");
   return result;
 }
-function callbackPage(status, message, env) {
+function callbackPage(status, message, targetOrigin = "*") {
   const payload = JSON.stringify({ type: "reciclapac-drive-oauth", status, message }).replace(/</g, "\\u003c");
-  const html = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Reciclapac</title><body><p>${status === "success" ? "Conta Google vinculada. Esta janela será fechada." : "Não foi possível vincular a conta. Volte ao Reciclapac."}</p><script>try{if(window.opener){window.opener.postMessage(${payload}, ${JSON.stringify(env.APP_ORIGIN)});window.close();}}catch(e){}</script></body></html>`;
+  const html = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Reciclapac</title><body><p>${status === "success" ? "Conta Google vinculada. Esta janela será fechada." : "Não foi possível vincular a conta. Volte ao Reciclapac."}</p><script>try{if(window.opener){window.opener.postMessage(${payload}, ${JSON.stringify(targetOrigin)});setTimeout(function(){window.close();},800);}}catch(e){}</script></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "content-security-policy": "default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'" } });
 }
 async function handleOAuthStart(request, env) {
@@ -164,8 +185,9 @@ async function handleOAuthStart(request, env) {
   if (body.mode !== "connect") return json({ error: "Modo OAuth inválido." }, 400);
   const existing = await getDriveLink(uid, idToken);
   const state = randomToken();
+  const origin = request.headers.get("Origin") || "";
   const stateRecord = {
-    uid, idToken, mode: "connect", expectedGoogleSub: existing?.googleSub || "",
+    uid, idToken, origin, mode: "connect", expectedGoogleSub: existing?.googleSub || "",
     createdAt: Date.now(),
   };
   await env.DRIVE_TOKENS.put(`state:${state}`, await encryptJson(stateRecord, env), { expirationTtl: 600 });
@@ -186,17 +208,20 @@ async function handleOAuthCallback(request, env) {
   const url = new URL(request.url);
   const state = url.searchParams.get("state") || "";
   const code = url.searchParams.get("code") || "";
+  const fallbackOrigin = parseAllowedOrigins(env)[0] || env.APP_ORIGIN || "*";
   if (url.searchParams.has("error")) {
     console.warn("Google OAuth was cancelled or denied.");
-    return callbackPage("error", "Autorização Google cancelada ou recusada.", env);
+    return callbackPage("error", "Autorização Google cancelada ou recusada.", fallbackOrigin);
   }
-  if (!state || !code) return callbackPage("error", "Resposta OAuth incompleta.", env);
+  if (!state || !code) return callbackPage("error", "Resposta OAuth incompleta.", fallbackOrigin);
   const key = `state:${state}`;
   const stored = await env.DRIVE_TOKENS.get(key);
-  if (!stored) return callbackPage("error", "A autorização expirou. Tente novamente.", env);
+  if (!stored) return callbackPage("error", "A autorização expirou. Tente novamente.", fallbackOrigin);
   await env.DRIVE_TOKENS.delete(key);
+  let targetOrigin = fallbackOrigin;
   try {
     const stateRecord = await decryptJson(stored, env);
+    if (stateRecord?.origin) targetOrigin = stateRecord.origin;
     if (Date.now() - stateRecord.createdAt > 10 * 60 * 1000) throw new Error("A autorização expirou.");
     await requireAdmin(stateRecord.idToken, env);
     const tokens = await googleTokenRequest({
@@ -225,10 +250,10 @@ async function handleOAuthCallback(request, env) {
       }, env));
     }
     await saveDriveLink(stateRecord.uid, link, stateRecord.idToken);
-    return callbackPage("success", "Conta Google vinculada.", env);
+    return callbackPage("success", "Conta Google vinculada.", targetOrigin);
   } catch (error) {
     console.error("Cloudflare Drive OAuth callback failed:", error);
-    return callbackPage("error", "Não foi possível concluir a autorização. Volte ao Reciclapac e tente novamente.", env);
+    return callbackPage("error", "Não foi possível concluir a autorização. Volte ao Reciclapac e tente novamente.", targetOrigin);
   }
 }
 async function handleAccessToken(request, env) {
@@ -242,7 +267,12 @@ async function handleAccessToken(request, env) {
   if (record.googleSub !== link.googleSub || record.email.toLowerCase() !== link.email.toLowerCase()) {
     return json({ error: "A credencial salva não corresponde à conta Google vinculada." }, 409);
   }
-  const tokens = await googleTokenRequest({ refresh_token: record.refreshToken, grant_type: "refresh_token" }, env);
+  let tokens;
+  try {
+    tokens = await googleTokenRequest({ refresh_token: record.refreshToken, grant_type: "refresh_token" }, env);
+  } catch (error) {
+    throw new HttpError(401, "A autorização Google expirou ou foi revogada. Vincule a conta novamente.");
+  }
   return json({ accessToken: tokens.access_token, expiresIn: Number(tokens.expires_in) || 3600 });
 }
 async function handleUnlink(request, env) {
@@ -261,7 +291,7 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") {
       const origin = request.headers.get("Origin");
-      if (origin && origin !== env.APP_ORIGIN) return json({ error: "Origem não autorizada." }, 403);
+      if (origin && !parseAllowedOrigins(env).includes(origin)) return json({ error: "Origem não autorizada." }, 403);
       return new Response(null, { status: 204, headers: corsHeaders(request, env) });
     }
     if (url.pathname === "/oauth/callback" && request.method === "GET") return handleOAuthCallback(request, env);
@@ -282,8 +312,10 @@ export default {
       for (const [key, value] of Object.entries(corsHeaders(request, env))) headers.set(key, value);
       return new Response(response.body, { status: response.status, headers });
     } catch (error) {
-      console.error("Cloudflare Drive Worker request failed:", error);
-      return json({ error: "Não foi possível concluir a operação do Google Drive. Tente novamente." }, 500, corsHeaders(request, env));
+      const status = error.status || 500;
+      if (status >= 500) console.error("Cloudflare Drive Worker request failed:", error);
+      const message = error.status ? error.message : "Não foi possível concluir a operação do Google Drive. Tente novamente.";
+      return json({ error: message }, status, corsHeaders(request, env));
     }
   },
 };
