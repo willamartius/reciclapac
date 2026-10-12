@@ -858,7 +858,7 @@ function verificarConfiguracaoGoogleDrive(){
     throw new Error('O serviço de autenticação Google ainda está carregando. Tente novamente em alguns instantes.');
   }
 }
-function solicitarTokenGoogleDrive(prompt=''){
+function solicitarTokenGoogleDrive(prompt='',loginHint=''){
   verificarConfiguracaoGoogleDrive();
   return new Promise((resolve,reject)=>{
     const cliente=window.google.accounts.oauth2.initTokenClient({
@@ -877,7 +877,9 @@ function solicitarTokenGoogleDrive(prompt=''){
       },
       error_callback:erro=>reject(new Error(erro.message||'A janela de autorização Google não pôde ser aberta.')),
     });
-    cliente.requestAccessToken(prompt?{prompt}:{});
+    const opcoes={prompt};
+    if(loginHint) opcoes.login_hint=loginHint;
+    cliente.requestAccessToken(opcoes);
   });
 }
 function chaveTokenGoogleDrive(uid,googleSub){
@@ -952,7 +954,7 @@ async function obterTokenVinculadoGoogleDrive(){
     GOOGLE_DRIVE_TOKEN_CACHE=cache;
     return cache.accessToken;
   }
-  const token=await solicitarTokenGoogleDrive();
+  const token=await solicitarTokenGoogleDrive('',vinculo.email);
   const identidade=await buscarIdentidadeGoogleDrive(token.accessToken);
   if(!STATE.isAdmin || !STATE.authUser || STATE.authUser.uid!==uid
     || !STATE.googleDriveLink || STATE.googleDriveLink.googleSub!==vinculo.googleSub){
