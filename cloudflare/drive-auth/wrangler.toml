@@ -1,0 +1,7 @@
+name = "reciclapac-drive-auth"
+main = "src/index.js"
+compatibility_date = "2026-10-12"
+
+[[kv_namespaces]]
+binding = "DRIVE_TOKENS"
+id = "SUBSTITUA_PELO_ID_DO_KV"
