@@ -1076,6 +1076,8 @@ async function conectarGoogleDrive(){
     return;
   }
   const retornoOAuth=aguardarRetornoOAuthGoogleDrive(popup);
+  // Se a chamada inicial falhar antes de aguardarmos o retorno, evita rejeição não tratada.
+  retornoOAuth.catch(()=>{});
   definirEstadoGoogleDrive({ocupado:true,status:'Abrindo a autorização segura do Google...',erro:''});
   renderApp();
   try{
