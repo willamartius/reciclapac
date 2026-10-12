@@ -1,0 +1,14 @@
+{
+  "name": "reciclapac-automatic-backup",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Scheduled Firestore backup to Google Drive for Reciclapac",
+  "scripts": {
+    "backup": "node backup.js",
+    "get-drive-refresh-token": "node get-drive-refresh-token.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.5.0",
+    "googleapis": "^150.0.0"
+  }
+}
