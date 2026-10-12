@@ -40,8 +40,7 @@ function constantTimeEqual(a, b) {
   return diff === 0;
 }
 function originAllowed(request, env) {
-  const origin = request.headers.get("Origin");
-  return !origin || origin === env.APP_ORIGIN;
+  return request.headers.get("Origin") === env.APP_ORIGIN;
 }
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin");
@@ -187,6 +186,10 @@ async function handleOAuthCallback(request, env) {
   const url = new URL(request.url);
   const state = url.searchParams.get("state") || "";
   const code = url.searchParams.get("code") || "";
+  if (url.searchParams.has("error")) {
+    console.warn("Google OAuth was cancelled or denied.");
+    return callbackPage("error", "Autorização Google cancelada ou recusada.", env);
+  }
   if (!state || !code) return callbackPage("error", "Resposta OAuth incompleta.", env);
   const key = `state:${state}`;
   const stored = await env.DRIVE_TOKENS.get(key);
@@ -224,9 +227,9 @@ async function handleOAuthCallback(request, env) {
     await saveDriveLink(stateRecord.uid, link, stateRecord.idToken);
     return callbackPage("success", "Conta Google vinculada.", env);
   } catch (error) {
-    return callbackPage("error", error.message || "Falha ao concluir a autorização.", env);
-  }
-}
+    console.error("Cloudflare Drive OAuth callback failed:", error);
+    return callbackPage("error", "Não foi possível concluir a autorização. Volte ao Reciclapac e tente novamente.", env);
+  }}
 async function handleAccessToken(request, env) {
   const idToken = bearerToken(request);
   const { uid } = await requireAdmin(idToken, env);
@@ -244,8 +247,7 @@ async function handleAccessToken(request, env) {
 async function handleUnlink(request, env) {
   const idToken = bearerToken(request);
   const { uid } = await requireAdmin(idToken, env);
-  const link = await getDriveLink(uid, idToken);
-  if (!link) return json({ ok: true });
+  await getDriveLink(uid, idToken);
   const response = await fetch(firebaseDocumentUrl(`${DRIVE_LINK_COLLECTION}/${encodeURIComponent(uid)}`), {
     method: "DELETE", headers: { Authorization: `Bearer ${idToken}` },
   });
@@ -253,24 +255,35 @@ async function handleUnlink(request, env) {
   await env.DRIVE_TOKENS.delete(`refresh:${uid}`);
   return json({ ok: true });
 }
+}
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(request, env) });
+    if (request.method === "OPTIONS") {
+      const origin = request.headers.get("Origin");
+      if (origin && origin !== env.APP_ORIGIN) return json({ error: "Origem não autorizada." }, 403);
+      return new Response(null, { status: 204, headers: corsHeaders(request, env) });
+    }
     if (url.pathname === "/oauth/callback" && request.method === "GET") return handleOAuthCallback(request, env);
-    if (!originAllowed(request, env)) return json({ error: "Origem não autorizada." }, 403);
+    if (url.pathname === "/health" && request.method === "GET") {
+      return json({ ok: true, service: "reciclapac-drive-auth" }, 200, corsHeaders(request, env));
+    }
+    const protectedRoute = (url.pathname === "/oauth/start" && request.method === "POST")
+      || (url.pathname === "/token" && request.method === "POST")
+      || (url.pathname === "/link" && request.method === "DELETE");
+    if (!protectedRoute) return json({ error: "Rota não encontrada." }, 404, corsHeaders(request, env));
+    if (!originAllowed(request, env)) return json({ error: "Origem não autorizada." }, 403, corsHeaders(request, env));
     try {
       let response;
-      if (url.pathname === "/health" && request.method === "GET") response = json({ ok: true, service: "reciclapac-drive-auth" });
-      else if (url.pathname === "/oauth/start" && request.method === "POST") response = await handleOAuthStart(request, env);
-      else if (url.pathname === "/token" && request.method === "POST") response = await handleAccessToken(request, env);
-      else if (url.pathname === "/link" && request.method === "DELETE") response = await handleUnlink(request, env);
-      else response = json({ error: "Rota não encontrada." }, 404);
+      if (url.pathname === "/oauth/start") response = await handleOAuthStart(request, env);
+      else if (url.pathname === "/token") response = await handleAccessToken(request, env);
+      else response = await handleUnlink(request, env);
       const headers = new Headers(response.headers);
       for (const [key, value] of Object.entries(corsHeaders(request, env))) headers.set(key, value);
       return new Response(response.body, { status: response.status, headers });
     } catch (error) {
-      return json({ error: error.message || "Erro interno." }, 400, corsHeaders(request, env));
+      console.error("Cloudflare Drive Worker request failed:", error);
+      return json({ error: "Não foi possível concluir a operação do Google Drive. Tente novamente." }, 500, corsHeaders(request, env));
     }
   },
 };
