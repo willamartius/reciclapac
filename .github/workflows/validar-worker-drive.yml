@@ -1,0 +1,38 @@
+name: Validar Cloudflare Drive Worker
+
+on:
+  pull_request:
+    paths:
+      - "cloudflare/drive-auth/**"
+      - ".github/workflows/validar-worker-drive.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "cloudflare/drive-auth/**"
+      - ".github/workflows/validar-worker-drive.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloudflare/drive-auth
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v7
+      - name: Configurar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cloudflare/drive-auth/package-lock.json
+      - name: Instalar dependências
+        run: npm ci
+      - name: Verificar sintaxe JavaScript
+        run: node --check src/index.js
+      - name: Validar build do Worker
+        run: npx wrangler deploy --dry-run
