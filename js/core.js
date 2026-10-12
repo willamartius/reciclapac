@@ -107,7 +107,7 @@ const FIREBASE_CONFIG = {
 };
 const GOOGLE_DRIVE_CLIENT_ID = '309128467158-kgldnn0k6n88crj1ca17phlguranao7c.apps.googleusercontent.com';
 const GOOGLE_DRIVE_LINK_COLLECTION = 'reciclar-apac-drive-links';
-const GOOGLE_DRIVE_BACKUP_FOLDER_NAME = 'Reciclar APAC Backups';
+const GOOGLE_DRIVE_BACKUP_FOLDER_NAME = 'Reciclapac Manual Backup';
 const GOOGLE_DRIVE_BACKUP_LIMIT = 10;
 const GOOGLE_DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 const GOOGLE_DRIVE_SCOPE = 'openid email profile https://www.googleapis.com/auth/drive.file';
