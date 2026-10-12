@@ -7,7 +7,7 @@ on:
       - ".github/workflows/validar-worker-drive.yml"
   push:
     branches:
-      - main
+      - "**"
     paths:
       - "cloudflare/drive-auth/**"
       - ".github/workflows/validar-worker-drive.yml"
