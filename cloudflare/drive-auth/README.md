@@ -31,20 +31,26 @@ Não remova a origem autorizada do GitHub Pages. O fluxo atual deve continuar fu
 
 ## 3. Configurar e implantar
 
-No terminal, dentro deste diretório:
+No terminal, dentro deste diretório, instale o Wrangler e crie o namespace KV:
 
 ```powershell
 npm install
 npx wrangler kv namespace create DRIVE_TOKENS
 ```
 
-Copie o ID retornado para `wrangler.toml`, se ainda não o fez. Gere uma chave de criptografia local:
+Copie o ID retornado para `wrangler.toml`. Faça uma primeira implantação para reservar a URL `workers.dev`:
+
+```powershell
+npx wrangler deploy
+```
+
+Anote a URL gerada. Ela será usada como `GOOGLE_REDIRECT_URI` e deverá ser adicionada ao cliente OAuth como URI de redirecionamento autorizada. Gere uma chave de criptografia local:
 
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
-Configure os valores de ambiente no Cloudflare. Substitua os exemplos pelos valores reais:
+Configure os valores de ambiente no Cloudflare. Substitua os exemplos pelos valores reais. Para `GOOGLE_REDIRECT_URI`, use a URL do Worker seguida de `/oauth/callback`:
 
 ```powershell
 npx wrangler secret put GOOGLE_CLIENT_ID
@@ -61,7 +67,7 @@ Valores:
 - `APP_ORIGIN`: `https://reciclapac.com.br`.
 - `TOKEN_ENCRYPTION_KEY`: saída Base64 gerada acima. Guarde uma cópia segura; perder essa chave invalida os tokens criptografados.
 
-Implante:
+Depois de adicionar a URI de redirecionamento no Google Cloud Console e definir os cinco valores, implante novamente:
 
 ```powershell
 npx wrangler deploy
