@@ -1,0 +1,42 @@
+name: Backup diário do Firestore para o Google Drive
+
+on:
+  schedule:
+    # 06:00 UTC = 03:00 no horário de Brasília
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reciclapac-daily-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Gerar e enviar backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Instalar dependências
+        working-directory: scripts/backup
+        run: npm install --omit=dev
+
+      - name: Criar backup e enviar para o Drive
+        working-directory: scripts/backup
+        env:
+          FIREBASE_PROJECT_ID: apac-reciclar
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+        run: npm run backup
