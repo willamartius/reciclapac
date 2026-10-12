@@ -854,30 +854,6 @@ function verificarConfiguracaoGoogleDrive(){
     throw new Error('O Google Drive exige uma sessão administrativa autenticada no Firebase.');
   }
 }
-function solicitarTokenGoogleDrive(prompt='',loginHint=''){
-  verificarConfiguracaoGoogleDrive();
-  return new Promise((resolve,reject)=>{
-    const cliente=window.google.accounts.oauth2.initTokenClient({
-      client_id:GOOGLE_DRIVE_CLIENT_ID,
-      scope:GOOGLE_DRIVE_SCOPE,
-      callback:resposta=>{
-        if(resposta.error || !resposta.access_token){
-          reject(new Error(resposta.error_description||resposta.error||'Não foi possível autorizar o acesso ao Google Drive.'));
-          return;
-        }
-        const expiresIn=Number(resposta.expires_in);
-        resolve({
-          accessToken:resposta.access_token,
-          expiresAt:Number.isFinite(expiresIn)&&expiresIn>0?Date.now()+expiresIn*1000:0,
-        });
-      },
-      error_callback:erro=>reject(new Error(erro.message||'A janela de autorização Google não pôde ser aberta.')),
-    });
-    const opcoes={prompt};
-    if(loginHint) opcoes.login_hint=loginHint;
-    cliente.requestAccessToken(opcoes);
-  });
-}
 function chaveTokenGoogleDrive(uid,googleSub){
   return `${GOOGLE_DRIVE_TOKEN_SESSION_PREFIX}${encodeURIComponent(uid)}:${encodeURIComponent(googleSub)}`;
 }
@@ -926,17 +902,6 @@ function limparTokenGoogleDriveSessao(uid,googleSub){
   }catch(erro){
     console.warn('Não foi possível limpar os tokens temporários do Google Drive desta sessão.',erro);
   }
-}
-async function buscarIdentidadeGoogleDrive(token){
-  const resposta=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{
-    headers:{Authorization:`Bearer ${token}`},
-  });
-  const identidade=await resposta.json().catch(()=>({}));
-  if(!resposta.ok) throw new Error(identidade.error_description||identidade.error||'Não foi possível confirmar a conta Google autorizada.');
-  if(typeof identidade.sub!=='string' || !identidade.sub || typeof identidade.email!=='string' || !identidade.email){
-    throw new Error('O Google não retornou uma identidade de conta válida.');
-  }
-  return {googleSub:identidade.sub,email:identidade.email};
 }
 async function obterTokenVinculadoGoogleDrive(){
   if(!STATE.googleDriveLink) throw new Error('Vincule uma conta Google Drive antes de continuar.');
@@ -1037,7 +1002,9 @@ function sessaoAdminGoogleDriveAtiva(uid){
 function aguardarRetornoOAuthGoogleDrive(popup){
   return new Promise((resolve,reject)=>{
     const origemWorker=new URL(GOOGLE_DRIVE_WORKER_URL).origin;
+    let finalizado=false;
     const limpar=()=>{
+      finalizado=true;
       window.removeEventListener('message',aoReceberMensagem);
       clearTimeout(limite);
       clearInterval(verificarPopup);
@@ -1045,21 +1012,33 @@ function aguardarRetornoOAuthGoogleDrive(popup){
     const aoReceberMensagem=evento=>{
       if(evento.origin!==origemWorker || !evento.data || evento.data.type!=='reciclapac-drive-oauth') return;
       limpar();
-      if(!popup.closed) popup.close();
+      try{ if(popup && !popup.closed) popup.close(); }catch(e){}
       if(evento.data.status==='success') resolve(evento.data);
       else reject(new Error(evento.data.message||'Não foi possível vincular a conta Google.'));
     };
     const limite=setTimeout(()=>{
       limpar();
-      if(!popup.closed) popup.close();
+      try{ if(popup && !popup.closed) popup.close(); }catch(e){}
       reject(new Error('A autorização Google expirou. Tente novamente.'));
     },10*60*1000);
+    let popupFechadoTempo=0;
     const verificarPopup=setInterval(()=>{
-      if(popup.closed){
-        limpar();
-        reject(new Error('A janela de autorização foi fechada antes de concluir o vínculo.'));
-      }
-    },1000);
+      if(finalizado) return;
+      try{
+        if(popup && popup.closed){
+          if(!popupFechadoTempo){
+            popupFechadoTempo=Date.now();
+            return;
+          }
+          if(Date.now()-popupFechadoTempo>1200){
+            limpar();
+            reject(new Error('A janela de autorização foi fechada antes de concluir o vínculo.'));
+          }
+        }else{
+          popupFechadoTempo=0;
+        }
+      }catch(e){}
+    },500);
     window.addEventListener('message',aoReceberMensagem);
   });
 }
@@ -1070,6 +1049,9 @@ async function conectarGoogleDrive(){
     verificarConfiguracaoGoogleDrive();
     popup=window.open('about:blank','reciclapac-drive-oauth','popup,width=520,height=700');
     if(!popup) throw new Error('O navegador bloqueou a janela de autorização. Permita pop-ups para reciclapac.com.br e tente novamente.');
+    try{
+      popup.document.write('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Reciclapac</title><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f9fbf9;color:#2e4a36;text-align:center;"><p>Conectando ao Google...</p></body></html>');
+    }catch(e){}
   }catch(erro){
     definirEstadoGoogleDrive({status:'',erro:erro.message});
     renderApp();
