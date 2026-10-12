@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const { google } = require('googleapis');
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'apac-reciclar';
-const FOLDER_NAME = 'Reciclar APAC Backups Automáticos';
+const FOLDER_NAME = 'Reciclapac Automatic Backup';
 const KEEP_BACKUPS = 10;
 const BACKUP_FORMAT = 'reciclar-apac-backup';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
