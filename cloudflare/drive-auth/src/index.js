@@ -33,7 +33,9 @@ function base64ToBytes(value) {
   return Uint8Array.from(binary, char => char.charCodeAt(0));
 }
 function base64UrlEncode(bytes) {
-  return bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  let b64 = bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_");
+  while (b64.endsWith("=")) b64 = b64.slice(0, -1);
+  return b64;
 }
 function randomToken(bytes = 32) {
   const value = new Uint8Array(bytes);
@@ -49,7 +51,11 @@ function constantTimeEqual(a, b) {
 function parseAllowedOrigins(env) {
   return (env.APP_ORIGIN || "")
     .split(",")
-    .map(o => o.trim().replace(/\/+$/, ""))
+    .map(o => {
+      let s = o.trim();
+      while (s.endsWith("/")) s = s.slice(0, -1);
+      return s;
+    })
     .filter(Boolean);
 }
 function originAllowed(request, env) {

@@ -54,6 +54,19 @@ test('OPTIONS suporta múltiplas origens configuradas em APP_ORIGIN', async () =
   assert.equal(res.headers.get('Access-Control-Allow-Origin'), 'http://localhost:8000');
 });
 
+test('OPTIONS suporta APP_ORIGIN com barras finais e múltiplos espaços', async () => {
+  const req = new Request('https://worker.local/token', {
+    method: 'OPTIONS',
+    headers: { Origin: 'https://staging.reciclapac.com.br' },
+  });
+  const res = await worker.fetch(req, {
+    ...TEST_ENV,
+    APP_ORIGIN: ' https://reciclapac.com.br/// , https://staging.reciclapac.com.br// ',
+  });
+  assert.equal(res.status, 204);
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), 'https://staging.reciclapac.com.br');
+});
+
 test('OPTIONS rejeita origem não autorizada com 403', async () => {
   const req = new Request('https://worker.local/token', {
     method: 'OPTIONS',
