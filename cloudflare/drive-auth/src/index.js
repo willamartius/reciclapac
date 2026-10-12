@@ -81,7 +81,10 @@ async function verifyFirebaseIdToken(token, env) {
   const now = Math.floor(Date.now() / 1000);
   if (header.alg !== "RS256" || !header.kid) throw new Error("Assinatura do token Firebase inválida.");
   if (claims.aud !== FIREBASE_PROJECT_ID || claims.iss !== `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`
-      || typeof claims.sub !== "string" || !claims.sub || claims.exp <= now || claims.iat > now + 60 || claims.auth_time > now) {
+      || typeof claims.sub !== "string" || !claims.sub
+      || !Number.isSafeInteger(claims.exp) || claims.exp <= now
+      || !Number.isSafeInteger(claims.iat) || claims.iat > now + 60
+      || !Number.isSafeInteger(claims.auth_time) || claims.auth_time > now) {
     throw new Error("Token Firebase expirado ou destinado a outro projeto.");
   }
   const jwksResponse = await fetch(FIREBASE_JWKS_URL, { cf: { cacheTtl: 3600, cacheEverything: true } });
