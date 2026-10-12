@@ -229,7 +229,8 @@ async function handleOAuthCallback(request, env) {
   } catch (error) {
     console.error("Cloudflare Drive OAuth callback failed:", error);
     return callbackPage("error", "Não foi possível concluir a autorização. Volte ao Reciclapac e tente novamente.", env);
-  }}
+  }
+}
 async function handleAccessToken(request, env) {
   const idToken = bearerToken(request);
   const { uid } = await requireAdmin(idToken, env);
@@ -254,7 +255,6 @@ async function handleUnlink(request, env) {
   if (!response.ok && response.status !== 404) throw new Error("Não foi possível remover o vínculo no Firestore.");
   await env.DRIVE_TOKENS.delete(`refresh:${uid}`);
   return json({ ok: true });
-}
 }
 export default {
   async fetch(request, env) {
