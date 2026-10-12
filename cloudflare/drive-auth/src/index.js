@@ -203,17 +203,22 @@ async function handleOAuthCallback(request, env) {
     if (stateRecord.expectedGoogleSub && identity.sub !== stateRecord.expectedGoogleSub) {
       throw new Error("A conta autorizada não corresponde à conta Google já vinculada ao Reciclapac.");
     }
-    const link = { googleSub: identity.sub, email: identity.email, linkedAt: new Date().toISOString() };
-    await saveDriveLink(stateRecord.uid, link, stateRecord.idToken);
-    const refreshToken = tokens.refresh_token;
     const refreshKey = `refresh:${stateRecord.uid}`;
-    if (refreshToken) {
-      await env.DRIVE_TOKENS.put(refreshKey, await encryptJson({
-        refreshToken, googleSub: identity.sub, email: identity.email, updatedAt: Date.now(),
-      }, env));
-    } else if (!await env.DRIVE_TOKENS.get(refreshKey)) {
+    const existingRefresh = await env.DRIVE_TOKENS.get(refreshKey);
+    if (!tokens.refresh_token && !existingRefresh) {
       throw new Error("O Google não retornou um token de renovação. Tente vincular novamente e aceite o acesso solicitado.");
     }
+    if (!tokens.refresh_token && existingRefresh) {
+      const saved = await decryptJson(existingRefresh, env);
+      if (saved.googleSub !== identity.sub) throw new Error("A credencial de renovação existente pertence a outra conta Google.");
+    }
+    const link = { googleSub: identity.sub, email: identity.email, linkedAt: new Date().toISOString() };
+    if (tokens.refresh_token) {
+      await env.DRIVE_TOKENS.put(refreshKey, await encryptJson({
+        refreshToken: tokens.refresh_token, googleSub: identity.sub, email: identity.email, updatedAt: Date.now(),
+      }, env));
+    }
+    await saveDriveLink(stateRecord.uid, link, stateRecord.idToken);
     return callbackPage("success", "Conta Google vinculada.", env);
   } catch (error) {
     return callbackPage("error", error.message || "Falha ao concluir a autorização.", env);
