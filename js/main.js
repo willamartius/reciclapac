@@ -421,25 +421,8 @@ function renderConfig(){
     </div>
 
     <div class="section-title">Backup no Google Drive</div>
-    <div class="card drive-backup-card" style="display:grid;gap:12px;">
-      <p class="small-note" style="margin:0;">Cada administrador vincula sua própria conta Google. Os backups são armazenados de forma privada em uma pasta do Google Drive, e o aplicativo mantém os dez arquivos de restauração mais recentes.</p>
-      ${STATE.googleDriveLink?`<p class="small-note" style="margin:0;">Conta vinculada: <b>${escapeHtml(STATE.googleDriveLink.email)}</b></p>`:'<p class="small-note" style="margin:0;">Nenhuma conta Google vinculada a este usuário administrador.</p>'}
-      ${STATE.googleDriveStatus?`<p class="small-note" role="status" style="margin:0;">${escapeHtml(STATE.googleDriveStatus)}</p>`:''}
-      ${STATE.googleDriveLinkError?`<p class="auth-error" role="alert" style="margin:0;">${escapeHtml(STATE.googleDriveLinkError)}</p>`:''}
-      <div class="backup-actions drive-backup-actions">
-        ${STATE.googleDriveLink
-          ?`<button class="btn btn-outline btn-block" type="button" onclick="desvincularGoogleDrive()" ${STATE.googleDriveBusy?'disabled':''}>Desvincular Conta Google</button>`
-          :`<button class="btn btn-outline btn-block" type="button" onclick="conectarGoogleDrive()" ${STATE.googleDriveBusy?'disabled':''}>Vincular Conta Google</button>`}
-        <button class="btn btn-outline btn-block" type="button" onclick="criarBackupGoogleDrive()" ${!STATE.googleDriveLink||STATE.googleDriveBusy?'disabled':''}>${icon('download',16)}Salvar backup</button>
-        <button class="btn btn-outline btn-block" type="button" onclick="listarBackupsGoogleDrive()" ${!STATE.googleDriveLink||STATE.googleDriveBusy?'disabled':''}>${icon('upload',16)}Exibir backup</button>
-      </div>
-      ${STATE.googleDriveBackupsVisiveis&&STATE.googleDriveBackups.length?`<div class="field drive-backup-restore" style="margin:0;">
-        <label for="googleDriveBackupSelecionado">Backup para restaurar</label>
-        <select id="googleDriveBackupSelecionado" onchange="selecionarBackupGoogleDrive(this.value)" ${STATE.googleDriveBusy?'disabled':''}>
-          ${STATE.googleDriveBackups.map(item=>`<option value="${escapeHtml(item.id)}" ${item.id===STATE.googleDriveBackupSelecionadoId?'selected':''}>${escapeHtml(item.name)} · ${escapeHtml(item.createdTime?new Date(item.createdTime).toLocaleString('pt-BR'):'data desconhecida')}</option>`).join('')}
-        </select>
-        <button class="btn btn-outline" style="margin-top:8px;" type="button" onclick="restaurarBackupGoogleDrive()" ${STATE.googleDriveBusy?'disabled':''}>${icon('upload',16)}Restaurar backup do Drive</button>
-      </div>`:''}
+    <div class="card drive-backup-card" id="cardBackupGoogleDrive" style="display:grid;gap:12px;">
+      ${renderCardBackupGoogleDriveConteudo()}
     </div>
 
     <div class="section-title">Sobre a campanha</div>
@@ -991,10 +974,42 @@ async function listarArquivosBackupGoogleDrive(token,pastaId){
   }while(pageToken);
   return arquivos;
 }
+function renderCardBackupGoogleDriveConteudo(){
+  return `
+    <p class="small-note" style="margin:0;">Cada administrador vincula sua própria conta Google. Os backups são armazenados de forma privada em uma pasta do Google Drive, e o aplicativo mantém os dez arquivos de restauração mais recentes.</p>
+    ${STATE.googleDriveLink?`<p class="small-note" style="margin:0;">Conta vinculada: <b>${escapeHtml(STATE.googleDriveLink.email)}</b></p>`:'<p class="small-note" style="margin:0;">Nenhuma conta Google vinculada a este usuário administrador.</p>'}
+    ${STATE.googleDriveStatus?`<p class="small-note" role="status" style="margin:0;">${escapeHtml(STATE.googleDriveStatus)}</p>`:''}
+    ${STATE.googleDriveLinkError?`<p class="auth-error" role="alert" style="margin:0;">${escapeHtml(STATE.googleDriveLinkError)}</p>`:''}
+    <div class="backup-actions drive-backup-actions">
+      ${STATE.googleDriveLink
+        ?`<button class="btn btn-outline btn-block" type="button" onclick="desvincularGoogleDrive()" ${STATE.googleDriveBusy?'disabled':''}>Desvincular Conta Google</button>`
+        :`<button class="btn btn-outline btn-block" type="button" onclick="conectarGoogleDrive()" ${STATE.googleDriveBusy?'disabled':''}>Vincular Conta Google</button>`}
+      <button class="btn btn-outline btn-block" type="button" onclick="criarBackupGoogleDrive()" ${!STATE.googleDriveLink||STATE.googleDriveBusy?'disabled':''}>${icon('download',16)}Salvar backup</button>
+      <button class="btn btn-outline btn-block" type="button" onclick="listarBackupsGoogleDrive()" ${!STATE.googleDriveLink||STATE.googleDriveBusy?'disabled':''}>${icon('upload',16)}Exibir backup</button>
+    </div>
+    ${STATE.googleDriveBackupsVisiveis&&STATE.googleDriveBackups.length?`<div class="field drive-backup-restore" style="margin:0;">
+      <label for="googleDriveBackupSelecionado">Backup para restaurar</label>
+      <select id="googleDriveBackupSelecionado" onchange="selecionarBackupGoogleDrive(this.value)" ${STATE.googleDriveBusy?'disabled':''}>
+        ${STATE.googleDriveBackups.map(item=>`<option value="${escapeHtml(item.id)}" ${item.id===STATE.googleDriveBackupSelecionadoId?'selected':''}>${escapeHtml(item.name)} · ${escapeHtml(item.createdTime?new Date(item.createdTime).toLocaleString('pt-BR'):'data desconhecida')}</option>`).join('')}
+      </select>
+      <button class="btn btn-outline" style="margin-top:8px;" type="button" onclick="restaurarBackupGoogleDrive()" ${STATE.googleDriveBusy?'disabled':''}>${icon('upload',16)}Restaurar backup do Drive</button>
+    </div>`:''}
+  `;
+}
+function renderCardBackupGoogleDrive(){
+  if(typeof document==='undefined') return;
+  const card=document.getElementById('cardBackupGoogleDrive')||(document.querySelector&&document.querySelector('.drive-backup-card'));
+  if(!card || !card.nodeType) return;
+  card.innerHTML=renderCardBackupGoogleDriveConteudo();
+  if(typeof aprimorarSeletoresNativos==='function'){
+    aprimorarSeletoresNativos(card);
+  }
+}
 function definirEstadoGoogleDrive({ocupado=STATE.googleDriveBusy,status=STATE.googleDriveStatus,erro=''}={}){
   STATE.googleDriveBusy=ocupado;
   STATE.googleDriveStatus=status;
   STATE.googleDriveLinkError=erro;
+  renderCardBackupGoogleDrive();
 }
 function sessaoAdminGoogleDriveAtiva(uid){
   return STATE.isAdmin && STATE.authUser && STATE.authUser.uid===uid;
@@ -1054,14 +1069,12 @@ async function conectarGoogleDrive(){
     }catch(e){}
   }catch(erro){
     definirEstadoGoogleDrive({status:'',erro:erro.message});
-    renderApp();
     return;
   }
   const retornoOAuth=aguardarRetornoOAuthGoogleDrive(popup);
   // Se a chamada inicial falhar antes de aguardarmos o retorno, evita rejeição não tratada.
   retornoOAuth.catch(()=>{});
   definirEstadoGoogleDrive({ocupado:true,status:'Abrindo a autorização segura do Google...',erro:''});
-  renderApp();
   try{
     const idToken=await STATE.authUser.getIdToken();
     const resposta=await fetch(`${GOOGLE_DRIVE_WORKER_URL}/oauth/start`,{
@@ -1089,7 +1102,6 @@ async function conectarGoogleDrive(){
     if(!sessaoAdminGoogleDriveAtiva(firebaseUid)) return;
     definirEstadoGoogleDrive({ocupado:false,status:'',erro:erro.message||'Não foi possível vincular a conta Google Drive.'});
   }
-  renderApp();
 }
 window.conectarGoogleDrive=conectarGoogleDrive;
 async function desvincularGoogleDrive(){
@@ -1108,7 +1120,6 @@ async function confirmarDesvincularGoogleDrive(){
   fecharModal();
   const firebaseUid=STATE.authUser.uid;
   definirEstadoGoogleDrive({ocupado:true,status:'Removendo vínculo...',erro:''});
-  renderApp();
   try{
     const googleSub=STATE.googleDriveLink.googleSub;
     const idToken=await STATE.authUser.getIdToken();
@@ -1130,7 +1141,6 @@ async function confirmarDesvincularGoogleDrive(){
     if(!sessaoAdminGoogleDriveAtiva(firebaseUid)) return;
     definirEstadoGoogleDrive({ocupado:false,status:'',erro:erro.message||'Não foi possível remover o vínculo Google Drive.'});
   }
-  renderApp();
 }
 window.desvincularGoogleDrive=desvincularGoogleDrive;
 window.confirmarDesvincularGoogleDrive=confirmarDesvincularGoogleDrive;
@@ -1143,11 +1153,9 @@ async function listarBackupsGoogleDrive(){
     tokenPromise=obterTokenVinculadoGoogleDrive();
   }catch(erro){
     definirEstadoGoogleDrive({status:'',erro:erro.message});
-    renderApp();
     return;
   }
   definirEstadoGoogleDrive({ocupado:true,status:'Buscando backups no Google Drive...',erro:''});
-  renderApp();
   try{
     const token=await tokenPromise;
     if(!sessaoAdminGoogleDriveAtiva(firebaseUid)) return;
@@ -1164,7 +1172,6 @@ async function listarBackupsGoogleDrive(){
     if(!sessaoAdminGoogleDriveAtiva(firebaseUid)) return;
     definirEstadoGoogleDrive({ocupado:false,status:'',erro:erro.message||'Não foi possível listar os backups do Google Drive.'});
   }
-  renderApp();
 }
 window.listarBackupsGoogleDrive=listarBackupsGoogleDrive;
 async function criarBackupGoogleDrive(){
@@ -1176,11 +1183,9 @@ async function criarBackupGoogleDrive(){
     tokenPromise=obterTokenVinculadoGoogleDrive();
   }catch(erro){
     definirEstadoGoogleDrive({status:'',erro:erro.message});
-    renderApp();
     return;
   }
   definirEstadoGoogleDrive({ocupado:true,status:'Criando backup no Google Drive...',erro:''});
-  renderApp();
   let backupCriado=false;
   try{
     const token=await tokenPromise;
@@ -1223,7 +1228,6 @@ async function criarBackupGoogleDrive(){
     const prefixo=backupCriado?'O backup foi enviado, mas houve uma falha ao limitar os arquivos antigos. ':'';
     definirEstadoGoogleDrive({ocupado:false,status:'',erro:prefixo+(erro.message||'Não foi possível criar o backup no Google Drive.')});
   }
-  renderApp();
 }
 window.criarBackupGoogleDrive=criarBackupGoogleDrive;
 function selecionarBackupGoogleDrive(id){
@@ -1236,7 +1240,6 @@ async function restaurarBackupGoogleDrive(){
   const backupSelecionado=STATE.googleDriveBackups.find(item=>item.id===STATE.googleDriveBackupSelecionadoId);
   if(!backupSelecionado){
     definirEstadoGoogleDrive({status:'',erro:'Selecione um backup do Google Drive para restaurar.'});
-    renderApp();
     return;
   }
   let tokenPromise;
@@ -1245,11 +1248,9 @@ async function restaurarBackupGoogleDrive(){
     tokenPromise=obterTokenVinculadoGoogleDrive();
   }catch(erro){
     definirEstadoGoogleDrive({status:'',erro:erro.message});
-    renderApp();
     return;
   }
   definirEstadoGoogleDrive({ocupado:true,status:'Carregando backup do Google Drive...',erro:''});
-  renderApp();
   try{
     const token=await tokenPromise;
     if(!sessaoAdminGoogleDriveAtiva(firebaseUid)) return;
@@ -1273,7 +1274,6 @@ async function restaurarBackupGoogleDrive(){
     }
     const arquivo=new File([await resposta.blob()],backupSelecionado.name,{type:'application/json'});
     definirEstadoGoogleDrive({ocupado:false,status:'',erro:''});
-    renderApp();
     await importarBackupLocal(arquivo);
     return;
   }catch(erro){
@@ -1281,7 +1281,6 @@ async function restaurarBackupGoogleDrive(){
     if(!sessaoAdminGoogleDriveAtiva(firebaseUid)) return;
     definirEstadoGoogleDrive({ocupado:false,status:'',erro:erro.message||'Não foi possível restaurar o backup do Google Drive.'});
   }
-  renderApp();
 }
 window.restaurarBackupGoogleDrive=restaurarBackupGoogleDrive;
 function baixarBackupJSON(backup, nome){
