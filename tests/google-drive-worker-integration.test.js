@@ -337,3 +337,32 @@ test('confirmarDesvincularGoogleDrive invoca DELETE /link no Worker e limpa vín
   assert.equal(ctx.lerTokenGoogleDriveSessao('admin-1', 'sub-789'), null, 'Token deve ser limpo do cache');
 });
 
+test('atualizações de estado do backup no Google Drive atualizam o card diretamente sem chamar renderApp', () => {
+  let renderAppChamado = 0;
+  let seletoresAprimoradosCom = null;
+  const mockCard = {
+    nodeType: 1,
+    innerHTML: '',
+  };
+
+  const ctx = carregarContextoMain({
+    renderApp: () => { renderAppChamado++; },
+    aprimorarSeletoresNativos: el => { seletoresAprimoradosCom = el; },
+    document: {
+      getElementById: id => (id === 'cardBackupGoogleDrive' ? mockCard : null),
+      querySelector: () => mockCard,
+    },
+    escapeHtml: s => String(s || ''),
+    icon: () => '<svg></svg>',
+  });
+  vm.runInContext(mainSource, ctx);
+
+  ctx.STATE.googleDriveLink = { email: 'admin@reciclapac.com.br' };
+  ctx.definirEstadoGoogleDrive({ ocupado: true, status: 'Buscando backups no Google Drive...' });
+
+  assert.equal(renderAppChamado, 0, 'renderApp não deve ser chamado para evitar flicker e salto de rolagem');
+  assert.ok(mockCard.innerHTML.includes('Buscando backups no Google Drive...'), 'O conteúdo do card deve conter a mensagem de status');
+  assert.ok(mockCard.innerHTML.includes('disabled'), 'Os botões de ação devem refletir o estado ocupado');
+  assert.equal(seletoresAprimoradosCom, mockCard, 'aprimorarSeletoresNativos deve ser chamado para o card isolado');
+});
+
