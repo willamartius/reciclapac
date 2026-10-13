@@ -9,3 +9,5 @@ id = "2acd2334995d448cae353878c014724f"
 [vars]
 APP_ORIGIN = "https://reciclapac.com.br"
 GOOGLE_REDIRECT_URI = "https://reciclapac-drive-auth.reciclapac.workers.dev/oauth/callback"
+
+# Trigger automated Cloudflare deployment
