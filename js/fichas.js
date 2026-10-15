@@ -99,26 +99,46 @@ async function reservarFolhasEntrega(){
   const reservados=[];
   try{
     for(let inicio=0;inicio<todosIds.length;inicio+=200){
-      const parte=todosIds.slice(inicio,inicio+200);
+      let parte=todosIds.slice(inicio,inicio+200);
       let concluido=false;
       for(let tentativa=0;tentativa<4&&!concluido;tentativa++){
-        await FIREBASE_DB.runTransaction(async tx=>{
-          const refs=parte.map(id=>referencia.doc(id));
-          const snapshots=[];
-          for(const ref of refs) snapshots.push(await tx.get(ref));
-          if(snapshots.some(s=>s.exists)) throw new Error('COLISAO_ID');
-          refs.forEach((ref,i)=>tx.set(ref,{
-            id:parte[i],
-            status:'emitida',
-            colaboradorId,
-            colaboradorNome:colaborador.nome,
-            campanhaId,
-            loteId,
-            emitidaPor:STATE.authUser.uid,
-            emitidaEm:firebase.firestore.FieldValue.serverTimestamp(),
+        try{
+          await FIREBASE_DB.runTransaction(async tx=>{
+            const refs=parte.map(id=>referencia.doc(id));
+            const snapshots=[];
+            for(const ref of refs) snapshots.push(await tx.get(ref));
+            if(snapshots.some(s=>s.exists)) throw new Error('COLISAO_ID');
+            refs.forEach((ref,i)=>tx.set(ref,{
+              id:parte[i],
+              status:'emitida',
+              colaboradorId,
+              colaboradorNome:colaborador.nome,
+              campanhaId,
+              loteId,
+              emitidaPor:STATE.authUser.uid,
+              emitidaEm:firebase.firestore.FieldValue.serverTimestamp(),
+            }));
+          });
+          concluido=true;
+        }catch(erroReserva){
+          if(erroReserva.message!=='COLISAO_ID' || tentativa===3) throw erroReserva;
+          const novas=parte.map(()=>gerarIdFicha(usados));
+          parte.forEach((id,i)=>{todosIds[inicio+i]=novas[i];});
+          parte=novas;
+          for(const folha of folhas){
+            folha.ids=folha.ids.map(id=>{
+              const indiceOriginal=todosIds.indexOf(id);
+              return indiceOriginal===-1?id:id;
+            });
+          }
+          // Atualiza a posição exata dos IDs substituídos nas folhas.
+          let cursor=0;
+          folhas.forEach(folha=>folha.ids.forEach((id,i)=>{
+            const global=cursor+i;
+            if(global>=inicio && global<inicio+parte.length) folha.ids[i]=todosIds[global];
           }));
-        });
-        concluido=true;
+          folhas.forEach(folha=>{cursor+=folha.ids.length;});
+        }
       }
       reservados.push(...parte);
     }
