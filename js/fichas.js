@@ -127,11 +127,13 @@ async function reservarFolhasEntrega(){
           parte=novas;
           // Atualiza a posição exata dos IDs substituídos nas folhas.
           let cursor=0;
-          folhas.forEach(folha=>folha.ids.forEach((id,i)=>{
-            const global=cursor+i;
-            if(global>=inicio && global<inicio+parte.length) folha.ids[i]=todosIds[global];
-          }));
-          folhas.forEach(folha=>{cursor+=folha.ids.length;});
+          folhas.forEach(folha=>{
+            folha.ids.forEach((id,i)=>{
+              const global=cursor+i;
+              if(global>=inicio && global<inicio+parte.length) folha.ids[i]=todosIds[global];
+            });
+            cursor+=folha.ids.length;
+          });
         }
       }
       reservados.push(...parte);
