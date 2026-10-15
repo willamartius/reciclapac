@@ -931,7 +931,7 @@ function renderApp(){
     <div class="bottomnav">
       <div class="bottomnav-row">
         ${navItems.slice(0,4).map(n=>`<button class="${n.key===STATE.view?'active':''}" onclick="irPara('${n.key}')">${icon(n.icon,20)}<span>${n.label.split(' ')[0]}</span></button>`).join('')}
-        <button class="${['historico','relatorios','lixeira','config'].includes(STATE.view)?'active':''}" onclick="abrirMaisSheet()">${icon('more',20)}<span>Mais</span></button>
+        <button class="${['historico','relatorios','lixeira','config','folhas'].includes(STATE.view)?'active':''}" onclick="abrirMaisSheet()">${icon('more',20)}<span>Mais</span></button>
       </div>
     </div>
   `;
