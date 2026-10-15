@@ -90,7 +90,7 @@ async function reservarFolhasEntrega(){
   }
   const todosIds=folhas.flatMap(f=>f.ids);
   const loteId=uid();
-  const referencia=FIREBASE_DB.collection(FICHAS_COLLECTION).doc('records');
+  const referencia=FIREBASE_DB.collection(FICHAS_COLLECTION);
   const status=document.getElementById('folhasStatus');
   const botao=document.getElementById('btnGerarFolhas');
   FOLHAS_ENTREGA_BUSY=true;
@@ -103,7 +103,7 @@ async function reservarFolhasEntrega(){
       let concluido=false;
       for(let tentativa=0;tentativa<4&&!concluido;tentativa++){
         await FIREBASE_DB.runTransaction(async tx=>{
-          const refs=parte.map(id=>referencia.collection('records').doc(id));
+          const refs=parte.map(id=>referencia.doc(id));
           const snapshots=[];
           for(const ref of refs) snapshots.push(await tx.get(ref));
           if(snapshots.some(s=>s.exists)) throw new Error('COLISAO_ID');
@@ -130,7 +130,7 @@ async function reservarFolhasEntrega(){
     // Se uma etapa falhar, os IDs já reservados são cancelados quando possível.
     for(let inicio=0;inicio<reservados.length;inicio+=400){
       const lote=FIREBASE_DB.batch();
-      reservados.slice(inicio,inicio+400).forEach(id=>lote.update(referencia.collection('records').doc(id),{
+      reservados.slice(inicio,inicio+400).forEach(id=>lote.update(referencia.doc(id),{
         status:'cancelada',
         canceladaEm:firebase.firestore.FieldValue.serverTimestamp(),
         canceladaPor:STATE.authUser.uid,
