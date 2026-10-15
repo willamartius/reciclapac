@@ -213,7 +213,6 @@ test('criação: não reutiliza o ID de um documento existente', async () => {
   await assertFails(setDoc(fichaRef(admin), fichaInicial()));
 });
 
-test.todo('PENDENTE DE DECISÃO DE PRODUTO: qual formato de data deve ser aceito?');
 test.todo('PENDENTE DE DECISÃO DE PRODUTO: entregaId deve apontar para uma entrega existente?');
 
 test('criação: valida o dígito Luhn, inclusive com zero à esquerda', async () => {
@@ -356,6 +355,28 @@ test('atualização de uso: total deve ser a soma exata das seis quantidades', a
     ...payloadUtilizada(),
     quantidades: [999, 999, 999, 999, 999, 999],
     total: 5994,
+  }));
+});
+
+test('atualização de uso: data deve usar o formato ISO YYYY-MM-DD', async () => {
+  const operador = testEnv.authenticatedContext('operador-1');
+
+  await seedFicha();
+  await assertFails(updateDoc(fichaRef(operador), {
+    ...payloadUtilizada(),
+    data: '15/10/2026',
+  }));
+
+  await seedFicha('234567');
+  await assertFails(updateDoc(fichaRef(operador, '234567'), {
+    ...payloadUtilizada(),
+    data: '2026-13-15',
+  }));
+
+  await seedFicha('345678');
+  await assertFails(updateDoc(fichaRef(operador, '345678'), {
+    ...payloadUtilizada(),
+    data: '2026-10-32',
   }));
 });
 
