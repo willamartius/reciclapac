@@ -125,12 +125,6 @@ async function reservarFolhasEntrega(){
           const novas=parte.map(()=>gerarIdFicha(usados));
           parte.forEach((id,i)=>{todosIds[inicio+i]=novas[i];});
           parte=novas;
-          for(const folha of folhas){
-            folha.ids=folha.ids.map(id=>{
-              const indiceOriginal=todosIds.indexOf(id);
-              return indiceOriginal===-1?id:id;
-            });
-          }
           // Atualiza a posição exata dos IDs substituídos nas folhas.
           let cursor=0;
           folhas.forEach(folha=>folha.ids.forEach((id,i)=>{
