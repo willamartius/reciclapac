@@ -219,6 +219,85 @@ service cloud.firestore {
       }
     }
 
+
+    match /reciclapac-fichas/{recordId} {
+      allow read: if canUseApp();
+      allow create: if isAdmin()
+        && recordId.matches('^[0-9]{6}
+      allow read: if canUseApp();
+      allow create: if isAdmin() || isValidOperatorMetaSnapshot(recordId);
+      allow update, delete: if isAdmin();
+    }
+  }
+}
+)
+        && request.resource.data.keys().hasOnly([
+          'id', 'status', 'colaboradorId', 'colaboradorNome', 'campanhaId',
+          'loteId', 'emitidaPor', 'emitidaEm'
+        ])
+        && request.resource.data.keys().hasAll([
+          'id', 'status', 'colaboradorId', 'colaboradorNome', 'campanhaId',
+          'loteId', 'emitidaPor', 'emitidaEm'
+        ])
+        && request.resource.data.id == recordId
+        && request.resource.data.status == 'emitida'
+        && request.resource.data.colaboradorId is string
+        && request.resource.data.colaboradorNome is string
+        && request.resource.data.campanhaId is string
+        && request.resource.data.loteId is string
+        && request.resource.data.emitidaPor == request.auth.uid
+        && request.resource.data.emitidaEm == request.time;
+      allow update: if canUseApp()
+        && resource.data.status == 'emitida'
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.colaboradorId == resource.data.colaboradorId
+        && request.resource.data.colaboradorNome == resource.data.colaboradorNome
+        && request.resource.data.campanhaId == resource.data.campanhaId
+        && request.resource.data.loteId == resource.data.loteId
+        && request.resource.data.emitidaPor == resource.data.emitidaPor
+        && request.resource.data.emitidaEm == resource.data.emitidaEm
+        && (
+          (isAdmin()
+            && request.resource.data.status == 'cancelada'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'canceladaEm', 'canceladaPor'])
+            && request.resource.data.canceladaEm == request.time
+            && request.resource.data.canceladaPor == request.auth.uid)
+          ||
+          (request.resource.data.status == 'utilizada'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'utilizadaEm', 'utilizadaPor', 'entregaId', 'quantidades', 'total', 'data'
+            ])
+            && request.resource.data.utilizadaEm == request.time
+            && request.resource.data.utilizadaPor == request.auth.uid
+            && request.resource.data.entregaId is string
+            && request.resource.data.quantidades is list
+            && request.resource.data.quantidades.size() == 6
+            && request.resource.data.quantidades[0] is int
+            && request.resource.data.quantidades[0] >= 0
+            && request.resource.data.quantidades[0] <= 999
+            && request.resource.data.quantidades[1] is int
+            && request.resource.data.quantidades[1] >= 0
+            && request.resource.data.quantidades[1] <= 999
+            && request.resource.data.quantidades[2] is int
+            && request.resource.data.quantidades[2] >= 0
+            && request.resource.data.quantidades[2] <= 999
+            && request.resource.data.quantidades[3] is int
+            && request.resource.data.quantidades[3] >= 0
+            && request.resource.data.quantidades[3] <= 999
+            && request.resource.data.quantidades[4] is int
+            && request.resource.data.quantidades[4] >= 0
+            && request.resource.data.quantidades[4] <= 999
+            && request.resource.data.quantidades[5] is int
+            && request.resource.data.quantidades[5] >= 0
+            && request.resource.data.quantidades[5] <= 999
+            && request.resource.data.total is int
+            && request.resource.data.total >= 0
+            && request.resource.data.total <= 5994
+            && request.resource.data.data is string)
+        );
+      allow delete: if false;
+    }
+
     match /reciclar-apac/metas/records/{recordId} {
       allow read: if canUseApp();
       allow create: if isAdmin() || isValidOperatorMetaSnapshot(recordId);
