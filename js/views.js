@@ -1,6 +1,7 @@
 /* ---------- ÍCONES (inline SVG, stroke=currentColor) ---------- */
 const ICONS = {
   dashboard:'<path d="M4 13h6V4H4v9zM14 20h6v-9h-6v9zM14 4v5h6V4h-6zM4 20h6v-5H4v5z"/>',
+  folhas:'<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h4M9 12h7M9 16h7"/>',
   colaboradores:'<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15 20c.2-2.6 1.8-4.4 4-4.9"/>',
   entregas:'<path d="M4 8l8-4 8 4-8 4-8-4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/>',
   ranking:'<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a3 3 0 0 0 3 5"/><path d="M17 6h3a3 3 0 0 1-3 5"/>',
@@ -34,10 +35,11 @@ const NAV_ITEMS_BASE = [
   {key:'relatorios', label:'Relatórios', icon:'relatorios'},
 ];
 const NAV_ITEM_TRASH = {key:'lixeira', label:'Itens apagados', icon:'trash'};
+const NAV_ITEM_FOLHAS = {key:'folhas', label:'Folha de entrega', icon:'folhas'};
 const NAV_ITEM_CONFIG = {key:'config', label:'Configurações', icon:'config'};
 function navItemsVisiveis(){
   const itens = STATE.isAdmin
-    ? [...NAV_ITEMS_BASE, NAV_ITEM_TRASH, NAV_ITEM_CONFIG]
+    ? [...NAV_ITEMS_BASE, NAV_ITEM_TRASH, NAV_ITEM_CONFIG, NAV_ITEM_FOLHAS]
     : NAV_ITEMS_BASE.filter(n=>n.key!=='relatorios');
   return itens;
 }
@@ -157,7 +159,7 @@ async function salvarSenhaSolicitacaoTroca(){
 }
 window.salvarSenhaSolicitacaoTroca=salvarSenhaSolicitacaoTroca;
 function irPara(view){
-  if((view==='config' || view==='relatorios' || view==='lixeira') && !STATE.isAdmin){ exigirAdmin(); return; }
+  if((view==='config' || view==='relatorios' || view==='lixeira' || view==='folhas') && !STATE.isAdmin){ exigirAdmin(); return; }
   STATE.view=view; renderApp(); window.scrollTo(0,0);
 }
 window.irPara = irPara;
@@ -936,7 +938,7 @@ function renderApp(){
   const content = document.getElementById('viewContent');
   const renderers = {
     dashboard: renderDashboard, colaboradores: renderColaboradores, entregas: renderEntregas,
-    ranking: renderRanking, historico: renderHistorico, relatorios: renderRelatorios, lixeira: renderLixeira, config: renderConfig,
+    ranking: renderRanking, historico: renderHistorico, relatorios: renderRelatorios, lixeira: renderLixeira, config: renderConfig, folhas: renderFolhaEntrega,
   };
   content.innerHTML = renderers[STATE.view] ? renderers[STATE.view]() : '';
   aprimorarSeletoresNativos(content);
@@ -944,7 +946,7 @@ function renderApp(){
 }
 
 function abrirMaisSheet(){
-  const extras = STATE.isAdmin? ['historico','relatorios','lixeira','config'] : ['historico'];
+  const extras = STATE.isAdmin? ['historico','relatorios','lixeira','config','folhas'] : ['historico'];
   abrirModal(`
     <div class="modal-head"><h3>Mais opções</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
     <div style="display:flex;flex-direction:column;gap:8px;">
