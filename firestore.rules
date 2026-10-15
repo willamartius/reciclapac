@@ -25,6 +25,20 @@ service cloud.firestore {
       return isAdmin() || isOperator();
     }
 
+    function luhnDoubleDigit(digit) {
+      let doubled = digit * 2;
+      return doubled > 9 ? doubled - 9 : doubled;
+    }
+
+    function hasValidFichaLuhn(recordId) {
+      let sum = luhnDoubleDigit(int(recordId[0]))
+        + int(recordId[1])
+        + luhnDoubleDigit(int(recordId[2]))
+        + int(recordId[3])
+        + luhnDoubleDigit(int(recordId[4]));
+      return (10 - (sum % 10)) % 10 == int(recordId[5]);
+    }
+
     function isValidOperatorMetaSnapshot(recordId) {
       let data = request.resource.data;
       let campaignPath = /databases/$(database)/documents/reciclar-apac/campanhas/records/$(data.campanhaId);
@@ -220,17 +234,11 @@ service cloud.firestore {
     }
 
 
-    match /reciclapac-fichas/{recordId} {
+    match /reciclar-apac-fichas/{recordId} {
       allow read: if canUseApp();
       allow create: if isAdmin()
-        && recordId.matches('^[0-9]{6}
-      allow read: if canUseApp();
-      allow create: if isAdmin() || isValidOperatorMetaSnapshot(recordId);
-      allow update, delete: if isAdmin();
-    }
-  }
-}
-)
+        && recordId.matches('^[0-9]{6}$')
+        && hasValidFichaLuhn(recordId)
         && request.resource.data.keys().hasOnly([
           'id', 'status', 'colaboradorId', 'colaboradorNome', 'campanhaId',
           'loteId', 'emitidaPor', 'emitidaEm'
@@ -293,6 +301,12 @@ service cloud.firestore {
             && request.resource.data.total is int
             && request.resource.data.total >= 0
             && request.resource.data.total <= 5994
+            && request.resource.data.total == request.resource.data.quantidades[0]
+              + request.resource.data.quantidades[1]
+              + request.resource.data.quantidades[2]
+              + request.resource.data.quantidades[3]
+              + request.resource.data.quantidades[4]
+              + request.resource.data.quantidades[5]
             && request.resource.data.data is string)
         );
       allow delete: if false;
