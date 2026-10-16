@@ -18,6 +18,7 @@ function quantidadesFichaValidas(quantidades) {
 
 function dataISORegistroExpressValida(data) {
   if (typeof data !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(data)) return false;
+  if (Number(data.slice(0, 4)) < 1) return false;
   const dataUTC = new Date(`${data}T00:00:00.000Z`);
   return Number.isFinite(dataUTC.getTime()) && dataUTC.toISOString().slice(0, 10) === data;
 }
@@ -50,12 +51,34 @@ function montarEntregasDaFicha({ fichaId, ficha, data, quantidades, responsavelC
   }));
 }
 
+function montarHistoricoEntregasExpress(ficha, entregas = []) {
+  if (!ficha || ficha.status !== 'utilizada' || !quantidadesFichaValidas(ficha.quantidades)) return [];
+  const existentes = new Map(entregas.map(entrega => [entrega.id, entrega]));
+  const entregaGrupoId = `${ficha.id}-papelao`;
+  return REGISTRO_EXPRESS_MATERIAIS.map((material, indice) => {
+    const id = `${ficha.id}-${material.tipo}`;
+    const entrega = existentes.get(id);
+    return {
+      id,
+      tipo: material.tipo,
+      fichaId: ficha.id,
+      entregaGrupoId,
+      quantidadeOriginal: ficha.quantidades[indice],
+      quantidadeAtual: entrega && entrega.quantidade,
+      statusValidacao: entrega && entrega.statusValidacao,
+      unidade: entrega && entrega.unidade || 'unidades',
+      excluida: !entrega,
+    };
+  });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     REGISTRO_EXPRESS_MATERIAIS,
     quantidadesFichaValidas,
     dataISORegistroExpressValida,
     montarEntregasDaFicha,
+    montarHistoricoEntregasExpress,
   };
 }
 
@@ -70,6 +93,7 @@ function renderRegistroExpress() {
   const statusFicha = ficha ? (ficha.status === 'emitida' ? 'Emitida, aguardando registro' : ficha.status === 'utilizada' ? 'Já registrada' : 'Cancelada') : '';
   const quantidades = ficha && ficha.quantidades;
   const total = quantidadesFichaValidas(quantidades) ? quantidades.reduce((soma, valor) => soma + valor, 0) : null;
+  const historico = ficha && ficha.status === 'utilizada' ? montarHistoricoEntregasExpress(ficha, estado.entregas) : [];
   const draft = estado.formDraft || {};
   return `
     <div class="card">
@@ -87,7 +111,11 @@ function renderRegistroExpress() {
         <div class="toolbar"><div><b>Ficha ${escapeHtml(ficha.id)}</b><p class="small-note">${escapeHtml(statusFicha)} · ${escapeHtml(colaborador ? colaborador.nome : ficha.colaboradorNome || 'Colaborador não localizado')} · ${escapeHtml(campanha ? campanha.nome : ficha.campanhaId)}</p></div><span class="badge ${ficha.status === 'utilizada' ? 'badge-green' : ficha.status === 'cancelada' ? 'badge-amber' : 'badge-green'}">${escapeHtml(ficha.status)}</span></div>
         ${ficha.status === 'utilizada' ? `
           <p class="small-note">Data: ${escapeHtml(ficha.data || '—')} · Total conferido: ${Number.isInteger(ficha.total) ? ficha.total : '—'} · ID da entrega principal: ${escapeHtml(ficha.entregaId || '—')}</p>
-          ${estado.entregas.length ? `<div class="table-wrap"><table><thead><tr><th>Material</th><th>Quantidade</th><th>Status</th></tr></thead><tbody>${estado.entregas.map(entrega => `<tr><td>${escapeHtml((REGISTRO_EXPRESS_MATERIAIS.find(item => item.tipo === entrega.tipo) || {}).label || entrega.tipo)}</td><td>${escapeHtml(String(entrega.quantidade))} ${escapeHtml(entrega.unidade || 'unidades')}</td><td>${entrega.statusValidacao === 'validado' ? 'Validado' : 'Pendente'}</td></tr>`).join('')}</tbody></table></div>` : '<p class="small-note">Os registros vinculados não estão disponíveis. Um administrador pode ter movido entregas para a lixeira.</p>'}
+          <p class="small-note">Snapshot imutável da ficha de origem. O vínculo identifica o Registro Express mesmo se uma entrega individual for editada ou removida.</p>
+          <div class="table-wrap"><table><thead><tr><th>Material</th><th>Quantidade original</th><th>Quantidade atual</th><th>Estado</th><th>Origem</th></tr></thead><tbody>${historico.map(item => {
+            const material = REGISTRO_EXPRESS_MATERIAIS.find(entry => entry.tipo === item.tipo) || {};
+            return `<tr><td>${escapeHtml(material.label || item.tipo)}</td><td>${escapeHtml(String(item.quantidadeOriginal))} unidades</td><td>${item.excluida ? '—' : `${escapeHtml(String(item.quantidadeAtual))} ${escapeHtml(item.unidade)}`}</td><td>${item.excluida ? 'Excluída; snapshot preservado' : item.statusValidacao === 'validado' ? 'Validado' : 'Pendente'}</td><td>${escapeHtml(item.fichaId)} · ${escapeHtml(item.entregaGrupoId)}</td></tr>`;
+          }).join('')}</tbody></table></div>
         ` : ficha.status === 'emitida' ? `
           <form onsubmit="event.preventDefault();registrarFichaExpress()">
             <div class="grid grid-2">

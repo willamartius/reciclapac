@@ -39,15 +39,25 @@ service cloud.firestore {
       return (10 - (sum % 10)) % 10 == int(recordId[5]);
     }
 
-    function isExpectedFichaDelivery(fichaId, fichaData, material, indice) {
-      let entregaId = fichaId + '-papelao';
+    function isExpectedFichaDelivery(fichaId, material) {
       let deliveryId = fichaId + '-' + material;
       let deliveryPath = /databases/$(database)/documents/reciclar-apac/entregas/records/$(deliveryId);
-      return existsAfter(deliveryPath)
-        && getAfter(deliveryPath).data.fichaId == fichaId
-        && getAfter(deliveryPath).data.entregaGrupoId == entregaId
-        && getAfter(deliveryPath).data.tipo == material
-        && getAfter(deliveryPath).data.quantidade == fichaData.quantidades[indice];
+      return existsAfter(deliveryPath);
+    }
+
+    function isValidCalendarDate(date) {
+      let parts = date.split('-');
+      let year = int(parts[0]);
+      let month = int(parts[1]);
+      let day = int(parts[2]);
+      let leapYear = year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
+      let maxDay = month in [1, 3, 5, 7, 8, 10, 12]
+        ? 31
+        : month == 2 ? (leapYear ? 29 : 28) : 30;
+      return parts.size() == 3
+        && year >= 1 && year <= 9999
+        && month >= 1 && month <= 12
+        && day >= 1 && day <= maxDay;
     }
 
     function isFichaDateWithinCampaign(campaignId, date) {
@@ -81,13 +91,14 @@ service cloud.firestore {
           + data.quantidades[3] + data.quantidades[4] + data.quantidades[5]
         && data.data is string
         && data.data.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+        && isValidCalendarDate(data.data)
         && isFichaDateWithinCampaign(data.campanhaId, data.data)
-        && isExpectedFichaDelivery(recordId, data, 'papelao', 0)
-        && isExpectedFichaDelivery(recordId, data, 'latinhas', 1)
-        && isExpectedFichaDelivery(recordId, data, 'embalagens', 2)
-        && isExpectedFichaDelivery(recordId, data, 'pet', 3)
-        && isExpectedFichaDelivery(recordId, data, 'ovos', 4)
-        && isExpectedFichaDelivery(recordId, data, 'latas', 5);
+        && isExpectedFichaDelivery(recordId, 'papelao')
+        && isExpectedFichaDelivery(recordId, 'latinhas')
+        && isExpectedFichaDelivery(recordId, 'embalagens')
+        && isExpectedFichaDelivery(recordId, 'pet')
+        && isExpectedFichaDelivery(recordId, 'ovos')
+        && isExpectedFichaDelivery(recordId, 'latas');
     }
 
     function isValidLinkedFichaDelivery(recordId) {
@@ -95,7 +106,7 @@ service cloud.firestore {
       let fichaPath = /databases/$(database)/documents/reciclar-apac-fichas/$(data.fichaId);
       let fichaBefore = get(fichaPath).data;
       let fichaAfter = getAfter(fichaPath).data;
-      return isOperator()
+      return canUseApp()
         && data.keys().hasOnly([
           'id', 'criadoEm', 'data', 'colaboradorId', 'tipo', 'quantidade', 'unidade',
           'responsavelContagem', 'observacoes', 'statusValidacao', 'campanhaId', 'fichaId', 'entregaGrupoId'
@@ -142,6 +153,25 @@ service cloud.firestore {
         && data.chave.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
         && exists(campaignPath)
         && data.metas == get(campaignPath).data.metasDefault;
+    }
+
+    function preservesDeliveryOrigin() {
+      return ('fichaId' in resource.data)
+        ? ('fichaId' in request.resource.data
+          && 'entregaGrupoId' in request.resource.data
+          && request.resource.data.fichaId == resource.data.fichaId
+          && request.resource.data.entregaGrupoId == resource.data.entregaGrupoId)
+        : (!('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data));
+    }
+
+    function isValidLinkedDeliveryUpdate() {
+      let data = request.resource.data;
+      return preservesDeliveryOrigin()
+        && data.data is string
+        && data.data.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+        && isValidCalendarDate(data.data)
+        && data.campanhaId is string
+        && isFichaDateWithinCampaign(data.campanhaId, data.data);
     }
 
     function isValidPublicTransferRequest(requestId) {
@@ -319,14 +349,20 @@ service cloud.firestore {
 
       match /records/{recordId} {
         allow read: if key == 'lixeira' ? isAdmin() : canUseApp();
-        allow create: if isAdmin()
-          || (isOperator()
+        allow create: if (isAdmin()
+            && (key != 'entregas'
+              || (!('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data))))
+          || (canUseApp()
             && key in ['colaboradores', 'entregas', 'transferencias']
             && request.resource.data.id == recordId
             && (key != 'entregas'
               || ((!('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data))
                 || isValidLinkedFichaDelivery(recordId))));
-        allow update: if isAdmin()
+        allow update: if (isAdmin()
+            && (key != 'entregas'
+              || ((!('fichaId' in resource.data) && !('entregaGrupoId' in resource.data)
+                  && !('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data))
+                || isValidLinkedDeliveryUpdate())))
           || (isOperator()
             && key in ['colaboradores', 'entregas', 'transferencias']
             && request.resource.data.id == recordId
@@ -334,8 +370,7 @@ service cloud.firestore {
               || ((!('fichaId' in resource.data) && !('entregaGrupoId' in resource.data)
                   && !('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data))
                 || ('fichaId' in resource.data && 'entregaGrupoId' in resource.data
-                  && request.resource.data.fichaId == resource.data.fichaId
-                  && request.resource.data.entregaGrupoId == resource.data.entregaGrupoId))));
+                  && isValidLinkedDeliveryUpdate()))));
         allow delete: if isAdmin();
       }
     }

@@ -5,6 +5,7 @@ const {
   quantidadesFichaValidas,
   dataISORegistroExpressValida,
   montarEntregasDaFicha,
+  montarHistoricoEntregasExpress,
 } = require('../js/registro-express.js');
 
 const ficha = {
@@ -64,4 +65,32 @@ test('Registro Express rejeita data impossível, ficha terminal e status desconh
     quantidades: [1, 2, 3, 4, 5, 6],
     statusValidacao: 'desconhecido',
   }), /status de validação/);
+});
+
+test('Registro Express valida o calendário civil gregoriano e anos bissextos', () => {
+  assert.equal(dataISORegistroExpressValida('2024-02-29'), true);
+  assert.equal(dataISORegistroExpressValida('2000-02-29'), true);
+  assert.equal(dataISORegistroExpressValida('1900-02-29'), false);
+  assert.equal(dataISORegistroExpressValida('2026-02-29'), false);
+  assert.equal(dataISORegistroExpressValida('2026-04-31'), false);
+  assert.equal(dataISORegistroExpressValida('0000-01-01'), false);
+});
+
+test('histórico usa snapshot para as seis entregas e identifica exclusões e edições', () => {
+  const snapshot = {
+    id: '123455', status: 'utilizada', quantidades: [1, 2, 3, 4, 5, 6],
+  };
+  const atualizadas = [
+    { id: '123455-papelao', tipo: 'papelao', quantidade: 99, statusValidacao: 'validado' },
+    { id: '123455-latinhas', tipo: 'latinhas', quantidade: 8, statusValidacao: 'pendente' },
+  ];
+  const historico = montarHistoricoEntregasExpress(snapshot, atualizadas);
+
+  assert.equal(historico.length, 6);
+  assert.deepEqual(historico.map(item => item.quantidadeOriginal), [1, 2, 3, 4, 5, 6]);
+  assert.equal(historico[0].quantidadeAtual, 99);
+  assert.equal(historico[0].fichaId, snapshot.id);
+  assert.equal(historico[0].entregaGrupoId, `${snapshot.id}-papelao`);
+  assert.equal(historico[2].excluida, true);
+  assert.equal(historico[2].quantidadeOriginal, 3);
 });

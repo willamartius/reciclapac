@@ -78,7 +78,7 @@ async function seedFicha(id = '123456') {
   await testEnv.withSecurityRulesDisabled(async context => {
     await setDoc(doc(firestore(context), 'reciclar-apac', 'campanhas', 'records', 'campanha-1'), {
       id: 'campanha-1',
-      anoInicio: 2026,
+      anoInicio: 2024,
       mesInicio: 1,
       anoFim: 2026,
       mesFim: 12,
@@ -349,13 +349,37 @@ test('Registro Express: regras rejeitam transação parcial e data fora do perí
   assert.equal(entregasSnapshot.size, 0);
 });
 
+test('Registro Express: regras validam calendário civil e aceitam ano bissexto', async () => {
+  const operador = testEnv.authenticatedContext('operador-1');
+  await seedFicha('234567');
+  await assertSucceeds(registrarFicha(operador, '234567', 'operador-1', [1, 2, 3, 4, 5, 6], {
+    data: '2024-02-29',
+  }));
+
+  await seedFicha('345678');
+  await assertFails(registrarFicha(operador, '345678', 'operador-1', [1, 2, 3, 4, 5, 6], {
+    data: '2026-02-29',
+  }));
+  await seedFicha('456789');
+  await assertFails(registrarFicha(operador, '456789', 'operador-1', [1, 2, 3, 4, 5, 6], {
+    data: '2026-04-31',
+  }));
+  assert.equal((await getDoc(fichaRef(operador, '345678'))).data().status, 'emitida');
+  assert.equal((await getDoc(fichaRef(operador, '456789'))).data().status, 'emitida');
+});
+
 test('Registro Express: operador não pode criar entrega vinculada fora do consumo atômico da ficha', async () => {
   await seedFicha();
   const operador = testEnv.authenticatedContext('operador-1');
+  const admin = testEnv.authenticatedContext('admin-1');
   const entrega = payloadEntregasFicha('123456', [1, 2, 3, 4, 5, 6])[0];
 
   await assertFails(setDoc(
     doc(firestore(operador), 'reciclar-apac', 'entregas', 'records', entrega.id),
+    entrega,
+  ));
+  await assertFails(setDoc(
+    doc(firestore(admin), 'reciclar-apac', 'entregas', 'records', entrega.id),
     entrega,
   ));
   await assertFails(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6], {
@@ -365,18 +389,51 @@ test('Registro Express: operador não pode criar entrega vinculada fora do consu
   assert.equal((await getDoc(fichaRef(operador))).data().status, 'emitida');
 });
 
-test('Registro Express: vínculo não pode ser removido por operador; edição e exclusão admin continuam disponíveis', async () => {
+test('Registro Express: origem é imutável; exclusão individual preserva snapshot e não libera ficha', async () => {
   await seedFicha();
   const operador = testEnv.authenticatedContext('operador-1');
   const admin = testEnv.authenticatedContext('admin-1');
   await assertSucceeds(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6]));
 
+  const snapshotOriginal = (await getDoc(fichaRef(admin))).data();
+  assert.deepEqual(snapshotOriginal.quantidades, [1, 2, 3, 4, 5, 6]);
+  assert.equal(snapshotOriginal.total, 21);
   const entregaOperador = doc(firestore(operador), 'reciclar-apac', 'entregas', 'records', '123456-papelao');
   await assertFails(updateDoc(entregaOperador, { fichaId: '654321' }));
+  await assertFails(updateDoc(entregaOperador, { data: '2026-02-31' }));
+  await assertFails(updateDoc(entregaOperador, { data: '2027-01-15' }));
   await assertSucceeds(updateDoc(entregaOperador, { quantidade: 7 }));
 
   const entregaAdmin = doc(firestore(admin), 'reciclar-apac', 'entregas', 'records', '123456-papelao');
-  await assertSucceeds(deleteDoc(entregaAdmin));
+  await assertFails(updateDoc(entregaAdmin, { fichaId: '654321' }));
+  await assertFails(updateDoc(entregaAdmin, { data: '2026-02-31' }));
+  await assertFails(updateDoc(entregaAdmin, { entregaGrupoId: '654321-papelao' }));
+  await assertFails(updateDoc(entregaAdmin, { fichaId: '654321', entregaGrupoId: '654321-papelao' }));
+  await assertSucceeds(updateDoc(entregaAdmin, { quantidade: 8 }));
+  const entregaEditada = (await getDoc(entregaAdmin)).data();
+  assert.equal(entregaEditada.fichaId, '123456');
+  assert.equal(entregaEditada.entregaGrupoId, '123456-papelao');
+  await assertFails(updateDoc(fichaRef(admin), { quantidades: [99, 2, 3, 4, 5, 6] }));
+  await assertFails(updateDoc(fichaRef(admin), { data: '2026-10-16' }));
+  const lixeiraRef = doc(firestore(admin), 'reciclar-apac', 'lixeira', 'records', 'lixeira-express-papelao');
+  await assertSucceeds(runTransaction(firestore(admin), async transaction => {
+    transaction.set(lixeiraRef, {
+      id: 'lixeira-express-papelao', colecao: 'entregas', registroId: '123456-papelao',
+      registro: entregaEditada, excluidoEm: '2026-10-15T12:00:00.000Z', excluidoPor: 'admin-1',
+    });
+    transaction.delete(entregaAdmin);
+  }));
+  const copiaLixeira = (await getDoc(lixeiraRef)).data();
+  assert.equal(copiaLixeira.registro.fichaId, '123456');
+  assert.equal(copiaLixeira.registro.entregaGrupoId, '123456-papelao');
+  const fichaDepoisDaExclusao = (await getDoc(fichaRef(admin))).data();
+  assert.equal(fichaDepoisDaExclusao.status, 'utilizada');
+  assert.deepEqual(fichaDepoisDaExclusao.quantidades, snapshotOriginal.quantidades);
+  assert.equal(fichaDepoisDaExclusao.total, snapshotOriginal.total);
+  assert.equal(fichaDepoisDaExclusao.entregaId, snapshotOriginal.entregaId);
+  assert.equal(fichaDepoisDaExclusao.data, snapshotOriginal.data);
+  await assertFails(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6]));
+  assert.equal((await getDoc(fichaRef(admin))).data().status, 'utilizada');
 });
 
 test('atualização de uso: sem papel e anônimo não podem consumir ficha', async () => {

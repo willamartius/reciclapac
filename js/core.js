@@ -148,9 +148,18 @@ function serializarEstavel(valor){
 
 function inicializarFirebase(config){
   try{
-    if(!firebase.apps.length) firebase.initializeApp(config);
+    const localEmulatorsAtivos = typeof window !== 'undefined'
+      && ['localhost','127.0.0.1'].includes(window.location.hostname)
+      && new URLSearchParams(window.location.search).get('emulator') === '1';
+    const configuracaoAtiva = localEmulatorsAtivos ? {...config, projectId:'demo-reciclapac'} : config;
+    if(!firebase.apps.length) firebase.initializeApp(configuracaoAtiva);
     FIREBASE_DB = firebase.firestore();
     FIREBASE_AUTH = firebase.auth();
+    if(localEmulatorsAtivos){
+      FIREBASE_DB.useEmulator('127.0.0.1',8080);
+      FIREBASE_AUTH.useEmulator('http://127.0.0.1:9099',{disableWarnings:true});
+      console.info('Reciclapac conectado somente aos emuladores locais demo-reciclapac.');
+    }
     return true;
   }catch(e){ console.error('Erro ao iniciar Firebase', e); return false; }
 }

@@ -937,6 +937,7 @@ async function salvarEntrega(id){
   const observacoes = document.getElementById('fObs').value.trim();
   const statusValidacao = document.getElementById('fStatusValid').value;
   if(!data || !colaboradorId || !tipo || isNaN(quantidade) || quantidade<0){ alert('Preencha data, colaborador, tipo de material e uma quantidade válida.'); return; }
+  if(!dataISORegistroExpressValida(data)){ alert('Informe uma data civil válida.'); return; }
   if(!ReciclarRankingLogic.quantidadeUnitariaValida(quantidade,tipo==='latinhas'&&unidade==='kg')){
     alert('A quantidade desta categoria precisa ser informada em unidades inteiras.');
     return;
