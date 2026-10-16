@@ -39,6 +39,100 @@ service cloud.firestore {
       return (10 - (sum % 10)) % 10 == int(recordId[5]);
     }
 
+    function isExpectedFichaDelivery(fichaId, fichaData, material, indice) {
+      let entregaId = fichaId + '-papelao';
+      let deliveryId = fichaId + '-' + material;
+      let deliveryPath = /databases/$(database)/documents/reciclar-apac/entregas/records/$(deliveryId);
+      return existsAfter(deliveryPath)
+        && getAfter(deliveryPath).data.fichaId == fichaId
+        && getAfter(deliveryPath).data.entregaGrupoId == entregaId
+        && getAfter(deliveryPath).data.tipo == material
+        && getAfter(deliveryPath).data.quantidade == fichaData.quantidades[indice];
+    }
+
+    function isFichaDateWithinCampaign(campaignId, date) {
+      let campaignPath = /databases/$(database)/documents/reciclar-apac/campanhas/records/$(campaignId);
+      let campaign = get(campaignPath).data;
+      let dateParts = date.split('-');
+      let recordPeriod = int(dateParts[0]) * 12 + int(dateParts[1]);
+      let startPeriod = campaign.anoInicio * 12 + campaign.mesInicio;
+      let endPeriod = campaign.anoFim is int
+        ? campaign.anoFim * 12 + campaign.mesFim
+        : 9999 * 12 + 12;
+      return exists(campaignPath)
+        && campaign.anoInicio is int && campaign.mesInicio is int
+        && recordPeriod >= startPeriod
+        && recordPeriod <= endPeriod;
+    }
+
+    function isValidFichaUse(recordId) {
+      let data = request.resource.data;
+      return data.entregaId == recordId + '-papelao'
+        && data.quantidades is list
+        && data.quantidades.size() == 6
+        && data.quantidades[0] is int && data.quantidades[0] >= 0 && data.quantidades[0] <= 999
+        && data.quantidades[1] is int && data.quantidades[1] >= 0 && data.quantidades[1] <= 999
+        && data.quantidades[2] is int && data.quantidades[2] >= 0 && data.quantidades[2] <= 999
+        && data.quantidades[3] is int && data.quantidades[3] >= 0 && data.quantidades[3] <= 999
+        && data.quantidades[4] is int && data.quantidades[4] >= 0 && data.quantidades[4] <= 999
+        && data.quantidades[5] is int && data.quantidades[5] >= 0 && data.quantidades[5] <= 999
+        && data.total is int
+        && data.total == data.quantidades[0] + data.quantidades[1] + data.quantidades[2]
+          + data.quantidades[3] + data.quantidades[4] + data.quantidades[5]
+        && data.data is string
+        && data.data.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+        && isFichaDateWithinCampaign(data.campanhaId, data.data)
+        && isExpectedFichaDelivery(recordId, data, 'papelao', 0)
+        && isExpectedFichaDelivery(recordId, data, 'latinhas', 1)
+        && isExpectedFichaDelivery(recordId, data, 'embalagens', 2)
+        && isExpectedFichaDelivery(recordId, data, 'pet', 3)
+        && isExpectedFichaDelivery(recordId, data, 'ovos', 4)
+        && isExpectedFichaDelivery(recordId, data, 'latas', 5);
+    }
+
+    function isValidLinkedFichaDelivery(recordId) {
+      let data = request.resource.data;
+      let fichaPath = /databases/$(database)/documents/reciclar-apac-fichas/$(data.fichaId);
+      let fichaBefore = get(fichaPath).data;
+      let fichaAfter = getAfter(fichaPath).data;
+      return isOperator()
+        && data.keys().hasOnly([
+          'id', 'criadoEm', 'data', 'colaboradorId', 'tipo', 'quantidade', 'unidade',
+          'responsavelContagem', 'observacoes', 'statusValidacao', 'campanhaId', 'fichaId', 'entregaGrupoId'
+        ])
+        && data.id == recordId
+        && data.fichaId is string && data.fichaId.matches('^[0-9]{6}$')
+        && data.tipo in ['papelao', 'latinhas', 'embalagens', 'pet', 'ovos', 'latas']
+        && recordId == data.fichaId + '-' + data.tipo
+        && data.entregaGrupoId == data.fichaId + '-papelao'
+        && data.criadoEm is int
+        && data.quantidade is int && data.quantidade >= 0 && data.quantidade <= 999
+        && data.unidade == 'unidades'
+        && data.responsavelContagem is string
+        && data.responsavelContagem.size() <= 120
+        && data.observacoes is string
+        && data.observacoes.size() <= 500
+        && data.statusValidacao in ['pendente', 'validado']
+        && data.data is string
+        && data.campanhaId is string
+        && fichaBefore.status == 'emitida'
+        && fichaAfter.status == 'utilizada'
+        && fichaAfter.utilizadaPor == request.auth.uid
+        && fichaAfter.entregaId == data.entregaGrupoId
+        && fichaAfter.campanhaId == data.campanhaId
+        && fichaAfter.colaboradorId == data.colaboradorId
+        && fichaAfter.data == data.data
+        && fichaAfter.statusValidacao == data.statusValidacao
+        && fichaAfter.responsavelContagem == data.responsavelContagem
+        && fichaAfter.observacoes == data.observacoes
+        && ((data.tipo == 'papelao' && fichaAfter.quantidades[0] == data.quantidade)
+          || (data.tipo == 'latinhas' && fichaAfter.quantidades[1] == data.quantidade)
+          || (data.tipo == 'embalagens' && fichaAfter.quantidades[2] == data.quantidade)
+          || (data.tipo == 'pet' && fichaAfter.quantidades[3] == data.quantidade)
+          || (data.tipo == 'ovos' && fichaAfter.quantidades[4] == data.quantidade)
+          || (data.tipo == 'latas' && fichaAfter.quantidades[5] == data.quantidade));
+    }
+
     function isValidOperatorMetaSnapshot(recordId) {
       let data = request.resource.data;
       let campaignPath = /databases/$(database)/documents/reciclar-apac/campanhas/records/$(data.campanhaId);
@@ -225,10 +319,23 @@ service cloud.firestore {
 
       match /records/{recordId} {
         allow read: if key == 'lixeira' ? isAdmin() : canUseApp();
-        allow create, update: if isAdmin()
+        allow create: if isAdmin()
           || (isOperator()
             && key in ['colaboradores', 'entregas', 'transferencias']
-            && request.resource.data.id == recordId);
+            && request.resource.data.id == recordId
+            && (key != 'entregas'
+              || ((!('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data))
+                || isValidLinkedFichaDelivery(recordId))));
+        allow update: if isAdmin()
+          || (isOperator()
+            && key in ['colaboradores', 'entregas', 'transferencias']
+            && request.resource.data.id == recordId
+            && (key != 'entregas'
+              || ((!('fichaId' in resource.data) && !('entregaGrupoId' in resource.data)
+                  && !('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data))
+                || ('fichaId' in resource.data && 'entregaGrupoId' in resource.data
+                  && request.resource.data.fichaId == resource.data.fichaId
+                  && request.resource.data.entregaGrupoId == resource.data.entregaGrupoId))));
         allow delete: if isAdmin();
       }
     }
@@ -273,42 +380,15 @@ service cloud.firestore {
           ||
           (request.resource.data.status == 'utilizada'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              'status', 'utilizadaEm', 'utilizadaPor', 'entregaId', 'quantidades', 'total', 'data'
+              'status', 'utilizadaEm', 'utilizadaPor', 'entregaId', 'quantidades', 'total', 'data',
+              'statusValidacao', 'responsavelContagem', 'observacoes'
             ])
             && request.resource.data.utilizadaEm == request.time
             && request.resource.data.utilizadaPor == request.auth.uid
-            && request.resource.data.entregaId is string
-            && request.resource.data.quantidades is list
-            && request.resource.data.quantidades.size() == 6
-            && request.resource.data.quantidades[0] is int
-            && request.resource.data.quantidades[0] >= 0
-            && request.resource.data.quantidades[0] <= 999
-            && request.resource.data.quantidades[1] is int
-            && request.resource.data.quantidades[1] >= 0
-            && request.resource.data.quantidades[1] <= 999
-            && request.resource.data.quantidades[2] is int
-            && request.resource.data.quantidades[2] >= 0
-            && request.resource.data.quantidades[2] <= 999
-            && request.resource.data.quantidades[3] is int
-            && request.resource.data.quantidades[3] >= 0
-            && request.resource.data.quantidades[3] <= 999
-            && request.resource.data.quantidades[4] is int
-            && request.resource.data.quantidades[4] >= 0
-            && request.resource.data.quantidades[4] <= 999
-            && request.resource.data.quantidades[5] is int
-            && request.resource.data.quantidades[5] >= 0
-            && request.resource.data.quantidades[5] <= 999
-            && request.resource.data.total is int
-            && request.resource.data.total >= 0
-            && request.resource.data.total <= 5994
-            && request.resource.data.total == request.resource.data.quantidades[0]
-              + request.resource.data.quantidades[1]
-              + request.resource.data.quantidades[2]
-              + request.resource.data.quantidades[3]
-              + request.resource.data.quantidades[4]
-              + request.resource.data.quantidades[5]
-            && request.resource.data.data is string
-            && request.resource.data.data.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'))
+            && request.resource.data.statusValidacao in ['pendente', 'validado']
+            && request.resource.data.responsavelContagem is string
+            && request.resource.data.observacoes is string
+            && isValidFichaUse(recordId))
         );
       allow delete: if false;
     }

@@ -809,7 +809,7 @@ function renderTabelaEntregas(){
             return `<tr>
               <td>${formatarData(e.data)}</td>
               <td style="font-weight:700;">${escapeHtml(c?c.nome:'(removido)')}</td>
-              <td>${cat? escapeHtml(cat.label.split(' (')[0]) : 'Outros materiais'}</td>
+              <td>${cat? escapeHtml(cat.label.split(' (')[0]) : 'Outros materiais'}${e.fichaId?`<div class="small-note">Ficha ${escapeHtml(e.fichaId)}</div>`:''}</td>
               <td>${e.quantidade} ${unidLabel}</td>
               <td>${e.statusValidacao==='validado'? '<span class="badge badge-green">Validado</span>' : '<span class="badge badge-amber">Pendente</span>'}</td>
               ${podeEditarDados()? `<td style="text-align:right;white-space:nowrap;">

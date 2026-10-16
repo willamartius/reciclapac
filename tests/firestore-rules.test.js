@@ -14,15 +14,19 @@ const {
   doc,
   getDoc,
   getDocs,
+  query,
   serverTimestamp,
   setDoc,
+  runTransaction,
   updateDoc,
+  where,
 } = require('firebase/firestore');
 
 const PROJECT_ID = 'demo-reciclapac';
 const EMULATOR_HOST = '127.0.0.1';
 const EMULATOR_PORT = 8080;
 const FICHAS = 'reciclar-apac-fichas';
+const ENTREGA_MATERIAIS = ['papelao', 'latinhas', 'embalagens', 'pet', 'ovos', 'latas'];
 const RULES_PATH = path.resolve(__dirname, '..', 'firestore.rules');
 
 let testEnv;
@@ -72,9 +76,70 @@ async function seedRole(uid, role) {
 
 async function seedFicha(id = '123456') {
   await testEnv.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(firestore(context), 'reciclar-apac', 'campanhas', 'records', 'campanha-1'), {
+      id: 'campanha-1',
+      anoInicio: 2026,
+      mesInicio: 1,
+      anoFim: 2026,
+      mesFim: 12,
+      metasDefault: { papel: 5 },
+    });
     await setDoc(fichaRef(context, id), {
       ...fichaInicial(id),
       emitidaEm: new Date('2026-10-15T12:00:00.000Z'),
+    });
+  });
+}
+
+function payloadEntregasFicha(fichaId, quantidades, data = '2026-10-15', statusValidacao = 'pendente', overrides = {}) {
+  const entregaGrupoId = `${fichaId}-papelao`;
+  return ENTREGA_MATERIAIS.map((tipo, indice) => ({
+    id: `${fichaId}-${tipo}`,
+    criadoEm: 1000 + indice,
+    data,
+    colaboradorId: 'colaborador-1',
+    tipo,
+    quantidade: quantidades[indice],
+    unidade: 'unidades',
+    responsavelContagem: 'Responsável Teste',
+    observacoes: 'Conferida',
+    statusValidacao,
+    campanhaId: 'campanha-1',
+    fichaId,
+    entregaGrupoId,
+    ...overrides,
+  }));
+}
+
+async function registrarFicha(context, fichaId, actor, quantidades, options = {}) {
+  const db = firestore(context);
+  const ficha = doc(db, FICHAS, fichaId);
+  const entregas = payloadEntregasFicha(
+    fichaId,
+    quantidades,
+    options.data || '2026-10-15',
+    options.statusValidacao || 'pendente',
+    options.deliveryOverrides || {},
+  );
+  const entregaRefs = entregas.map(item => doc(db, 'reciclar-apac', 'entregas', 'records', item.id));
+  await runTransaction(db, async tx => {
+    const fichaSnapshot = await tx.get(ficha);
+    if (!fichaSnapshot.exists()) throw new Error('Ficha ausente');
+    for (const ref of entregaRefs) await tx.get(ref);
+    tx.update(ficha, {
+      status: 'utilizada',
+      utilizadaEm: serverTimestamp(),
+      utilizadaPor: actor,
+      entregaId: entregas[0].id,
+      quantidades,
+      total: quantidades.reduce((sum, value) => sum + value, 0),
+      data: options.data || '2026-10-15',
+      statusValidacao: options.statusValidacao || 'pendente',
+      responsavelContagem: options.responsavelContagem || 'Responsável Teste',
+      observacoes: options.observacoes || 'Conferida',
+    });
+    entregas.forEach((item, index) => {
+      if (index !== options.omitIndex) tx.set(entregaRefs[index], item);
     });
   });
 }
@@ -213,7 +278,7 @@ test('criação: não reutiliza o ID de um documento existente', async () => {
   await assertFails(setDoc(fichaRef(admin), fichaInicial()));
 });
 
-test.todo('PENDENTE DE DECISÃO DE PRODUTO: entregaId deve apontar para uma entrega existente?');
+test.todo('PENDENTE: definir se entregaId precisa continuar apontando para uma entrega após exclusão individual por admin');
 
 test('criação: valida o dígito Luhn, inclusive com zero à esquerda', async () => {
   const admin = testEnv.authenticatedContext('admin-1');
@@ -229,13 +294,89 @@ test('atualização de uso: admin e operador podem consumir uma ficha emitida um
   const admin = testEnv.authenticatedContext('admin-1');
   const operador = testEnv.authenticatedContext('operador-1');
 
-  await assertSucceeds(updateDoc(fichaRef(operador), payloadUtilizada()));
+  await assertSucceeds(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6]));
 
   await seedFicha('234567');
-  await assertSucceeds(updateDoc(fichaRef(admin, '234567'), {
-    ...payloadUtilizada(),
-    utilizadaPor: 'admin-1',
+  await assertSucceeds(registrarFicha(admin, '234567', 'admin-1', [1, 2, 3, 4, 5, 6]));
+});
+
+test('Registro Express: uma transação consome a ficha e cria seis entregas vinculadas', async () => {
+  await seedFicha();
+  const operador = testEnv.authenticatedContext('operador-1');
+  const db = firestore(operador);
+  const quantidades = [1, 2, 3, 4, 5, 6];
+
+  await assertSucceeds(registrarFicha(operador, '123456', 'operador-1', quantidades, {
+    statusValidacao: 'validado',
+    responsavelContagem: 'Responsável Teste',
+    observacoes: 'Conferida',
   }));
+
+  const fichaSnapshot = await getDoc(doc(db, FICHAS, '123456'));
+  const entregasSnapshot = await getDocs(query(
+    collection(firestore(operador), 'reciclar-apac', 'entregas', 'records'),
+    where('fichaId', '==', '123456'),
+  ));
+  assert.equal(fichaSnapshot.data().status, 'utilizada');
+  assert.equal(fichaSnapshot.data().entregaId, '123456-papelao');
+  assert.equal(fichaSnapshot.data().total, 21);
+  assert.equal(entregasSnapshot.size, 6);
+  assert.deepEqual(entregasSnapshot.docs.map(item => item.data()).sort((a, b) => a.id.localeCompare(b.id)).map(item => item.quantidade).sort((a, b) => a - b), quantidades);
+  assert.ok(entregasSnapshot.docs.every(item => item.data().entregaGrupoId === '123456-papelao'));
+  await assertFails(registrarFicha(operador, '123456', 'operador-1', quantidades));
+});
+
+test('Registro Express: regras rejeitam transação parcial e data fora do período da campanha sem gravar nada', async () => {
+  const operador = testEnv.authenticatedContext('operador-1');
+  await seedFicha();
+
+  await assertFails(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6], { omitIndex: 5 }));
+  let fichaSnapshot = await getDoc(fichaRef(operador));
+  let entregasSnapshot = await getDocs(query(
+    collection(firestore(operador), 'reciclar-apac', 'entregas', 'records'),
+    where('fichaId', '==', '123456'),
+  ));
+  assert.equal(fichaSnapshot.data().status, 'emitida');
+  assert.equal(entregasSnapshot.size, 0);
+
+  await assertFails(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6], { data: '2027-01-15' }));
+  fichaSnapshot = await getDoc(fichaRef(operador));
+  entregasSnapshot = await getDocs(query(
+    collection(firestore(operador), 'reciclar-apac', 'entregas', 'records'),
+    where('fichaId', '==', '123456'),
+  ));
+  assert.equal(fichaSnapshot.data().status, 'emitida');
+  assert.equal(entregasSnapshot.size, 0);
+});
+
+test('Registro Express: operador não pode criar entrega vinculada fora do consumo atômico da ficha', async () => {
+  await seedFicha();
+  const operador = testEnv.authenticatedContext('operador-1');
+  const entrega = payloadEntregasFicha('123456', [1, 2, 3, 4, 5, 6])[0];
+
+  await assertFails(setDoc(
+    doc(firestore(operador), 'reciclar-apac', 'entregas', 'records', entrega.id),
+    entrega,
+  ));
+  await assertFails(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6], {
+    deliveryOverrides: { quantidade: 99 },
+  }));
+
+  assert.equal((await getDoc(fichaRef(operador))).data().status, 'emitida');
+});
+
+test('Registro Express: vínculo não pode ser removido por operador; edição e exclusão admin continuam disponíveis', async () => {
+  await seedFicha();
+  const operador = testEnv.authenticatedContext('operador-1');
+  const admin = testEnv.authenticatedContext('admin-1');
+  await assertSucceeds(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6]));
+
+  const entregaOperador = doc(firestore(operador), 'reciclar-apac', 'entregas', 'records', '123456-papelao');
+  await assertFails(updateDoc(entregaOperador, { fichaId: '654321' }));
+  await assertSucceeds(updateDoc(entregaOperador, { quantidade: 7 }));
+
+  const entregaAdmin = doc(firestore(admin), 'reciclar-apac', 'entregas', 'records', '123456-papelao');
+  await assertSucceeds(deleteDoc(entregaAdmin));
 });
 
 test('atualização de uso: sem papel e anônimo não podem consumir ficha', async () => {
@@ -329,7 +470,7 @@ test('atualização de uso: total deve ser a soma exata das seis quantidades', a
   const operador = testEnv.authenticatedContext('operador-1');
 
   await seedFicha();
-  await assertSucceeds(updateDoc(fichaRef(operador), payloadUtilizada()));
+  await assertSucceeds(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6]));
 
   await seedFicha('234567');
   await assertFails(updateDoc(fichaRef(operador, '234567'), {
@@ -344,18 +485,10 @@ test('atualização de uso: total deve ser a soma exata das seis quantidades', a
   }));
 
   await seedFicha('456789');
-  await assertSucceeds(updateDoc(fichaRef(operador, '456789'), {
-    ...payloadUtilizada(),
-    quantidades: [0, 0, 0, 0, 0, 0],
-    total: 0,
-  }));
+  await assertSucceeds(registrarFicha(operador, '456789', 'operador-1', [0, 0, 0, 0, 0, 0]));
 
   await seedFicha('567890');
-  await assertSucceeds(updateDoc(fichaRef(operador, '567890'), {
-    ...payloadUtilizada(),
-    quantidades: [999, 999, 999, 999, 999, 999],
-    total: 5994,
-  }));
+  await assertSucceeds(registrarFicha(operador, '567890', 'operador-1', [999, 999, 999, 999, 999, 999]));
 });
 
 test('atualização de uso: data deve usar o formato ISO YYYY-MM-DD', async () => {
@@ -412,7 +545,7 @@ test('estados terminais: ficha utilizada ou cancelada não pode ser reutilizada 
   const operador = testEnv.authenticatedContext('operador-1');
 
   await seedFicha();
-  await assertSucceeds(updateDoc(fichaRef(operador), payloadUtilizada()));
+  await assertSucceeds(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6]));
   await assertFails(updateDoc(fichaRef(admin), {
     status: 'cancelada',
     canceladaEm: serverTimestamp(),
@@ -426,10 +559,7 @@ test('estados terminais: ficha utilizada ou cancelada não pode ser reutilizada 
     canceladaEm: serverTimestamp(),
     canceladaPor: 'admin-1',
   }));
-  await assertFails(updateDoc(fichaRef(admin, '234567'), {
-    ...payloadUtilizada(),
-    utilizadaPor: 'admin-1',
-  }));
+  await assertFails(registrarFicha(admin, '234567', 'admin-1', [1, 2, 3, 4, 5, 6]));
   await assertFails(updateDoc(fichaRef(admin, '234567'), {
     status: 'cancelada',
     canceladaEm: serverTimestamp(),
