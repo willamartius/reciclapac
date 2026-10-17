@@ -54,3 +54,31 @@ test('painel e página pública usam o mesmo renderizador de detalhes de kits', 
   assert.deepEqual(usos.sort(), ['js/transfers-exchange.js', 'js/views.js']);
   assert.ok(read('js/auth.js').includes('montarResumoKitColaborador('));
 });
+
+test('emissão de fichas fica dentro do Registro Express e não na navegação separada', () => {
+  const views = read('js/views.js');
+  const registro = read('js/registro-express.js');
+
+  assert.match(views, /\[\.\.\.NAV_ITEMS_BASE, NAV_ITEM_TRASH, NAV_ITEM_CONFIG\]/);
+  assert.doesNotMatch(views, /NAV_ITEMS_BASE\.slice\(0, 4\), NAV_ITEM_FOLHAS/);
+  assert.doesNotMatch(views, /folhas: renderFolhaEntrega/);
+  assert.match(views, /label:'Emissão de fichas'/);
+  assert.match(registro, /registro-express-emissao/);
+  assert.match(registro, /\$\{renderFolhaEntrega\(\)\}/);
+  assert.match(registro, /registroExpressTabRegistrar/);
+  assert.match(registro, /registroExpressTabEmitir/);
+  assert.match(registro, /function selecionarAbaRegistroExpress/);
+  assert.match(registro, /registroExpressPainelRegistrar/);
+  assert.match(registro, /registroExpressPainelEmitir/);
+});
+
+test('Registro Express expõe avanço por Enter, progresso e acessibilidade responsiva', () => {
+  const registro = read('js/registro-express.js');
+  const css = read('css/styles.css');
+  assert.match(registro, /onsubmit="event\.preventDefault\(\);avancarEtapaFichaExpress\(\)"/);
+  assert.match(registro, /aria-label="Progresso do Registro Express"/);
+  assert.match(registro, /onclick="voltarEtapaFichaExpress\(\)"/);
+  assert.match(registro, /role="alert"/);
+  assert.match(css, /@media\(max-width:600px\)/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+});

@@ -752,6 +752,14 @@ function renderEntregas(){
         <button class="btn btn-primary" onclick="abrirFormEntrega()">${icon('plus')}Nova entrega</button>
       </div>` : ''}
     </div>
+    ${STATE.entregasSecao==='entregas' && podeEditarDados()?`
+      <div class="card">
+        <div class="toolbar">
+          <div><b>Fichas comuns para preenchimento manual</b><p class="small-note">Sem ID e sem registro no sistema. Preencha a ficha à mão e registre cada material individualmente em Entregas.</p></div>
+          <button class="btn btn-outline" type="button" onclick="imprimirFichasComuns()">Imprimir fichas comuns</button>
+        </div>
+      </div>
+    `:''}
     <div class="section-tabs" role="tablist" aria-label="Seção de registros">
       <button type="button" role="tab" aria-selected="${STATE.entregasSecao==='entregas'}" class="${STATE.entregasSecao==='entregas'?'active':''}" onclick="mudarSecaoEntregas('entregas')">Entregas</button>
       <button type="button" role="tab" aria-selected="${STATE.entregasSecao==='excedentes'}" class="${STATE.entregasSecao==='excedentes'?'active':''}" onclick="mudarSecaoEntregas('excedentes')">Excedentes</button>
@@ -878,7 +886,7 @@ function abrirFormEntrega(id){
     <div class="modal-head"><h3>${e?'Editar entrega':'Nova entrega'}</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
     <div class="banner" style="margin-bottom:14px;"><span>${icon('ranking')}</span><div>Campanha: <b>${escapeHtml(campanha?campanha.nome:'—')}</b></div></div>
     <div class="grid grid-2">
-      <div class="field"><label>Data da entrega</label><input type="date" id="fData" value="${e?e.data:new Date().toISOString().slice(0,10)}"></div>
+      <div class="field"><label>Data da entrega</label><input type="date" id="fData" value="${e?e.data:dataCivilHojeISO()}"></div>
       <div class="field"><label>Colaborador</label><select id="fColab">${STATE.colaboradores.filter(c=>c.status==='ativo'||c.id===(e&&e.colaboradorId)).map(c=>`<option value="${c.id}" ${e&&e.colaboradorId===c.id?'selected':''}>${escapeHtml(c.nome)}</option>`).join('')}</select></div>
     </div>
     <div class="field"><label>Tipo de material</label><select id="fTipo" onchange="atualizarCampoUnidadeEntrega()" ${e?'disabled':''}>${catOpcoes}</select></div>

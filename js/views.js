@@ -37,11 +37,11 @@ const NAV_ITEMS_BASE = [
   {key:'relatorios', label:'Relatórios', icon:'relatorios'},
 ];
 const NAV_ITEM_TRASH = {key:'lixeira', label:'Itens apagados', icon:'trash'};
-const NAV_ITEM_FOLHAS = {key:'folhas', label:'Folha de entrega', icon:'folhas'};
+const NAV_ITEM_FOLHAS = {key:'folhas', label:'Emissão de fichas', icon:'folhas'};
 const NAV_ITEM_CONFIG = {key:'config', label:'Configurações', icon:'config'};
 function navItemsVisiveis(){
   const itens = STATE.isAdmin
-    ? [...NAV_ITEMS_BASE, NAV_ITEM_TRASH, NAV_ITEM_CONFIG, NAV_ITEM_FOLHAS]
+    ? [...NAV_ITEMS_BASE, NAV_ITEM_TRASH, NAV_ITEM_CONFIG]
     : NAV_ITEMS_BASE.filter(n=>n.key!=='relatorios');
   return itens;
 }
@@ -934,14 +934,14 @@ function renderApp(){
     <div class="bottomnav">
       <div class="bottomnav-row">
         ${navItems.slice(0,4).map(n=>`<button class="${n.key===STATE.view?'active':''}" onclick="irPara('${n.key}')">${icon(n.icon,20)}<span>${n.label.split(' ')[0]}</span></button>`).join('')}
-        <button class="${['historico','relatorios','lixeira','config','folhas','registro-express'].includes(STATE.view)?'active':''}" onclick="abrirMaisSheet()">${icon('more',20)}<span>Mais</span></button>
+        <button class="${['historico','relatorios','lixeira','config','registro-express'].includes(STATE.view)?'active':''}" onclick="abrirMaisSheet()">${icon('more',20)}<span>Mais</span></button>
       </div>
     </div>
   `;
   const content = document.getElementById('viewContent');
   const renderers = {
     dashboard: renderDashboard, colaboradores: renderColaboradores, entregas: renderEntregas,
-    ranking: renderRanking, historico: renderHistorico, relatorios: renderRelatorios, lixeira: renderLixeira, config: renderConfig, folhas: renderFolhaEntrega, 'registro-express': renderRegistroExpress,
+    ranking: renderRanking, historico: renderHistorico, relatorios: renderRelatorios, lixeira: renderLixeira, config: renderConfig, 'registro-express': renderRegistroExpress,
   };
   content.innerHTML = renderers[STATE.view] ? renderers[STATE.view]() : '';
   aprimorarSeletoresNativos(content);
@@ -949,7 +949,7 @@ function renderApp(){
 }
 
 function abrirMaisSheet(){
-  const extras = STATE.isAdmin? ['historico','relatorios','lixeira','config','folhas','registro-express'] : ['historico','registro-express'];
+  const extras = STATE.isAdmin? ['registro-express','historico','relatorios','lixeira','config'] : ['historico','registro-express'];
   abrirModal(`
     <div class="modal-head"><h3>Mais opções</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
     <div style="display:flex;flex-direction:column;gap:8px;">
@@ -1006,4 +1006,3 @@ function fecharModal(){
   }
 }
 window.fecharModal = fecharModal;
-

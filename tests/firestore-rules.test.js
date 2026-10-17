@@ -130,7 +130,7 @@ async function registrarFicha(context, fichaId, actor, quantidades, options = {}
       status: 'utilizada',
       utilizadaEm: serverTimestamp(),
       utilizadaPor: actor,
-      entregaId: entregas[0].id,
+      entregaId: `${fichaId}-papelao`,
       quantidades,
       total: quantidades.reduce((sum, value) => sum + value, 0),
       data: options.data || '2026-10-15',
@@ -139,7 +139,7 @@ async function registrarFicha(context, fichaId, actor, quantidades, options = {}
       observacoes: options.observacoes || 'Conferida',
     });
     entregas.forEach((item, index) => {
-      if (index !== options.omitIndex) tx.set(entregaRefs[index], item);
+      if (item.quantidade > 0 && index !== options.omitIndex) tx.set(entregaRefs[index], item);
     });
   });
 }
@@ -278,7 +278,6 @@ test('criação: não reutiliza o ID de um documento existente', async () => {
   await assertFails(setDoc(fichaRef(admin), fichaInicial()));
 });
 
-test.todo('PENDENTE: definir se entregaId precisa continuar apontando para uma entrega após exclusão individual por admin');
 
 test('criação: valida o dígito Luhn, inclusive com zero à esquerda', async () => {
   const admin = testEnv.authenticatedContext('admin-1');
@@ -431,6 +430,8 @@ test('Registro Express: origem é imutável; exclusão individual preserva snaps
   assert.deepEqual(fichaDepoisDaExclusao.quantidades, snapshotOriginal.quantidades);
   assert.equal(fichaDepoisDaExclusao.total, snapshotOriginal.total);
   assert.equal(fichaDepoisDaExclusao.entregaId, snapshotOriginal.entregaId);
+  assert.equal(fichaDepoisDaExclusao.entregaId, '123456-papelao');
+  assert.equal((await getDoc(entregaAdmin)).exists(), false);
   assert.equal(fichaDepoisDaExclusao.data, snapshotOriginal.data);
   await assertFails(registrarFicha(operador, '123456', 'operador-1', [1, 2, 3, 4, 5, 6]));
   assert.equal((await getDoc(fichaRef(admin))).data().status, 'utilizada');
@@ -682,4 +683,134 @@ test('metas: operador não atualiza nem exclui; admin mantém esses privilégios
   await assertFails(deleteDoc(metaRefOperador));
   await assertSucceeds(updateDoc(metaRefAdmin, { metas: { papel: 6 } }));
   await assertSucceeds(deleteDoc(metaRefAdmin));
+});
+
+function payloadEntregaComum(id = 'entrega-comum-1', overrides = {}) {
+  return {
+    id,
+    criadoEm: 123456789,
+    data: '2026-10-15',
+    colaboradorId: 'colaborador-1',
+    tipo: 'papelao',
+    quantidade: 15,
+    unidade: 'unidades',
+    responsavelContagem: 'Responsável Teste',
+    observacoes: 'Contagem manual',
+    statusValidacao: 'pendente',
+    campanhaId: 'campanha-1',
+    ...overrides,
+  };
+}
+
+test('entregas comuns: admin e operador criam e editam com validação estrita de data, quantidade e campanha', async () => {
+  await seedFicha();
+  const admin = testEnv.authenticatedContext('admin-1');
+  const operador = testEnv.authenticatedContext('operador-1');
+  const semPapel = testEnv.authenticatedContext('sem-papel');
+  const anonimo = testEnv.unauthenticatedContext();
+
+  const entregaRef = (ctx, id) => doc(firestore(ctx), 'reciclar-apac', 'entregas', 'records', id);
+
+  // Criação válida por operador e admin
+  await assertSucceeds(setDoc(entregaRef(operador, 'comum-op-1'), payloadEntregaComum('comum-op-1')));
+  await assertSucceeds(setDoc(entregaRef(admin, 'comum-adm-1'), payloadEntregaComum('comum-adm-1')));
+
+  // Usuário sem papel e anônimo são negados
+  await assertFails(setDoc(entregaRef(semPapel, 'comum-sem-1'), payloadEntregaComum('comum-sem-1')));
+  await assertFails(setDoc(entregaRef(anonimo, 'comum-anon-1'), payloadEntregaComum('comum-anon-1')));
+
+  // Rejeição de datas civis impossíveis na criação
+  await assertFails(setDoc(entregaRef(operador, 'data-inv-1'), payloadEntregaComum('data-inv-1', { data: '2026-02-31' })));
+  await assertFails(setDoc(entregaRef(operador, 'data-inv-2'), payloadEntregaComum('data-inv-2', { data: '2026-02-29' })));
+  await assertFails(setDoc(entregaRef(operador, 'data-inv-3'), payloadEntregaComum('data-inv-3', { data: '2024-04-31' })));
+  await assertFails(setDoc(entregaRef(operador, 'data-inv-4'), payloadEntregaComum('data-inv-4', { data: '2024-13-01' })));
+  await assertFails(setDoc(entregaRef(operador, 'data-inv-5'), payloadEntregaComum('data-inv-5', { data: '2024-00-10' })));
+  await assertFails(setDoc(entregaRef(operador, 'data-inv-6'), payloadEntregaComum('data-inv-6', { data: '2027-01-15' }))); // Fora da campanha
+  await assertFails(setDoc(entregaRef(operador, 'data-inv-7'), payloadEntregaComum('data-inv-7', { data: '15/10/2026' }))); // Formato inválido
+
+  // Aceita ano bissexto válido dentro da campanha
+  await assertSucceeds(setDoc(entregaRef(operador, 'data-bis-1'), payloadEntregaComum('data-bis-1', { data: '2024-02-29' })));
+
+  // Rejeição de quantidades inválidas
+  await assertFails(setDoc(entregaRef(operador, 'qtd-inv-1'), payloadEntregaComum('qtd-inv-1', { quantidade: 0 })));
+  await assertFails(setDoc(entregaRef(operador, 'qtd-inv-2'), payloadEntregaComum('qtd-inv-2', { quantidade: -10 })));
+  await assertFails(setDoc(entregaRef(operador, 'qtd-inv-3'), payloadEntregaComum('qtd-inv-3', { quantidade: 1.5 }))); // fração em material discreto
+  await assertSucceeds(setDoc(entregaRef(operador, 'qtd-kg-1'), payloadEntregaComum('qtd-kg-1', { tipo: 'latinhas', unidade: 'kg', quantidade: 2.5 }))); // fração permitida em latinhas com kg
+
+  // Rejeição de campos extras ou ausência de obrigatórios
+  await assertFails(setDoc(entregaRef(operador, 'extra-1'), payloadEntregaComum('extra-1', { campoInesperado: true })));
+  const semTipo = payloadEntregaComum('sem-tipo-1');
+  delete semTipo.tipo;
+  await assertFails(setDoc(entregaRef(operador, 'sem-tipo-1'), semTipo));
+
+  // Edição: data inválida ou quantidade negativa rejeitada na atualização
+  await assertFails(updateDoc(entregaRef(operador, 'comum-op-1'), { data: '2026-02-31' }));
+  await assertFails(updateDoc(entregaRef(operador, 'comum-op-1'), { quantidade: -5 }));
+  await assertFails(updateDoc(entregaRef(operador, 'comum-op-1'), { quantidade: 0 }));
+  await assertSucceeds(updateDoc(entregaRef(operador, 'comum-op-1'), { quantidade: 20 }));
+
+  // Proibição de acoplar fichaId/entregaGrupoId em entrega comum na atualização
+  await assertFails(updateDoc(entregaRef(operador, 'comum-op-1'), { fichaId: '123456' }));
+  await assertFails(updateDoc(entregaRef(admin, 'comum-adm-1'), { entregaGrupoId: '123456-papelao' }));
+});
+
+test('edição de entregas vinculadas: protege tipo, colaboradorId, limites e integridade do snapshot', async () => {
+  await seedFicha();
+  const operador = testEnv.authenticatedContext('operador-1');
+  const admin = testEnv.authenticatedContext('admin-1');
+  await assertSucceeds(registrarFicha(operador, '123456', 'operador-1', [10, 20, 30, 40, 50, 60]));
+
+  const entregaRef = (ctx, id) => doc(firestore(ctx), 'reciclar-apac', 'entregas', 'records', id);
+  const papelaoRef = entregaRef(operador, '123456-papelao');
+  const latinhasRef = entregaRef(operador, '123456-latinhas');
+
+  // Tentativa de trocar tipo de material deve ser rejeitada
+  await assertFails(updateDoc(papelaoRef, { tipo: 'latinhas' }));
+
+  // Tentativa de trocar colaborador deve ser rejeitada
+  await assertFails(updateDoc(papelaoRef, { colaboradorId: 'outro-colaborador' }));
+
+  // Quantidade <= 0 ou > 999 deve ser rejeitada
+  await assertFails(updateDoc(papelaoRef, { quantidade: 0 }));
+  await assertFails(updateDoc(papelaoRef, { quantidade: -1 }));
+  await assertFails(updateDoc(papelaoRef, { quantidade: 1000 }));
+
+  // Campos extras rejeitados
+  await assertFails(updateDoc(papelaoRef, { campoInvalido: 'teste' }));
+
+  // Atualização válida de quantidade e validação
+  await assertSucceeds(updateDoc(papelaoRef, { quantidade: 12, statusValidacao: 'validado' }));
+
+  // O snapshot original da ficha permanece intacto
+  const snapshotFicha = (await getDoc(fichaRef(admin, '123456'))).data();
+  assert.equal(snapshotFicha.status, 'utilizada');
+  assert.deepEqual(snapshotFicha.quantidades, [10, 20, 30, 40, 50, 60]);
+  assert.equal(snapshotFicha.total, 210);
+
+  // Exclusão individual de uma entrega (papelao) não exclui as demais entregas do grupo
+  await assertSucceeds(deleteDoc(entregaRef(admin, '123456-papelao')));
+  assert.equal((await getDoc(entregaRef(admin, '123456-papelao'))).exists(), false);
+  assert.equal((await getDoc(latinhasRef)).exists(), true);
+  assert.equal((await getDoc(latinhasRef)).data().quantidade, 20);
+
+  // A ficha não é liberada nem pode ser reutilizada após exclusão de entrega
+  assert.equal((await getDoc(fichaRef(admin, '123456'))).data().status, 'utilizada');
+  await assertFails(registrarFicha(operador, '123456', 'operador-1', [5, 5, 5, 5, 5, 5]));
+});
+
+test('concorrência: transações simultâneas não consomem a mesma ficha mais de uma vez', async () => {
+  await seedFicha('234567');
+  const operador1 = testEnv.authenticatedContext('operador-1');
+  const admin = testEnv.authenticatedContext('admin-1');
+
+  // Primeira operação consome a ficha
+  await assertSucceeds(registrarFicha(operador1, '234567', 'operador-1', [1, 2, 3, 4, 5, 6]));
+
+  // Segunda operação concorrente que tenta registrar a mesma ficha é rejeitada
+  await assertFails(registrarFicha(admin, '234567', 'admin-1', [2, 3, 4, 5, 6, 7]));
+
+  const fichaFinal = (await getDoc(fichaRef(admin, '234567'))).data();
+  assert.equal(fichaFinal.status, 'utilizada');
+  assert.equal(fichaFinal.utilizadaPor, 'operador-1');
+  assert.deepEqual(fichaFinal.quantidades, [1, 2, 3, 4, 5, 6]);
 });

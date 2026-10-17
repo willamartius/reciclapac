@@ -584,6 +584,12 @@ function campanhaPadrao(){
   return campanhasOrdenadas()[0] || null;
 }
 function hoje(){ return new Date(); }
+function dataCivilHojeISO(d = hoje()){
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
 function mesAnoAtual(){ const d=hoje(); return {mes:d.getMonth()+1, ano:d.getFullYear()}; }
 function chaveMA(mes,ano){ return ano+'-'+String(mes).padStart(2,'0'); }
 function nomeMes(mes){ return MESES_PT[mes-1]; }
@@ -975,4 +981,69 @@ function mesesComDados(campanhaId){
   if(campanha) Object.keys(campanha.metasHistorico||{}).forEach(k=>chaves.add(k));
   return [...chaves].sort().reverse();
 }
+
+/* VALIDACAO GLOBAL PT-BR */
+(function instalarValidacaoGlobalPtBr() {
+  if (typeof document === 'undefined') return;
+
+  function mensagemValidacao(campo) {
+    const v = campo.validity;
+
+    if (v.valueMissing) {
+      if (campo.type === 'checkbox') return 'Marque esta opção para continuar.';
+      if (campo.type === 'radio') return 'Selecione uma opção para continuar.';
+      return 'Preencha este campo para continuar.';
+    }
+    if (v.typeMismatch && campo.type === 'email')
+      return 'Informe um endereço de e-mail válido.';
+    if (v.typeMismatch && campo.type === 'url')
+      return 'Informe um endereço de site válido.';
+    if (v.patternMismatch) {
+      if (campo.id === 'registroExpressId')
+        return 'Informe o ID da ficha com exatamente 6 dígitos.';
+      return 'Confira o formato informado.';
+    }
+    if (v.rangeUnderflow)
+      return 'O valor deve ser igual ou posterior a ' + campo.min + '.';
+    if (v.rangeOverflow)
+      return 'O valor deve ser igual ou anterior a ' + campo.max + '.';
+    if (v.tooShort)
+      return 'Digite pelo menos ' + campo.minLength + ' caracteres.';
+    if (v.tooLong)
+      return 'Digite no máximo ' + campo.maxLength + ' caracteres.';
+    if (v.stepMismatch)
+      return 'Informe um valor válido para este campo.';
+    if (v.badInput)
+      return 'Confira o valor digitado.';
+    return 'Confira os dados informados.';
+  }
+
+  document.addEventListener('invalid', function(evento) {
+    const campo = evento.target;
+    if (!(campo instanceof HTMLInputElement ||
+          campo instanceof HTMLSelectElement ||
+          campo instanceof HTMLTextAreaElement)) return;
+
+    // Não substitui mensagens personalizadas definidas por outros módulos.
+    if (campo.validity.customError) return;
+
+    campo.setCustomValidity(mensagemValidacao(campo));
+    campo.dataset.validacaoPtBr = '1';
+  }, true);
+
+  function limparMensagem(evento) {
+    const campo = evento.target;
+    if (!(campo instanceof HTMLInputElement ||
+          campo instanceof HTMLSelectElement ||
+          campo instanceof HTMLTextAreaElement)) return;
+
+    if (campo.dataset.validacaoPtBr === '1') {
+      campo.setCustomValidity('');
+      delete campo.dataset.validacaoPtBr;
+    }
+  }
+
+  document.addEventListener('input', limparMensagem, true);
+  document.addEventListener('change', limparMensagem, true);
+})();
 
