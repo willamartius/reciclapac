@@ -207,8 +207,18 @@ function formatarMesRankingPublico(mes, ano){
 function rankingPublicoPorId(id){
   return STATE.rankingsPublicos.find(ranking=>ranking.id===id) || null;
 }
+function renderRodapePublico(){
+  return `<footer class="public-site-footer" aria-label="Informações legais">
+    <span>© willamartius</span>
+    <nav aria-label="Links legais">
+      <a href="termos.html">Termos de Uso</a>
+      <a href="privacidade.html">Política de Privacidade</a>
+    </nav>
+  </footer>`;
+}
+
 function renderAvisoManutencaoPublica(){
-  return `<main class="auth-screen public-ranking-screen">
+  return `<div class="public-page-shell"><main class="auth-screen public-ranking-screen">
     <section class="card public-ranking-card maintenance-card">
       <div class="maintenance-illustration">
         <img src="maintenance-working-kitten.png" alt="Gatinho trabalhando no computador" loading="lazy">
@@ -220,7 +230,7 @@ function renderAvisoManutencaoPublica(){
         <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
       </div>
     </section>
-  </main>`;
+  </main>${renderRodapePublico()}</div>`;
 }
 function renderRankingPublico(){
   if(STATE.mostrarLogin) return renderTelaAutenticacao();
@@ -247,7 +257,7 @@ function renderRankingPublico(){
     .map(item=>`<option value="${escapeHtml(item.id)}" ${ranking&&item.id===ranking.id?'selected':''}>${escapeHtml(formatarMesRankingPublico(item.mes,item.ano))}</option>`)
     .join('');
   const mostraDetalhes=!!ranking&&ranking.ranking.some(item=>item.detalhes&&item.detalhes.length);
-  return `<main class="auth-screen public-ranking-screen">
+  return `<div class="public-page-shell"><main class="auth-screen public-ranking-screen">
     <section class="card public-ranking-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
         <div><h1 style="margin:0 0 6px;color:var(--verde-900);">Ranking Reciclapac</h1><p class="small-note" style="margin:0;">Acompanhe suas entregas e as dos demais colaboradores.</p></div>
@@ -294,7 +304,7 @@ function renderRankingPublico(){
       ` : `<div class="empty-state">${STATE.erroRankingPublico?'Não foi possível carregar o ranking público.':'A página pública será preenchida automaticamente após um administrador ou operador abrir o aplicativo.'}</div>`}
       <p class="small-note" style="margin:16px 0 0;">A página apresenta a classificação e os saldos mensais por material. Solicitações de troca só alteram os saldos depois da conferência e aprovação de um administrador.</p>
     </section>
-  </main>`;
+  </main>${renderRodapePublico()}</div>`;
 }
 function selecionarCampanhaRankingPublico(campanhaId){
   STATE.rankingPublicoCampanhaId=campanhaId;

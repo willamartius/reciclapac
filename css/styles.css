@@ -735,3 +735,53 @@ select{text-overflow:ellipsis;}
     border: 1px solid #ccc !important;
   }
 }
+
+
+/* Rodapé da página pública */
+.public-page-shell{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+.public-page-shell .public-ranking-screen{
+  flex:1 0 auto;
+  min-height:0;
+  box-sizing:border-box;
+  width:100%;
+}
+.public-site-footer{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:8px 18px;
+  width:100%;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-top:1px solid var(--border);
+  background:var(--card);
+  color:var(--text-muted, #68756b);
+  font-size:12px;
+  text-align:center;
+  box-sizing:border-box;
+}
+.public-site-footer nav{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:8px 16px;
+}
+.public-site-footer a{
+  color:var(--verde-900, #24543a);
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.public-site-footer a:hover{opacity:.78;}
+.public-site-footer a:focus-visible{
+  outline:2px solid currentColor;
+  outline-offset:3px;
+  border-radius:2px;
+}
+@media(max-width:480px){
+  .public-site-footer{gap:8px;padding-inline:12px;}
+  .public-site-footer nav{gap:8px 12px;}
+}
