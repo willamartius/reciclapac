@@ -25,6 +25,20 @@ service cloud.firestore {
       return isAdmin() || isOperator();
     }
 
+    function luhnDoubleDigit(digit) {
+      let doubled = digit * 2;
+      return doubled > 9 ? doubled - 9 : doubled;
+    }
+
+    function hasValidFichaLuhn(recordId) {
+      let sum = luhnDoubleDigit(int(recordId[0]))
+        + int(recordId[1])
+        + luhnDoubleDigit(int(recordId[2]))
+        + int(recordId[3])
+        + luhnDoubleDigit(int(recordId[4]));
+      return (10 - (sum % 10)) % 10 == int(recordId[5]);
+    }
+
     function isValidOperatorMetaSnapshot(recordId) {
       let data = request.resource.data;
       let campaignPath = /databases/$(database)/documents/reciclar-apac/campanhas/records/$(data.campanhaId);
@@ -217,6 +231,86 @@ service cloud.firestore {
             && request.resource.data.id == recordId);
         allow delete: if isAdmin();
       }
+    }
+
+
+    match /reciclar-apac-fichas/{recordId} {
+      allow read: if canUseApp();
+      allow create: if isAdmin()
+        && recordId.matches('^[0-9]{6}$')
+        && hasValidFichaLuhn(recordId)
+        && request.resource.data.keys().hasOnly([
+          'id', 'status', 'colaboradorId', 'colaboradorNome', 'campanhaId',
+          'loteId', 'emitidaPor', 'emitidaEm'
+        ])
+        && request.resource.data.keys().hasAll([
+          'id', 'status', 'colaboradorId', 'colaboradorNome', 'campanhaId',
+          'loteId', 'emitidaPor', 'emitidaEm'
+        ])
+        && request.resource.data.id == recordId
+        && request.resource.data.status == 'emitida'
+        && request.resource.data.colaboradorId is string
+        && request.resource.data.colaboradorNome is string
+        && request.resource.data.campanhaId is string
+        && request.resource.data.loteId is string
+        && request.resource.data.emitidaPor == request.auth.uid
+        && request.resource.data.emitidaEm == request.time;
+      allow update: if canUseApp()
+        && resource.data.status == 'emitida'
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.colaboradorId == resource.data.colaboradorId
+        && request.resource.data.colaboradorNome == resource.data.colaboradorNome
+        && request.resource.data.campanhaId == resource.data.campanhaId
+        && request.resource.data.loteId == resource.data.loteId
+        && request.resource.data.emitidaPor == resource.data.emitidaPor
+        && request.resource.data.emitidaEm == resource.data.emitidaEm
+        && (
+          (isAdmin()
+            && request.resource.data.status == 'cancelada'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'canceladaEm', 'canceladaPor'])
+            && request.resource.data.canceladaEm == request.time
+            && request.resource.data.canceladaPor == request.auth.uid)
+          ||
+          (request.resource.data.status == 'utilizada'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'utilizadaEm', 'utilizadaPor', 'entregaId', 'quantidades', 'total', 'data'
+            ])
+            && request.resource.data.utilizadaEm == request.time
+            && request.resource.data.utilizadaPor == request.auth.uid
+            && request.resource.data.entregaId is string
+            && request.resource.data.quantidades is list
+            && request.resource.data.quantidades.size() == 6
+            && request.resource.data.quantidades[0] is int
+            && request.resource.data.quantidades[0] >= 0
+            && request.resource.data.quantidades[0] <= 999
+            && request.resource.data.quantidades[1] is int
+            && request.resource.data.quantidades[1] >= 0
+            && request.resource.data.quantidades[1] <= 999
+            && request.resource.data.quantidades[2] is int
+            && request.resource.data.quantidades[2] >= 0
+            && request.resource.data.quantidades[2] <= 999
+            && request.resource.data.quantidades[3] is int
+            && request.resource.data.quantidades[3] >= 0
+            && request.resource.data.quantidades[3] <= 999
+            && request.resource.data.quantidades[4] is int
+            && request.resource.data.quantidades[4] >= 0
+            && request.resource.data.quantidades[4] <= 999
+            && request.resource.data.quantidades[5] is int
+            && request.resource.data.quantidades[5] >= 0
+            && request.resource.data.quantidades[5] <= 999
+            && request.resource.data.total is int
+            && request.resource.data.total >= 0
+            && request.resource.data.total <= 5994
+            && request.resource.data.total == request.resource.data.quantidades[0]
+              + request.resource.data.quantidades[1]
+              + request.resource.data.quantidades[2]
+              + request.resource.data.quantidades[3]
+              + request.resource.data.quantidades[4]
+              + request.resource.data.quantidades[5]
+            && request.resource.data.data is string
+            && request.resource.data.data.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'))
+        );
+      allow delete: if false;
     }
 
     match /reciclar-apac/metas/records/{recordId} {

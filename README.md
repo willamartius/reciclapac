@@ -15,6 +15,10 @@ Os dados são legíveis somente por contas com um desses papéis. O operador nã
 
 Cada usuário pode salvar o próprio nome de exibição no Firebase Authentication. O papel exibido no app vem do campo `role` do documento `reciclar-apac-roles/{uid}` e não pode ser alterado pelo próprio usuário.
 
+### Testes locais
+
+Os testes usam Node.js 20 ou superior. A suíte de regras também precisa de um JDK 21 ou superior para iniciar o Firestore Emulator. Na raiz do repositório, execute `npm ci` uma vez e depois `npm test`. O script roda os testes unitários e inicia somente o Firestore Emulator com o projeto demonstrativo `demo-reciclapac`; não exige login no Firebase nem usa o projeto de produção. Os arquivos de regras são carregados de `firestore.rules`.
+
 Registros excluídos por um administrador ficam em **Itens apagados** por até 30 dias e podem ser restaurados nesse período. A lixeira é compartilhada entre administradores, sua leitura é restrita ao papel `admin`, e itens vencidos são removidos na próxima inicialização administrativa do app. Publique as regras atualizadas do Firestore junto com esta versão.
 
 ### Ranking público
