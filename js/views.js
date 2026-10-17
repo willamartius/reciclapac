@@ -211,8 +211,8 @@ function renderRodapePublico(){
   return `<footer class="public-site-footer" aria-label="Informações legais">
     <span>© willamartius</span>
     <nav aria-label="Links legais">
-      <a href="privacidade.html">Política de Privacidade</a>
       <a href="termos.html">Termos de Uso</a>
+      <a href="privacidade.html">Política de Privacidade</a>
     </nav>
   </footer>`;
 }
