@@ -751,10 +751,10 @@ select{text-overflow:ellipsis;}
 }
 .public-site-footer{
   display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
-  flex-wrap:wrap;
-  gap:8px 18px;
+  gap:8px;
   width:100%;
   padding:18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
   border-top:1px solid var(--border);
@@ -772,8 +772,7 @@ select{text-overflow:ellipsis;}
 }
 .public-site-footer a{
   color:var(--verde-900, #24543a);
-  text-decoration:underline;
-  text-underline-offset:3px;
+  text-decoration:none;
 }
 .public-site-footer a:hover{opacity:.78;}
 .public-site-footer a:focus-visible{
