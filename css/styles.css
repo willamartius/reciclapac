@@ -771,12 +771,9 @@ select{text-overflow:ellipsis;}
   flex-wrap:wrap;
   gap:8px 16px;
 }
-.public-site-footer nav a + a::before{
-  content:"·";
-  display:inline-block;
-  margin-right:16px;
+.public-site-footer .public-footer-separator{
   color:var(--text-muted, #68756b);
-  text-decoration:none;
+  line-height:1;
 }
 .public-site-footer a{
   color:var(--verde-900, #24543a);

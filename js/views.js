@@ -213,6 +213,7 @@ function renderRodapePublico(){
     <span>© ${anoAtual} Reciclapac · Desenvolvido por <a href="https://github.com/willamartius" target="_blank" rel="noopener noreferrer">willamartius</a></span>
     <nav aria-label="Links legais">
       <a href="termos.html">Termos de Uso</a>
+      <span class="public-footer-separator" aria-hidden="true">·</span>
       <a href="privacidade.html">Política de Privacidade</a>
     </nav>
   </footer>`;
