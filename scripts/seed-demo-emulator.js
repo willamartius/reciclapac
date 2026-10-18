@@ -9,7 +9,10 @@ const authEmulator = 'http://127.0.0.1:9099';
 const firestoreEmulator = { host: '127.0.0.1', port: 8080 };
 const demoSuffix = crypto.randomBytes(8).toString('hex');
 const email = `express-admin-${demoSuffix}@reciclapac.local`;
-const password = crypto.randomBytes(18).toString('hex');
+const password = process.env.DEMO_PASSWORD || crypto.randomBytes(18).toString('hex');
+if (process.env.DEMO_PASSWORD && password.length < 6) {
+  throw new Error('DEMO_PASSWORD precisa ter pelo menos 6 caracteres.');
+}
 
 async function obterUsuarioDemo() {
   const response = await fetch(
