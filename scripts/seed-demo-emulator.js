@@ -77,7 +77,7 @@ async function main() {
 
   console.log('Dados demo semeados somente nos emuladores locais.');
   console.log(`E-mail: ${email}`);
-  console.log(`Senha: ${password}`);
+  console.log('Senha: [REDACTED]');
   console.log('Ficha disponível: 123455');
 }
 
