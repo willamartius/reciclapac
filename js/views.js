@@ -226,11 +226,10 @@ function renderAvisoManutencaoPublica(){
       <h1 class="maintenance-title">Estamos em manutenção</h1>
       <span class="badge badge-amber maintenance-badge">Voltaremos em breve</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
-        <button class="btn btn-primary" type="button" onclick="abrirSolicitacaoTrocaPublica()">Solicitar troca</button>
         <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
       </div>
     </section>
-  </main>${renderRodapePublico()}</div>`;
+  </main></div>`;
 }
 function renderRankingPublico(){
   if(STATE.mostrarLogin) return renderTelaAutenticacao();
