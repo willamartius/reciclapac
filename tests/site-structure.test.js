@@ -82,3 +82,20 @@ test('Registro Express expõe avanço por Enter, progresso e acessibilidade resp
   assert.match(css, /@media\(max-width:600px\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
+
+
+test('modo de manutenção pública não exibe solicitação de troca nem rodapé legal', () => {
+  const views = read('js/views.js');
+  const maintenanceStart = views.indexOf('function renderAvisoManutencaoPublica()');
+  const publicRankingStart = views.indexOf('function renderRankingPublico()', maintenanceStart);
+  assert.ok(maintenanceStart >= 0 && publicRankingStart > maintenanceStart);
+  const maintenance = views.slice(maintenanceStart, publicRankingStart);
+  assert.doesNotMatch(maintenance, /Solicitar troca/);
+  assert.doesNotMatch(maintenance, /renderRodapePublico\(\)/);
+  assert.match(maintenance, /Estamos em manutenção/);
+  assert.match(maintenance, /abrirLoginAdmin\(\)/);
+  const normalRanking = views.slice(publicRankingStart);
+  assert.match(normalRanking, /if\(STATE\.manutencaoPublica\) return renderAvisoManutencaoPublica\(\)/);
+  assert.match(normalRanking, /Solicitar troca/);
+  assert.match(normalRanking, /renderRodapePublico\(\)/);
+});
