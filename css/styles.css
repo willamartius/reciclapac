@@ -766,14 +766,10 @@ select{text-overflow:ellipsis;}
 }
 .public-site-footer nav{
   display:flex;
-  justify-content:center;
+  flex-direction:column;
   align-items:center;
-  flex-wrap:wrap;
-  gap:8px 16px;
-}
-.public-site-footer .public-footer-separator{
-  color:var(--text-muted, #68756b);
-  line-height:1;
+  justify-content:center;
+  gap:8px;
 }
 .public-site-footer a{
   color:var(--verde-900, #24543a);
