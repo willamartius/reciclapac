@@ -767,8 +767,16 @@ select{text-overflow:ellipsis;}
 .public-site-footer nav{
   display:flex;
   justify-content:center;
+  align-items:center;
   flex-wrap:wrap;
   gap:8px 16px;
+}
+.public-site-footer nav a + a::before{
+  content:"·";
+  display:inline-block;
+  margin-right:16px;
+  color:var(--text-muted, #68756b);
+  text-decoration:none;
 }
 .public-site-footer a{
   color:var(--verde-900, #24543a);
