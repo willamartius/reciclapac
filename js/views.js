@@ -208,8 +208,9 @@ function rankingPublicoPorId(id){
   return STATE.rankingsPublicos.find(ranking=>ranking.id===id) || null;
 }
 function renderRodapePublico(){
+  const anoAtual = new Date().getFullYear();
   return `<footer class="public-site-footer" aria-label="Informações legais">
-    <span>© willamartius</span>
+    <span>© ${anoAtual} Reciclapac · Desenvolvido por <a href="https://github.com/willamartius" target="_blank" rel="noopener noreferrer">willamartius</a></span>
     <nav aria-label="Links legais">
       <a href="termos.html">Termos de Uso</a>
       <a href="privacidade.html">Política de Privacidade</a>
