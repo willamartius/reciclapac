@@ -141,7 +141,7 @@ function renderProgressoRegistroExpress(etapa) {
     : rotuloEtapaRegistroExpress(etapa);
   return `<div class="registro-express-progresso" aria-label="Etapa ${progresso} de 8: ${escapeHtml(detalhe)}">
     <div class="registro-express-progresso-texto"><span>${escapeHtml(detalhe)}</span><b>Etapa ${progresso} de 8</b></div>
-    <progress max="8" value="${progresso}" aria-label="Progresso do Registro Express"></progress>
+    <progress max="8" value="${progresso}" aria-label="Progresso do Registro express"></progress>
   </div>`;
 }
 
@@ -161,7 +161,7 @@ function selecionarAbaRegistroExpress(aba) {
   renderApp();
 }
 function renderRegistroExpress() {
-  if (!podeEditarDados()) return '<div class="card"><div class="empty-state">O Registro Express exige perfil de administrador ou operador.</div></div>';
+  if (!podeEditarDados()) return '<div class="card"><div class="empty-state">O Registro express exige perfil de administrador ou operador.</div></div>';
   const estado = REGISTRO_EXPRESS_STATE;
   const ficha = estado.ficha;
   const colaborador = ficha && STATE.colaboradores.find(item => item.id === ficha.colaboradorId);
@@ -222,10 +222,10 @@ function renderRegistroExpress() {
   requestAnimationFrame(focoEtapaRegistroExpress);
   return `<div class="registro-express-shell">
     <header class="registro-express-intro">
-      <h1>Registro Express</h1>
+      <h1>Registro express</h1>
       <p class="small-note">Emita fichas ou registre uma entrega, sem misturar os fluxos.</p>
     </header>
-    <div class="registro-express-tabs" role="tablist" aria-label="Registro Express">
+    <div class="registro-express-tabs" role="tablist" aria-label="Registro express">
       <button id="registroExpressTabRegistrar" class="btn ${REGISTRO_EXPRESS_ABA === 'registrar' ? 'btn-primary' : 'btn-outline'}" type="button" role="tab" aria-selected="${REGISTRO_EXPRESS_ABA === 'registrar'}" aria-controls="registroExpressPainelRegistrar" onclick="selecionarAbaRegistroExpress('registrar')">Registrar fichas</button>
       ${STATE.isAdmin ? `<button id="registroExpressTabEmitir" class="btn ${REGISTRO_EXPRESS_ABA === 'emitir' ? 'btn-primary' : 'btn-outline'}" type="button" role="tab" aria-selected="${REGISTRO_EXPRESS_ABA === 'emitir'}" aria-controls="registroExpressPainelEmitir" onclick="selecionarAbaRegistroExpress('emitir')">Emitir fichas</button>` : ''}
     </div>
@@ -293,7 +293,7 @@ async function consultarFichaExpress() {
   renderApp();
   if (STORAGE_MODE !== 'firestore' || !FIREBASE_DB) {
     REGISTRO_EXPRESS_STATE.carregando = false;
-    REGISTRO_EXPRESS_STATE.erro = 'O Registro Express exige conexão com o Firestore.';
+    REGISTRO_EXPRESS_STATE.erro = 'O Registro express exige conexão com o Firestore.';
     renderApp();
     return;
   }

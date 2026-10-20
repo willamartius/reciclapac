@@ -31,7 +31,7 @@ const NAV_ITEMS_BASE = [
   {key:'dashboard', label:'Painel geral', icon:'dashboard'},
   {key:'colaboradores', label:'Colaboradores', icon:'colaboradores'},
   {key:'entregas', label:'Entregas', icon:'entregas'},
-  {key:'registro-express', label:'Registro Express', icon:'registro'},
+  {key:'registro-express', label:'Registro express', icon:'registro'},
   {key:'ranking', label:'Ranking mensal', icon:'ranking'},
   {key:'historico', label:'Histórico', icon:'historico'},
   {key:'relatorios', label:'Relatórios', icon:'relatorios'},

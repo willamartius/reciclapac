@@ -814,7 +814,7 @@ function renderTabelaEntregas(){
             const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
             const cat = resolverCategoria(campanhaId, e.tipo);
             const unidLabel = e.tipo==='latinhas'? (e.unidade==='kg'?'kg':'unid.') : (cat?cat.unidade.replace('unidades','unid.'):'');
-            const rotuloData = 'Data coleta';
+            const rotuloData = 'Coleta';
             return `<tr>
               <td><span>${formatarDataHoraRegistro(e.criadoEm)}</span><div class="small-note">${rotuloData}: ${formatarData(e.data)}</div></td>
               <td style="font-weight:700;">${escapeHtml(c?c.nome:'(removido)')}</td>

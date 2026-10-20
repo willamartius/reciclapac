@@ -149,10 +149,10 @@ function renderHistorico(){
         <td class="table-cell-center">${l.transferencias}</td><td class="table-cell-center">${l.resgates}</td></tr>`).join('')}</tbody>
     </table></div></div>
     <div class="section-title">Movimentações de ${nomeMes(mes)} de ${ano}</div>
-    <div class="card" style="padding:0;"><div class="table-wrap">${eventos.length? `<table><thead><tr><th>Data</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th></tr></thead><tbody>
+    <div class="card" style="padding:0;"><div class="table-wrap">${eventos.length? `<table><thead><tr><th>Registro no sistema</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th></tr></thead><tbody>
       ${eventos.map(ev=>{
         const dataPrincipal=ev.tipo==='Entrega'?formatarDataHoraRegistro(ev.criadoEm):formatarData(ev.data);
-        const dataSecundaria=ev.tipo==='Entrega'?'<div class="small-note">Data coleta: '+escapeHtml(formatarData(ev.data))+'</div>':'';
+        const dataSecundaria=ev.tipo==='Entrega'?'<div class="small-note">Coleta: '+escapeHtml(formatarData(ev.data))+'</div>':'';
         return `<tr><td style="white-space:nowrap;"><span>${dataPrincipal}</span>${dataSecundaria}</td><td><span class="badge ${ev.cor}">${ev.tipo}</span></td><td>${escapeHtml(ev.texto)}</td><td>${escapeHtml(ev.extra)}</td></tr>`;
       }).join('')}
     </tbody></table>` : `<div class="table-empty">Nenhuma movimentação neste mês.</div>`}</div></div>
@@ -168,7 +168,7 @@ function renderTabelaEntregasHistorico(mes,ano){
     <tbody>${lista.map(e=>{
       const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
       const cat = resolverCategoria(campanhaId, e.tipo);
-      const rotuloData = 'Data coleta';
+      const rotuloData = 'Coleta';
       return `<tr><td><span>${formatarDataHoraRegistro(e.criadoEm)}</span><div class="small-note">${rotuloData}: ${formatarData(e.data)}</div></td><td>${escapeHtml(c?c.nome:'(removido)')}</td><td>${cat?escapeHtml(cat.label.split(' (')[0]):'Outros'}</td><td>${e.quantidade}</td><td>${e.statusValidacao==='validado'?'<span class="badge badge-green">Validado</span>':'<span class="badge badge-amber">Pendente</span>'}</td></tr>`;
     }).join('')}</tbody></table>`;
 }
