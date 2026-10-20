@@ -149,10 +149,10 @@ function renderHistorico(){
         <td class="table-cell-center">${l.transferencias}</td><td class="table-cell-center">${l.resgates}</td></tr>`).join('')}</tbody>
     </table></div></div>
     <div class="section-title">Movimentações de ${nomeMes(mes)} de ${ano}</div>
-    <div class="card" style="padding:0;"><div class="table-wrap">${eventos.length? `<table><thead><tr><th>Data</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th></tr></thead><tbody>
+    <div class="card" style="padding:0;"><div class="table-wrap">${eventos.length? `<table><thead><tr><th>Registro no sistema</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th></tr></thead><tbody>
       ${eventos.map(ev=>{
         const dataPrincipal=ev.tipo==='Entrega'?formatarDataHoraRegistro(ev.criadoEm):formatarData(ev.data);
-        const dataSecundaria=ev.tipo==='Entrega'?'<div class="small-note">Data coleta: '+escapeHtml(formatarData(ev.data))+'</div>':'';
+        const dataSecundaria=ev.tipo==='Entrega'?'<div class="small-note">Coleta: '+escapeHtml(formatarData(ev.data))+'</div>':'';
         return `<tr><td style="white-space:nowrap;"><span>${dataPrincipal}</span>${dataSecundaria}</td><td><span class="badge ${ev.cor}">${ev.tipo}</span></td><td>${escapeHtml(ev.texto)}</td><td>${escapeHtml(ev.extra)}</td></tr>`;
       }).join('')}
     </tbody></table>` : `<div class="table-empty">Nenhuma movimentação neste mês.</div>`}</div></div>
