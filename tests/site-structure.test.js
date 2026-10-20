@@ -84,6 +84,18 @@ test('Registro Express expõe avanço por Enter, progresso e acessibilidade resp
 });
 
 
+test('histórico exibe horário do registro e data coleta; detalhes públicos identificam kit de materiais', () => {
+  const main = read('js/main.js');
+  const auth = read('js/auth.js');
+  const views = read('js/views.js');
+  assert.match(main, /dataPrincipal=ev\.tipo==='Entrega'\?formatarDataHoraRegistro\(ev\.criadoEm\)/);
+  assert.match(main, /Data coleta:/);
+  assert.match(main, /const rotuloData = 'Data coleta';/);
+  assert.match(auth, /const rotuloData = 'Data coleta';/);
+  assert.doesNotMatch(main + auth, /Data informada/);
+  assert.match(views, /<th>KIT DE MATERIAIS<\/th><th>Necessário<\/th><th>Disponível<\/th>/);
+});
+
 test('modo de manutenção pública não exibe solicitação de troca nem rodapé legal', () => {
   const views = read('js/views.js');
   const maintenanceStart = views.indexOf('function renderAvisoManutencaoPublica()');
