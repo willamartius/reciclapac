@@ -55,7 +55,7 @@ test('painel e página pública usam o mesmo renderizador de detalhes de kits', 
   assert.ok(read('js/auth.js').includes('montarResumoKitColaborador('));
 });
 
-test('emissão de fichas fica dentro do Registro Express e não na navegação separada', () => {
+test('emissão de fichas fica dentro do Registro express e não na navegação separada', () => {
   const views = read('js/views.js');
   const registro = read('js/registro-express.js');
 
@@ -72,11 +72,11 @@ test('emissão de fichas fica dentro do Registro Express e não na navegação s
   assert.match(registro, /registroExpressPainelEmitir/);
 });
 
-test('Registro Express expõe avanço por Enter, progresso e acessibilidade responsiva', () => {
+test('Registro express expõe avanço por Enter, progresso e acessibilidade responsiva', () => {
   const registro = read('js/registro-express.js');
   const css = read('css/styles.css');
   assert.match(registro, /onsubmit="event\.preventDefault\(\);avancarEtapaFichaExpress\(\)"/);
-  assert.match(registro, /aria-label="Progresso do Registro Express"/);
+  assert.match(registro, /aria-label="Progresso do Registro express"/);
   assert.match(registro, /onclick="voltarEtapaFichaExpress\(\)"/);
   assert.match(registro, /role="alert"/);
   assert.match(css, /@media\(max-width:600px\)/);
@@ -89,10 +89,13 @@ test('histórico exibe horário do registro e data coleta; detalhes públicos id
   const auth = read('js/auth.js');
   const views = read('js/views.js');
   assert.match(main, /dataPrincipal=ev\.tipo==='Entrega'\?formatarDataHoraRegistro\(ev\.criadoEm\)/);
-  assert.match(main, /Data coleta:/);
-  assert.match(main, /const rotuloData = 'Data coleta';/);
-  assert.match(auth, /const rotuloData = 'Data coleta';/);
-  assert.doesNotMatch(main + auth, /Data informada/);
+  assert.match(main, /<th>Registro no sistema<\\/th><th>Tipo<\\/th><th>Detalhe<\\/th><th>Obs\\.<\\/th>/);
+  assert.match(views, /label:'Registro express'/);
+  assert.match(read('js/registro-express.js'), /<h1>Registro express<\\/h1>/);
+  assert.match(main, /Coleta:/);
+  assert.match(main, /const rotuloData = 'Coleta';/);
+  assert.match(auth, /const rotuloData = 'Coleta';/);
+  assert.doesNotMatch(main + auth, /Data informada|Data coleta/);
   assert.match(views, /<th>KIT DE MATERIAIS<\/th><th>Necessário<\/th><th>Disponível<\/th>/);
 });
 
