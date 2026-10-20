@@ -804,18 +804,19 @@ function renderTabelaEntregas(){
   if(wrap){
     const chave = chaveMA(mes,ano);
     let lista = STATE.entregas.filter(e=> e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave && (!status || e.statusValidacao===status));
-    lista.sort((a,b)=> b.data.localeCompare(a.data));
+    lista = ordenarEntregasPorRegistro(lista);
     if(lista.length===0){ wrap.innerHTML = `<div class="table-empty">Nenhuma entrega registrada nesta campanha e período.</div>`; }
     else {
       wrap.innerHTML = `
-        <table><thead><tr><th>Data</th><th>Colaborador</th><th>Material</th><th>Qtd.</th><th>Status</th>${podeEditarDados()?'<th></th>':''}</tr></thead>
+        <table><thead><tr><th>Registro no sistema</th><th>Colaborador</th><th>Material</th><th>Qtd.</th><th>Status</th>${podeEditarDados()?'<th></th>':''}</tr></thead>
         <tbody>
           ${lista.map(e=>{
             const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
             const cat = resolverCategoria(campanhaId, e.tipo);
             const unidLabel = e.tipo==='latinhas'? (e.unidade==='kg'?'kg':'unid.') : (cat?cat.unidade.replace('unidades','unid.'):'');
+            const rotuloData = e.fichaId ? 'Data da ficha' : 'Data informada';
             return `<tr>
-              <td>${formatarData(e.data)}</td>
+              <td><span>${formatarDataHoraRegistro(e.criadoEm)}</span><div class="small-note">${rotuloData}: ${formatarData(e.data)}</div></td>
               <td style="font-weight:700;">${escapeHtml(c?c.nome:'(removido)')}</td>
               <td>${cat? escapeHtml(cat.label.split(' (')[0]) : 'Outros materiais'}${e.fichaId?`<div class="small-note">Ficha ${escapeHtml(e.fichaId)}</div>`:''}</td>
               <td>${e.quantidade} ${unidLabel}</td>

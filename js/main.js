@@ -144,13 +144,14 @@ function renderHistorico(){
 function renderTabelaEntregasHistorico(mes,ano){
   const campanhaId = STATE.campanhaSelecionadaId;
   const chave = chaveMA(mes,ano);
-  const lista = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave).sort((a,b)=>b.data.localeCompare(a.data));
+  const lista = ordenarEntregasPorRegistro(STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave));
   if(lista.length===0) return `<div class="table-empty">Nenhuma entrega neste mês.</div>`;
-  return `<table><thead><tr><th>Data</th><th>Colaborador</th><th>Material</th><th>Qtd.</th><th>Status</th></tr></thead>
+  return `<table><thead><tr><th>Registro no sistema</th><th>Colaborador</th><th>Material</th><th>Qtd.</th><th>Status</th></tr></thead>
     <tbody>${lista.map(e=>{
       const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
       const cat = resolverCategoria(campanhaId, e.tipo);
-      return `<tr><td>${formatarData(e.data)}</td><td>${escapeHtml(c?c.nome:'(removido)')}</td><td>${cat?escapeHtml(cat.label.split(' (')[0]):'Outros'}</td><td>${e.quantidade}</td><td>${e.statusValidacao==='validado'?'<span class="badge badge-green">Validado</span>':'<span class="badge badge-amber">Pendente</span>'}</td></tr>`;
+      const rotuloData = e.fichaId ? 'Data da ficha' : 'Data informada';
+      return `<tr><td><span>${formatarDataHoraRegistro(e.criadoEm)}</span><div class="small-note">${rotuloData}: ${formatarData(e.data)}</div></td><td>${escapeHtml(c?c.nome:'(removido)')}</td><td>${cat?escapeHtml(cat.label.split(' (')[0]):'Outros'}</td><td>${e.quantidade}</td><td>${e.statusValidacao==='validado'?'<span class="badge badge-green">Validado</span>':'<span class="badge badge-amber">Pendente</span>'}</td></tr>`;
     }).join('')}</tbody></table>`;
 }
 function baixarArquivo(conteudo, nome, tipo){
