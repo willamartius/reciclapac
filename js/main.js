@@ -98,7 +98,14 @@ function renderHistorico(){
       const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
       const cat = resolverCategoria(campanhaId,e.tipo);
       const unid = e.tipo==='latinhas'&&e.unidade==='kg' ? 'kg' : 'unid.';
-      return {data:e.data,tipo:'Entrega',cor:'badge-green',texto:`${c?c.nome:'(removido)'} entregou ${e.quantidade} ${unid} de ${cat?cat.label.split(' (')[0]:'outros materiais'}`,extra:e.statusValidacao==='validado'?'Validada':'Pendente'};
+      return {
+        data:e.data,
+        criadoEm:e.criadoEm,
+        tipo:'Entrega',
+        cor:'badge-green',
+        texto:`${c?c.nome:'(removido)'} entregou ${e.quantidade} ${unid} de ${cat?cat.label.split(' (')[0]:'outros materiais'}`,
+        extra:e.statusValidacao==='validado'?'Validada':'Pendente',
+      };
     }),
     ...transferenciasDoMes(campanhaId,mes,ano).map(t=>{
       const {origem:o,destino:d,catOrigem,catDestino,campanhaOrigem,campanhaDestino}=partesTransferencia(t);
@@ -112,7 +119,14 @@ function renderHistorico(){
       const c = STATE.colaboradores.find(x=>x.id===t.colaboradorId);
       return {data:t.data,tipo:'Resgate',cor:'badge-green',texto:`${c?c.nome:'(removido)'} resgatou ${t.cartelasEmitidas||0} item(ns)`,extra:t.quantidadeKits?`${t.quantidadeKits} kit(s)`:''};
     }),
-  ].sort((a,b)=>String(b.data).localeCompare(String(a.data)));
+  ].sort((a,b)=>{
+    const timestampA=a.tipo==='Entrega'?normalizarTimestampRegistro(a.criadoEm):null;
+    const timestampB=b.tipo==='Entrega'?normalizarTimestampRegistro(b.criadoEm):null;
+    const ordemA=timestampA===null?Date.parse(`${a.data||''}T00:00:00`):timestampA;
+    const ordemB=timestampB===null?Date.parse(`${b.data||''}T00:00:00`):timestampB;
+    if(Number.isFinite(ordemA)&&Number.isFinite(ordemB)&&ordemA!==ordemB) return ordemB-ordemA;
+    return String(b.data).localeCompare(String(a.data));
+  });
   const cartao=(rotulo,valor)=>`<div class="card stat-card"><div class="stat-label">${rotulo}</div><div class="stat-value">${valor}</div></div>`;
   return `
     <div class="toolbar">
@@ -136,7 +150,11 @@ function renderHistorico(){
     </table></div></div>
     <div class="section-title">Movimentações de ${nomeMes(mes)} de ${ano}</div>
     <div class="card" style="padding:0;"><div class="table-wrap">${eventos.length? `<table><thead><tr><th>Data</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th></tr></thead><tbody>
-      ${eventos.map(ev=>`<tr><td style="white-space:nowrap;">${formatarData(ev.data)}</td><td><span class="badge ${ev.cor}">${ev.tipo}</span></td><td>${escapeHtml(ev.texto)}</td><td>${escapeHtml(ev.extra)}</td></tr>`).join('')}
+      ${eventos.map(ev=>{
+        const dataPrincipal=ev.tipo==='Entrega'?formatarDataHoraRegistro(ev.criadoEm):formatarData(ev.data);
+        const dataSecundaria=ev.tipo==='Entrega'?'<div class="small-note">Data coleta: '+escapeHtml(formatarData(ev.data))+'</div>':'';
+        return `<tr><td style="white-space:nowrap;"><span>${dataPrincipal}</span>${dataSecundaria}</td><td><span class="badge ${ev.cor}">${ev.tipo}</span></td><td>${escapeHtml(ev.texto)}</td><td>${escapeHtml(ev.extra)}</td></tr>`;
+      }).join('')}
     </tbody></table>` : `<div class="table-empty">Nenhuma movimentação neste mês.</div>`}</div></div>
     `}
   `;
@@ -150,7 +168,7 @@ function renderTabelaEntregasHistorico(mes,ano){
     <tbody>${lista.map(e=>{
       const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
       const cat = resolverCategoria(campanhaId, e.tipo);
-      const rotuloData = e.fichaId ? 'Data da ficha' : 'Data informada';
+      const rotuloData = 'Data coleta';
       return `<tr><td><span>${formatarDataHoraRegistro(e.criadoEm)}</span><div class="small-note">${rotuloData}: ${formatarData(e.data)}</div></td><td>${escapeHtml(c?c.nome:'(removido)')}</td><td>${cat?escapeHtml(cat.label.split(' (')[0]):'Outros'}</td><td>${e.quantidade}</td><td>${e.statusValidacao==='validado'?'<span class="badge badge-green">Validado</span>':'<span class="badge badge-amber">Pendente</span>'}</td></tr>`;
     }).join('')}</tbody></table>`;
 }
