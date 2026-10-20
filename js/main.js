@@ -168,7 +168,7 @@ function renderTabelaEntregasHistorico(mes,ano){
     <tbody>${lista.map(e=>{
       const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
       const cat = resolverCategoria(campanhaId, e.tipo);
-      const rotuloData = 'Data coleta';
+      const rotuloData = 'Coleta';
       return `<tr><td><span>${formatarDataHoraRegistro(e.criadoEm)}</span><div class="small-note">${rotuloData}: ${formatarData(e.data)}</div></td><td>${escapeHtml(c?c.nome:'(removido)')}</td><td>${cat?escapeHtml(cat.label.split(' (')[0]):'Outros'}</td><td>${e.quantidade}</td><td>${e.statusValidacao==='validado'?'<span class="badge badge-green">Validado</span>':'<span class="badge badge-amber">Pendente</span>'}</td></tr>`;
     }).join('')}</tbody></table>`;
 }
