@@ -808,7 +808,7 @@ function renderDetalhesKit(kit,unidadeItem){
           ${metaMensal?`<div class="card stat-card"><div class="stat-label">Meta mensal</div><div class="stat-value">${fmt(metaMensal)} ${escapeHtml(unidadeItem)}</div></div>`:''}
           ${kit.disponiveis==null?'':`<div class="card stat-card"><div class="stat-label">${escapeHtml(rotuloItem)} disponíveis</div><div class="stat-value">${fmt(kit.disponiveis*(Number(kit.cartelasPorKit)||1))}</div></div>`}
         </div>
-        ${kit.materiais.length?`<div class="card kit-detail-materials">        <div class="kit-detail-scroll" style="margin-top:0;"><table class="kit-materials-table"><thead><tr><th>Material</th><th>Necessário</th><th>Disponível</th></tr></thead>
+        ${kit.materiais.length?`<div class="card kit-detail-materials">        <div class="kit-detail-scroll" style="margin-top:0;"><table class="kit-materials-table"><thead><tr><th>KIT DE MATERIAIS</th><th>Necessário</th><th>Disponível</th></tr></thead>
           <tbody>${kit.materiais.map(mat=>`<tr><td>${escapeHtml(mat.nome)}</td><td>${fmt(mat.porKit)} ${escapeHtml(mat.unidade)}</td><td>${fmt(mat.disponivel)} ${escapeHtml(mat.unidade)}</td></tr>`).join('')}</tbody></table></div></div>`:''}
       </div>
       ${informativo?`<p class="small-note" style="margin-top:12px;white-space:pre-line;">${escapeHtml(informativo)}</p>`:''}`;
