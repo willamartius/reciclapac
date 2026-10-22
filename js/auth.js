@@ -186,15 +186,21 @@ async function sincronizarRankingsPublicos(){
   if(rankingPublicoSyncPromise) return rankingPublicoSyncPromise;
   rankingPublicoSyncPendente=false;
   rankingPublicoSyncPromise=(async()=>{
-    // Reutiliza os dados já carregados na sessão. Reconsultar as seis coleções
-    // aqui duplicava leituras no login e após alterações que agendam esta sincronização.
+    const [colaboradores,entregas,transferencias,trocas,campanhasCarregadas,metasSnapshots]=await Promise.all([
+      storageGet('colaboradores',[]),
+      storageGet('entregas',[]),
+      storageGet('transferencias',[]),
+      storageGet('trocas',[]),
+      storageGet('campanhas',[]),
+      storageGet('metas',[]),
+    ]);
     if(!rankingPublicoSyncAtivo || !podeEditarDados()) return;
-    const colaboradores=STATE.colaboradores;
-    const entregas=STATE.entregas;
-    const transferencias=STATE.transferencias;
-    const trocas=STATE.trocas;
-    const campanhasCarregadas=STATE.campanhas;
-    const metasSnapshots=STATE.metasSnapshots;
+    STATE.colaboradores=colaboradores;
+    STATE.entregas=entregas;
+    STATE.transferencias=transferencias;
+    STATE.trocas=trocas;
+    STATE.campanhas=Array.isArray(campanhasCarregadas)?campanhasCarregadas:[];
+    STATE.metasSnapshots=metasSnapshots;
     const colecao=FIREBASE_DB.collection('reciclar-apac-public-ranking');
     const snapshot=await colecao.get();
     const documentos=new Map(snapshot.docs.map(doc=>[doc.id,doc.data()]));

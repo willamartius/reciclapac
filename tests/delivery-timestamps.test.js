@@ -62,5 +62,5 @@ test('edição de entrega preserva criadoEm e Registro Express mantém data e cr
   assert.match(auth, /STATE\.entregas\[idx\]\s*=\s*\{\.\.\.STATE\.entregas\[idx\],\s*\.\.\.payload\}/);
   assert.match(auth, /STATE\.entregas\.push\(\{id:uid\(\),\s*criadoEm:Date\.now\(\),\s*\.\.\.payload\}\)/);
   assert.match(express, /function montarEntregasDaFicha\([\s\S]*?data, quantidades[\s\S]*?criadoEm = Date\.now\(\)/);
-  assert.match(express, /\n\s*criadoEm,\n\s*data,/);
+  assert.match(express, /\r?\n\s*criadoEm,\r?\n\s*data,/);
 });
