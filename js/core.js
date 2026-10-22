@@ -215,8 +215,6 @@ async function storageSet(key, value){
       if(!Array.isArray(value)) throw new Error(`A coleção "${key}" precisa ser uma lista.`);
       const base = FIRESTORE_BASELINES.get(key) || new Map();
       const referencia = FIREBASE_DB.collection('reciclar-apac').doc(key).collection('records');
-      const atuais = await referencia.get();
-      const remotos = new Map(atuais.docs.map(doc=>[doc.id, serializarEstavel(doc.data())]));
       const alterados = [];
       const ids = new Set();
       for(const registro of value){
@@ -226,22 +224,38 @@ async function storageSet(key, value){
         ids.add(registro.id);
         const serializado = serializarEstavel(registro);
         const original = base.get(registro.id);
-        const remoto = remotos.get(registro.id);
-        if(original===serializado || remoto===serializado) continue;
-        if((original===undefined && remoto!==undefined) || (original!==undefined && remoto!==original)){
-          throw new Error(`O registro "${registro.id}" foi alterado por outra pessoa. Atualize a página antes de salvar.`);
-        }
-        alterados.push({id:registro.id, registro, serializado});
+        if(original===serializado) continue;
+        alterados.push({id:registro.id, registro, serializado, original});
       }
+      // Leia apenas candidatos a gravação. Nenhuma escrita ocorre antes de todas as leituras.
+      const remotos = new Map();
       for(let inicio=0;inicio<alterados.length;inicio+=450){
         const parte = alterados.slice(inicio,inicio+450);
+        const snapshots = await Promise.all(parte.map(item=>referencia.doc(item.id).get()));
+        snapshots.forEach((snapshot,indice)=>{
+          const item = parte[indice];
+          remotos.set(item.id, snapshot.exists ? serializarEstavel(snapshot.data()) : undefined);
+        });
+      }
+      const jaSincronizados = [];
+      const paraGravar = [];
+      for(const item of alterados){
+        const remoto = remotos.get(item.id);
+        if(remoto===item.serializado){ jaSincronizados.push(item); continue; }
+        if((item.original===undefined && remoto!==undefined)
+          || (item.original!==undefined && remoto!==item.original)){
+          throw new Error(`O registro "${item.id}" foi alterado por outra pessoa. Atualize a página antes de salvar.`);
+        }
+        paraGravar.push(item);
+      }
+      // Não altere baselines se qualquer registro apresentar conflito.
+      jaSincronizados.forEach(item=>base.set(item.id,item.serializado));
+      for(let inicio=0;inicio<paraGravar.length;inicio+=450){
+        const parte = paraGravar.slice(inicio,inicio+450);
         const lote = FIREBASE_DB.batch();
         parte.forEach(item=>lote.set(referencia.doc(item.id), item.registro));
         await lote.commit();
-        parte.forEach(item=>{
-          base.set(item.id,item.serializado);
-          remotos.set(item.id,item.serializado);
-        });
+        parte.forEach(item=>base.set(item.id,item.serializado));
       }
       FIRESTORE_BASELINES.set(key,base);
       agendarSincronizacaoRankingsPublicos(key);
