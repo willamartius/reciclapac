@@ -208,7 +208,7 @@ function verificarRegistrosTransacionais(key,remotos,filtro){
     throw new Error('Os dados envolvidos nesta troca mudaram desde que o painel foi carregado. Atualize a página e revise o pedido.');
   }
 }
-async function montarTransferenciasSolicitacaoPublica(pedido,campanhaId,data,origem,destino,materialOrigem,materialDestino,origemParaDestinoId,destinoParaOrigemId,criadoEm=Date.now()){
+function montarTransferenciasSolicitacaoPublica(pedido,campanhaId,data,origem,destino,materialOrigem,materialDestino,origemParaDestinoId,destinoParaOrigemId,criadoEm=Date.now()){
   const motivo=`Troca aprovada a partir da solicitação pública ${pedido.id}`;
   return [
     {
@@ -237,7 +237,7 @@ async function montarTransferenciasSolicitacaoPublica(pedido,campanhaId,data,ori
     },
   ];
 }
-function consultarRegistrosTrocaTransacional(campanhaId,participanteIds){
+async function consultarRegistrosTrocaTransacional(campanhaId,participanteIds){
   const raiz=FIREBASE_DB.collection('reciclar-apac');
   const registros=key=>raiz.doc(key).collection('records');
   const [entregas,transferenciasOrigem,transferenciasDestino,trocas,metas]=await Promise.all([
