@@ -107,3 +107,45 @@ test('o cálculo real de saldos reflete a troca nos dois colaboradores e nas dua
   assert.equal(saldos.bia.latinhas['2026-10'].creditos, -5);
   assert.equal(saldos.ana.latinhas['2026-10'].creditos, 5);
 });
+
+test('consultas da aprovação de troca filtram por participantes/campanha em vez de ler coleções inteiras', async () => {
+  const querySource = source.match(/async function consultarRegistrosTrocaTransacional\([\s\S]*?\n}\n/);
+  assert.ok(querySource, 'a função de consultas transacionais deve existir');
+
+  const queries = [];
+  const sandbox = {
+    FIREBASE_DB: {
+      collection(root) {
+        assert.equal(root, 'reciclar-apac');
+        return {
+          doc(key) {
+            return {
+              collection(sub) {
+                assert.equal(sub, 'records');
+                return {
+                  where(field, operator, value) {
+                    const query = { key, field, operator, value };
+                    queries.push(query);
+                    return { get: async () => ({ docs: [], query }) };
+                  },
+                };
+              },
+            };
+          },
+        };
+      },
+    },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(querySource[0] + '\nglobalThis.consultar = consultarRegistrosTrocaTransacional;', sandbox);
+  await sandbox.consultar('campanha-1', ['ana', 'bia']);
+
+  assert.equal(queries.length, 5);
+  assert.deepEqual(JSON.parse(JSON.stringify(queries)), [
+    { key: 'entregas', field: 'colaboradorId', operator: 'in', value: ['ana', 'bia'] },
+    { key: 'transferencias', field: 'colaboradorOrigemId', operator: 'in', value: ['ana', 'bia'] },
+    { key: 'transferencias', field: 'colaboradorDestinoId', operator: 'in', value: ['ana', 'bia'] },
+    { key: 'trocas', field: 'colaboradorId', operator: 'in', value: ['ana', 'bia'] },
+    { key: 'metas', field: 'campanhaId', operator: '==', value: 'campanha-1' },
+  ]);
+});
