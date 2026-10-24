@@ -16,6 +16,7 @@ const {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } = require('firebase/firestore');
 
 const PROJECT_ID = 'demo-reciclapac';
@@ -135,20 +136,12 @@ test('troca pública: aprovação exige duas transferências correspondentes e s
   await assertFails(deleteDoc(requestRef(admin)));
   await assertFails(setDoc(requestRef(anon, 'anotacao'), requestPayload('anotacao')));
 
-  await assertSucceeds(env.withSecurityRulesDisabled(async context => {
-    await setDoc(requestRef(context), {
-      ...requestPayload(),
-      solicitadoEm: new Date('2026-10-23T11:00:00.000Z'),
-    });
-  }));
-  await assertSucceeds(env.withSecurityRulesDisabled(async context => {
-    await setDoc(transferRef(context, 'transf-1'), first);
-    await setDoc(transferRef(context, 'transf-2'), second);
-  }));
+  const batch = writeBatch(db(admin));
+  batch.set(transferRef(admin, 'transf-1'), first);
+  batch.set(transferRef(admin, 'transf-2'), second);
+  batch.update(request, approval);
+  await assertSucceeds(batch.commit());
 
-  await assertSucceeds(env.withSecurityRulesDisabled(async context => {
-    await updateDoc(requestRef(context), approval);
-  }));
   // Uma segunda decisão deve ser recusada porque o pedido já não está pendente.
   await assertFails(updateDoc(request, { ...approval, decididoEm: '2026-10-23T12:01:00.000Z' }));
 });
