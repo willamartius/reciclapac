@@ -10,7 +10,6 @@ updates:
       prefix: "chore(deps)"
     labels:
       - "dependencies"
-      - "security"
 
   - package-ecosystem: "github-actions"
     directory: "/"
