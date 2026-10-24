@@ -58,8 +58,8 @@ test('troca pública debita e credita a mesma categoria em cada perna da transfe
 
 test('o cálculo real de saldos reflete a troca nos dois colaboradores e nas duas categorias', () => {
   const core = fs.readFileSync(path.join(__dirname, '..', 'js', 'core.js'), 'utf8');
-  const calcMatch = core.match(/function calcularSaldosAcumulados\\([\\s\\S]*?\\n}\\n/);
-  const transfersMatch = core.match(/function transferenciasDoMes\\([\\s\\S]*?\\n}\\n/);
+  const calcMatch = core.match(/function calcularSaldosAcumulados\([\s\S]*?\n}\n/);
+  const transfersMatch = core.match(/function transferenciasDoMes\([\s\S]*?\n}\n/);
   assert.ok(calcMatch, 'o cálculo de saldos do app deve existir');
   assert.ok(transfersMatch, 'o filtro mensal de transferências do app deve existir');
 
