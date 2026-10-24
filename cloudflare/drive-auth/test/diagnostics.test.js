@@ -75,3 +75,20 @@ test('retorna diagnóstico claro quando falta a URI de retorno OAuth', async () 
   assert.equal(response.status, 503);
   assert.match((await response.json()).error, /URI de retorno OAuth/i);
 });
+
+test('callback OAuth informa configuração incompleta sem revelar detalhes internos', async () => {
+  const { TOKEN_ENCRYPTION_KEY, ...env } = BASE_ENV;
+  const response = await worker.fetch(new Request('https://worker.local/oauth/callback?code=test&state=test'), env);
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(html, /segredo de criptografia não está configurado/i);
+  assert.doesNotMatch(html, /TOKEN_ENCRYPTION_KEY/);
+});
+
+test('callback OAuth preserva a mensagem de cancelamento mesmo com configuração incompleta', async () => {
+  const { TOKEN_ENCRYPTION_KEY, ...env } = BASE_ENV;
+  const response = await worker.fetch(new Request('https://worker.local/oauth/callback?error=access_denied'), env);
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(html, /Autorização Google cancelada ou recusada/i);
+});
