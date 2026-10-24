@@ -75,9 +75,18 @@ function corsHeaders(request, env) {
   return headers;
 }
 async function encryptionKey(env) {
-  if (!env.TOKEN_ENCRYPTION_KEY) throw new Error("TOKEN_ENCRYPTION_KEY não configurada.");
-  const raw = base64ToBytes(env.TOKEN_ENCRYPTION_KEY);
-  if (raw.length !== 32) throw new Error("TOKEN_ENCRYPTION_KEY deve conter 32 bytes em Base64.");
+  if (!env.TOKEN_ENCRYPTION_KEY) {
+    throw new HttpError(503, "Configuração incompleta do Google Drive: o segredo de criptografia não está configurado no Worker.");
+  }
+  let raw;
+  try {
+    raw = base64ToBytes(env.TOKEN_ENCRYPTION_KEY);
+  } catch {
+    throw new HttpError(503, "Configuração inválida do Google Drive: o segredo de criptografia precisa estar em Base64.");
+  }
+  if (raw.length !== 32) {
+    throw new HttpError(503, "Configuração inválida do Google Drive: o segredo de criptografia precisa conter 32 bytes em Base64.");
+  }
   return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 async function encryptJson(value, env) {
@@ -128,9 +137,16 @@ function firebaseDocumentUrl(path) {
   return `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`;
 }
 async function firebaseGet(path, idToken) {
-  const response = await fetch(firebaseDocumentUrl(path), { headers: { Authorization: `Bearer ${idToken}` } });
+  let response;
+  try {
+    response = await fetch(firebaseDocumentUrl(path), { headers: { Authorization: `Bearer ${idToken}` } });
+  } catch {
+    throw new HttpError(502, "Não foi possível conectar ao Firestore para verificar as permissões do administrador.");
+  }
   if (response.status === 404) return null;
-  if (!response.ok) throw new Error("Não foi possível consultar as permissões no Firestore.");
+  if (!response.ok) {
+    throw new HttpError(502, `O Firestore recusou a consulta de permissões (HTTP ${response.status}). Confira o acesso ao documento de perfil administrativo.`);
+  }
   return response.json();
 }
 async function requireAdmin(idToken, env) {
@@ -162,7 +178,9 @@ async function saveDriveLink(uid, link, idToken) {
       linkedAt: { stringValue: link.linkedAt },
     } }),
   });
-  if (!response.ok) throw new Error("Não foi possível salvar o vínculo Google no Firestore.");
+  if (!response.ok) {
+    throw new HttpError(502, `Não foi possível salvar o vínculo Google no Firestore (HTTP ${response.status}). Confira as regras de acesso da coleção de vínculos.`);
+  }
 }
 function bearerToken(request) {
   const value = request.headers.get("Authorization") || "";
@@ -170,13 +188,26 @@ function bearerToken(request) {
   return value.slice(7);
 }
 async function googleTokenRequest(params, env) {
-  const response = await fetch(GOOGLE_TOKEN_URL, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ ...params, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET }),
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error_description || result.error || "Falha na autorização Google.");
+  let response;
+  try {
+    response = await fetch(GOOGLE_TOKEN_URL, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ ...params, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET }),
+    });
+  } catch {
+    throw new HttpError(502, "Não foi possível conectar ao serviço OAuth do Google.");
+  }
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    if (result.error === "invalid_client") {
+      throw new HttpError(503, "Configuração OAuth do Google inválida no Worker. Confira o Client ID e o Client Secret.");
+    }
+    if (result.error === "invalid_grant") {
+      throw new HttpError(401, "A autorização Google expirou ou foi revogada. Vincule a conta novamente.");
+    }
+    throw new HttpError(502, `O Google recusou a solicitação OAuth (${String(result.error || "erro não identificado")}).`);
+  }
   return result;
 }
 function callbackPage(status, message, targetOrigin = "*") {
@@ -277,6 +308,7 @@ async function handleAccessToken(request, env) {
   try {
     tokens = await googleTokenRequest({ refresh_token: record.refreshToken, grant_type: "refresh_token" }, env);
   } catch (error) {
+    if (error && Number.isInteger(error.status)) throw error;
     throw new HttpError(401, "A autorização Google expirou ou foi revogada. Vincule a conta novamente.");
   }
   return json({ accessToken: tokens.access_token, expiresIn: Number(tokens.expires_in) || 3600 });
@@ -292,6 +324,37 @@ async function handleUnlink(request, env) {
   await env.DRIVE_TOKENS.delete(`refresh:${uid}`);
   return json({ ok: true });
 }
+function validateWorkerConfig(pathname, env) {
+  if (!env.DRIVE_TOKENS || typeof env.DRIVE_TOKENS.get !== "function"
+      || typeof env.DRIVE_TOKENS.put !== "function" || typeof env.DRIVE_TOKENS.delete !== "function") {
+    throw new HttpError(503, "Armazenamento KV do Google Drive não está configurado no Worker.");
+  }
+  const needsOAuth = pathname === "/oauth/start" || pathname === "/token" || pathname === "/oauth/callback";
+  if (needsOAuth) {
+    if (!env.TOKEN_ENCRYPTION_KEY) {
+      throw new HttpError(503, "Configuração incompleta do Google Drive: o segredo de criptografia não está configurado no Worker.");
+    }
+    let keyBytes;
+    try {
+      if (typeof env.TOKEN_ENCRYPTION_KEY !== "string"
+          || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(env.TOKEN_ENCRYPTION_KEY)) {
+        throw new Error("Formato Base64 inválido.");
+      }
+      keyBytes = base64ToBytes(env.TOKEN_ENCRYPTION_KEY);
+    } catch {
+      throw new HttpError(503, "Configuração inválida do Google Drive: o segredo de criptografia precisa estar em Base64.");
+    }
+    if (keyBytes.length !== 32) {
+      throw new HttpError(503, "Configuração inválida do Google Drive: o segredo de criptografia precisa conter 32 bytes em Base64.");
+    }
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      throw new HttpError(503, "Configuração OAuth do Google incompleta no Worker. Confira o Client ID e o Client Secret.");
+    }
+  }
+  if ((pathname === "/oauth/start" || pathname === "/oauth/callback") && !env.GOOGLE_REDIRECT_URI) {
+    throw new HttpError(503, "Configuração incompleta do Google Drive: a URI de retorno OAuth não está configurada no Worker.");
+  }
+}
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -300,7 +363,22 @@ export default {
       if (origin && !parseAllowedOrigins(env).includes(origin)) return json({ error: "Origem não autorizada." }, 403);
       return new Response(null, { status: 204, headers: corsHeaders(request, env) });
     }
-    if (url.pathname === "/oauth/callback" && request.method === "GET") return handleOAuthCallback(request, env);
+    if (url.pathname === "/oauth/callback" && request.method === "GET") {
+      const fallbackOrigin = parseAllowedOrigins(env)[0] || env.APP_ORIGIN || "*";
+      try {
+        // Preserve the cancellation/denial response even if other OAuth settings are incomplete.
+        if (!url.searchParams.has("error")) validateWorkerConfig(url.pathname, env);
+        return await handleOAuthCallback(request, env);
+      } catch (error) {
+        const message = error instanceof HttpError
+          ? error.message
+          : "Não foi possível concluir a autorização. Volte ao Reciclapac e tente novamente.";
+        if (!(error instanceof HttpError) || error.status >= 500) {
+          console.error("Cloudflare Drive OAuth callback failed:", error);
+        }
+        return callbackPage("error", message, fallbackOrigin);
+      }
+    }
     if (url.pathname === "/health" && request.method === "GET") {
       return json({ ok: true, service: "reciclapac-drive-auth" }, 200, corsHeaders(request, env));
     }
@@ -310,6 +388,7 @@ export default {
     if (!protectedRoute) return json({ error: "Rota não encontrada." }, 404, corsHeaders(request, env));
     if (!originAllowed(request, env)) return json({ error: "Origem não autorizada." }, 403, corsHeaders(request, env));
     try {
+      validateWorkerConfig(url.pathname, env);
       let response;
       if (url.pathname === "/oauth/start") response = await handleOAuthStart(request, env);
       else if (url.pathname === "/token") response = await handleAccessToken(request, env);
