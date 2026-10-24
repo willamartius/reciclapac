@@ -371,7 +371,7 @@ function renderLixeira(){
           <td data-label="Prazo">${diasRestantes} dia${diasRestantes===1?'':'s'}</td>
           <td class="trash-actions-cell"><div class="trash-actions">
             <button class="btn btn-outline btn-sm" type="button" onclick="restaurarRegistroLixeira('${escapeHtml(item.id)}')">${icon('upload',15)}Restaurar item</button>
-            <button class="btn btn-danger btn-sm" type="button" onclick="excluirDefinitivamenteLixeira('${escapeHtml(item.id)}')">${icon('trash',15)}Excluir definitivamente</button>
+            <button class="btn btn-danger btn-sm" type="button" onclick="excluirDefinitivamenteLixeira('${escapeHtml(item.id)}')">${icon('trash',15)}Excluir item definitivamente</button>
           </div></td>
         </tr>`;
       }).join('')}</tbody>
