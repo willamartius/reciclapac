@@ -208,6 +208,35 @@ function verificarRegistrosTransacionais(key,remotos,filtro){
     throw new Error('Os dados envolvidos nesta troca mudaram desde que o painel foi carregado. Atualize a página e revise o pedido.');
   }
 }
+function montarTransferenciasSolicitacaoPublica(pedido,campanhaId,data,origem,destino,materialOrigem,materialDestino,origemParaDestinoId,destinoParaOrigemId,criadoEm=Date.now()){
+  const motivo=`Troca aprovada a partir da solicitação pública ${pedido.id}`;
+  return [
+    {
+      id:origemParaDestinoId,
+      campanhaId,
+      data,
+      colaboradorOrigemId:origem.id,
+      categoriaOrigem:materialOrigem.key,
+      colaboradorDestinoId:destino.id,
+      categoriaDestino:materialOrigem.key,
+      quantidade:pedido.quantidadeOrigem,
+      motivo,
+      criadoEm,
+    },
+    {
+      id:destinoParaOrigemId,
+      campanhaId,
+      data,
+      colaboradorOrigemId:destino.id,
+      categoriaOrigem:materialDestino.key,
+      colaboradorDestinoId:origem.id,
+      categoriaDestino:materialDestino.key,
+      quantidade:pedido.quantidadeDestino,
+      motivo,
+      criadoEm,
+    },
+  ];
+}
 async function consultarRegistrosTrocaTransacional(campanhaId,participanteIds){
   const raiz=FIREBASE_DB.collection('reciclar-apac');
   const registros=key=>raiz.doc(key).collection('records');
@@ -316,31 +345,10 @@ async function decidirSolicitacaoTroca(id,decisao){
       const transferenciasRef=FIREBASE_DB.collection('reciclar-apac').doc('transferencias').collection('records');
       const origemParaDestinoRef=transferenciasRef.doc();
       const destinoParaOrigemRef=transferenciasRef.doc();
-      const motivo=`Troca aprovada a partir da solicitação pública ${pedido.id}`;
-      const transferenciaOrigemParaDestino={
-        id:origemParaDestinoRef.id,
-        campanhaId:campanha.id,
-        data,
-        colaboradorOrigemId:origem.id,
-        categoriaOrigem:materialOrigem.key,
-        colaboradorDestinoId:destino.id,
-        categoriaDestino:materialDestino.key,
-        quantidade:pedido.quantidadeOrigem,
-        motivo,
-        criadoEm:Date.now(),
-      };
-      const transferenciaDestinoParaOrigem={
-        id:destinoParaOrigemRef.id,
-        campanhaId:campanha.id,
-        data,
-        colaboradorOrigemId:destino.id,
-        categoriaOrigem:materialDestino.key,
-        colaboradorDestinoId:origem.id,
-        categoriaDestino:materialOrigem.key,
-        quantidade:pedido.quantidadeDestino,
-        motivo,
-        criadoEm:Date.now(),
-      };
+      const [transferenciaOrigemParaDestino,transferenciaDestinoParaOrigem]=montarTransferenciasSolicitacaoPublica(
+        pedido,campanha.id,data,origem,destino,materialOrigem,materialDestino,
+        origemParaDestinoRef.id,destinoParaOrigemRef.id
+      );
       await FIREBASE_DB.runTransaction(async transacao=>{
         const documento=await transacao.get(referencia);
         if(!documento.exists || documento.data().status!=='pendente'){
