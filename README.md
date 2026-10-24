@@ -60,15 +60,20 @@ As credenciais e os papéis não fazem parte dos novos backups JSON. Arquivos de
 
 Os administradores também podem vincular individualmente uma conta Google para criar e restaurar backups no Drive. Cada conta mantém uma pasta privada `Reciclar APAC Backups` no próprio Google Drive; após cada envio, o app remove arquivos excedentes e conserva os 10 mais recentes. O backup continua manual, e a exportação/importação local permanece disponível. O app não persiste tokens do Google de forma permanente: reutiliza na sessão da aba o token temporário até perto de sua expiração, associado ao UID Firebase e à conta Google vinculada. Ao fechar a aba, trocar a sessão, desvincular a conta ou expirar o token, o Google pode solicitar nova autorização.
 
-#### Configurar a integração com Google Drive
+#### Integração com Google Drive via Cloudflare Worker
 
-Antes de disponibilizar os botões do Drive:
+A integração do Google Drive utiliza o Cloudflare Worker `reciclapac-drive-auth` para conduzir o OAuth e manter o token de renovação criptografado no servidor. O frontend chama esse Worker; o fluxo não depende apenas do OAuth executado no navegador. Firebase Authentication e Firestore continuam sendo usados para autenticação e autorização dos administradores.
 
-1. No Google Cloud Console, selecione ou crie um projeto e habilite a **Google Drive API**.
-2. Configure a tela de consentimento OAuth. Adicione os administradores como usuários de teste enquanto o app estiver em modo de teste; para contas Google Workspace da mesma organização, a opção de público interno também pode ser usada.
-3. Crie um **OAuth client ID** do tipo **Web application**. Cadastre a origem exata do site em **Authorized JavaScript origins** (esquema e domínio, sem caminho). Cadastre também origens locais somente se for testar localmente. O fluxo usa o popup do Google Identity Services e não exige redirect URI.
-4. Copie o client ID para `GOOGLE_DRIVE_CLIENT_ID` no início de `js/core.js`. O client ID não é uma senha; não coloque client secrets ou tokens no HTML.
-5. Publique o conteúdo atualizado de `firestore.rules`. A regra `reciclar-apac-drive-links/{UID}` limita leitura e escrita do vínculo ao administrador autenticado correspondente; a coleção não permite listagem.
-6. Publique o app e, em **Configurações > Backup no Google Drive**, cada administrador vincula a própria conta Google. Trocar ou desvincular uma conta não apaga os arquivos já armazenados no Drive.
+A implantação do Worker é independente da publicação do frontend. O código e a configuração de implantação estão em [`cloudflare/drive-auth/`](cloudflare/drive-auth/README.md), e o endereço usado pelo frontend é `https://reciclapac-drive-auth.reciclapac.workers.dev`.
 
-A integração utiliza o escopo `drive.file`, limitado aos arquivos e à pasta criados pelo app, além dos escopos básicos de identidade para associar a conta Google ao administrador do Firebase. O uso normal da Google Drive API não tem cobrança, mas está sujeito às cotas e políticas do Google; a configuração OAuth ou uma eventual verificação do app pode depender das regras vigentes para o tipo de publicação.
+**Para operação e manutenção:**
+
+1. No Google Cloud Console, mantenha a **Google Drive API** habilitada e confira a tela de consentimento OAuth, os usuários de teste ou o público interno, conforme o tipo de conta.
+2. No cliente OAuth Web usado pelo Worker, mantenha autorizada a URI de redirecionamento `https://reciclapac-drive-auth.reciclapac.workers.dev/oauth/callback`. Não remova as origens autorizadas que ainda forem necessárias ao site.
+3. No Cloudflare, confirme que o Worker está publicado, que o namespace KV configurado em `wrangler.toml` está associado e que os segredos `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `TOKEN_ENCRYPTION_KEY` estão definidos. `GOOGLE_REDIRECT_URI` deve corresponder à URI acima; `APP_ORIGIN` deve ser `https://reciclapac.com.br`. Não registre os valores secretos no Git.
+4. Para uma verificação básica, abra `https://reciclapac-drive-auth.reciclapac.workers.dev/health`. Uma resposta saudável deve conter `{"ok":true,"service":"reciclapac-drive-auth"}`. Esse teste verifica a disponibilidade básica, não comprova o fluxo OAuth completo.
+5. No app, um administrador pode acessar **Configurações > Backup no Google Drive** para vincular a própria conta Google e realizar/restaurar backups. O backup continua manual; a exportação/importação local também permanece disponível.
+
+O Worker valida o token Firebase e o papel administrativo, guarda o token de renovação criptografado no KV e fornece ao frontend apenas tokens de acesso temporários. O escopo do Drive é `drive.file`, limitado aos arquivos e à pasta criados pelo app, junto aos escopos básicos de identidade. Desvincular uma conta remove o vínculo e o token mantido pelo Worker, mas não apaga os arquivos já existentes no Google Drive.
+
+A API do Google Drive está sujeita a cotas e políticas do Google. A tela de consentimento ou a verificação OAuth podem exigir providências adicionais de acordo com o tipo de publicação.
