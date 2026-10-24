@@ -88,11 +88,11 @@ test('o cálculo real de saldos reflete a troca nos dois colaboradores e nas dua
   };
   vm.createContext(sandbox);
   vm.runInContext(transfersMatch[0] + '\n' + calcMatch[0] +
-    '\\nglobalThis.calcular = calcularSaldosAcumulados;', sandbox);
+    '\nglobalThis.calcular = calcularSaldosAcumulados;', sandbox);
 
   const montarSandbox = {};
   vm.createContext(montarSandbox);
-  vm.runInContext(helperMatch[0] + '\\nglobalThis.montar = montarTransferenciasSolicitacaoPublica;', montarSandbox);
+  vm.runInContext(helperMatch[0] + '\nglobalThis.montar = montarTransferenciasSolicitacaoPublica;', montarSandbox);
   sandbox.STATE.transferencias = montarSandbox.montar(
     {id: 'pedido-1', quantidadeOrigem: 10, quantidadeDestino: 5},
     'campanha-1', '2026-10-23',
