@@ -16,6 +16,7 @@ const {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } = require('firebase/firestore');
 
 const PROJECT_ID = 'demo-reciclapac';
