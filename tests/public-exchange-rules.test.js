@@ -110,6 +110,44 @@ test('troca pública: rejeita dados inválidos, campos extras e criação autent
   await assertFails(setDoc(requestRef(admin, 'autenticado'), requestPayload('autenticado')));
 });
 
+
+test('troca pública: aprovação aceita par válido e grava transferências e solicitação atomicamente', async () => {
+  await seedRequest();
+  const admin = env.authenticatedContext('admin-1');
+  const request = requestRef(admin);
+  const motivo = 'Troca aprovada a partir da solicitação pública pedido-1';
+  const first = {
+    id: 'transf-valida-1', campanhaId: 'campanha-1', data: '2026-10-23',
+    colaboradorOrigemId: 'ana', categoriaOrigem: 'papelao',
+    colaboradorDestinoId: 'bia', categoriaDestino: 'papelao',
+    quantidade: 10, motivo,
+  };
+  const second = {
+    id: 'transf-valida-2', campanhaId: 'campanha-1', data: '2026-10-23',
+    colaboradorOrigemId: 'bia', categoriaOrigem: 'latinhas',
+    colaboradorDestinoId: 'ana', categoriaDestino: 'latinhas',
+    quantidade: 5, motivo,
+  };
+  const approval = {
+    status: 'aprovada',
+    decididoEm: '2026-10-23T12:00:00.000Z',
+    decididoPor: 'admin-1',
+    transferenciaIds: [first.id, second.id],
+  };
+
+  const batch = writeBatch(db(admin));
+  batch.set(transferRef(admin, first.id), first);
+  batch.set(transferRef(admin, second.id), second);
+  batch.update(request, approval);
+
+  await assertSucceeds(batch.commit());
+  assert.equal((await getDoc(transferRef(admin, first.id))).exists(), true);
+  assert.equal((await getDoc(transferRef(admin, second.id))).exists(), true);
+  const savedRequest = await getDoc(request);
+  assert.equal(savedRequest.data().status, 'aprovada');
+  assert.deepEqual(savedRequest.data().transferenciaIds, [first.id, second.id]);
+});
+
 test('troca pública: aprovação rejeita par com categoria de destino inconsistente', async () => {
   await seedRequest();
   const admin = env.authenticatedContext('admin-1');
