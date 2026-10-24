@@ -287,7 +287,7 @@ service cloud.firestore {
         && first.categoriaOrigem == resource.data.categoriaOrigem
         && first.quantidade == resource.data.quantidadeOrigem
         && first.colaboradorDestinoId == resource.data.colaboradorDestinoId
-        && first.categoriaDestino == resource.data.categoriaDestino
+        && first.categoriaDestino == resource.data.categoriaOrigem
         && second.colaboradorOrigemId == resource.data.colaboradorDestinoId
         && second.categoriaOrigem == resource.data.categoriaDestino
         && second.quantidade == resource.data.quantidadeDestino
