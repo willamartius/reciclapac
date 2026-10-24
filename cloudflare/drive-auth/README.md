@@ -1,92 +1,73 @@
-# Backend OAuth do Google Drive para o Reciclapac
+# Cloudflare Worker OAuth do Google Drive
 
-Este diretório contém um Cloudflare Worker opcional para manter o token de renovação do Google Drive no servidor. O site continua no GitHub Pages, o Firebase Authentication/Firestore continuam sendo usados, e os backups automáticos do GitHub Actions não são alterados.
+Este diretório contém o Worker `reciclapac-drive-auth`, integrado ao frontend do Reciclapac. O site usa Firebase Authentication/Firestore para autenticação e autorização; o Worker conduz o fluxo OAuth do Google Drive e guarda o token de renovação criptografado em Cloudflare Workers KV. Os backups automáticos do GitHub Actions não são alterados.
 
-## Estado atual
+## Ambiente configurado
 
-O Worker não entra em uso pelo site automaticamente. Ele precisa ser implantado e configurado primeiro; depois, o frontend pode ser integrado em uma alteração separada. Até essa integração, os botões atuais continuam usando o fluxo OAuth do navegador.
+A configuração versionada em `wrangler.toml` identifica:
 
-## Pré-requisitos
+- Worker: `reciclapac-drive-auth`
+- URL: `https://reciclapac-drive-auth.reciclapac.workers.dev`
+- Origem do app: `https://reciclapac.com.br`
+- Callback OAuth: `https://reciclapac-drive-auth.reciclapac.workers.dev/oauth/callback`
+- Binding KV: `DRIVE_TOKENS`
 
-- Conta Cloudflare com Workers e Workers KV habilitados.
-- Acesso ao projeto Google Cloud usado pelo Reciclapac.
-- Acesso ao Firebase Authentication/Firestore do projeto `apac-reciclar`.
-- Node.js e npm para implantar com Wrangler.
+Os valores reais dos segredos ficam no painel da Cloudflare e não devem ser armazenados no repositório. A configuração do arquivo não comprova, por si só, o estado atual da implantação ou dos segredos na conta Cloudflare.
 
-## 1. Criar o armazenamento KV
+## Verificação rápida
 
-No painel Cloudflare, crie um namespace KV chamado `reciclapac-drive-tokens`. Copie o ID e substitua `SUBSTITUA_PELO_ID_DO_KV` em `wrangler.toml`.
+Abra:
 
-O KV armazena os tokens de renovação e os estados OAuth criptografados com AES-256-GCM. A chave de criptografia deve ser um segredo de 32 bytes em Base64 e nunca deve ser commitada no Git.
+`https://reciclapac-drive-auth.reciclapac.workers.dev/health`
 
-## 2. Criar/configurar o cliente OAuth
+A resposta esperada é:
 
-Use o mesmo projeto Google Cloud e o cliente OAuth Web que já é usado pelo Reciclapac, ou crie um cliente separado se preferir isolar a integração. O cliente precisa autorizar o escopo `drive.file` e os escopos básicos `openid email profile`.
-
-Depois de implantar o Worker, configure no cliente OAuth a URI de redirecionamento exata:
-
-`https://SEU-WORKER.workers.dev/oauth/callback`
-
-Não remova a origem autorizada do GitHub Pages. O fluxo atual deve continuar funcionando até a integração do frontend ser testada.
-
-## 3. Configurar e implantar
-
-No terminal, dentro deste diretório, instale o Wrangler e crie o namespace KV:
-
-```powershell
-npm install
-npx wrangler kv namespace create DRIVE_TOKENS
+```json
+{"ok":true,"service":"reciclapac-drive-auth"}
 ```
 
-Copie o ID retornado para `wrangler.toml`. Faça uma primeira implantação para reservar a URL `workers.dev`:
+Isso confirma apenas que o endpoint de saúde responde. Para validar a integração completa, entre no Reciclapac com uma conta administradora e teste o vínculo Google, a listagem de backups, a criação de um backup e a restauração de um backup de teste, sem substituir dados importantes.
 
-```powershell
-npx wrangler deploy
-```
+## Configuração necessária no Cloudflare
 
-Anote a URL gerada. Ela será usada como `GOOGLE_REDIRECT_URI` e deverá ser adicionada ao cliente OAuth como URI de redirecionamento autorizada. Gere uma chave de criptografia local:
+O Worker depende dos seguintes bindings/segredos:
 
-```powershell
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
-
-Configure os valores de ambiente no Cloudflare. Substitua os exemplos pelos valores reais. Para `GOOGLE_REDIRECT_URI`, use a URL do Worker seguida de `/oauth/callback`:
-
-```powershell
-npx wrangler secret put GOOGLE_CLIENT_ID
-npx wrangler secret put GOOGLE_CLIENT_SECRET
-npx wrangler secret put GOOGLE_REDIRECT_URI
-npx wrangler secret put APP_ORIGIN
-npx wrangler secret put TOKEN_ENCRYPTION_KEY
-```
-
-Valores:
+- `DRIVE_TOKENS`: namespace KV usado para estados OAuth e tokens de renovação criptografados.
+- `TOKEN_ENCRYPTION_KEY`: chave Base64 que decodifica para exatamente 32 bytes, usada em AES-256-GCM.
 - `GOOGLE_CLIENT_ID`: client ID OAuth Web.
-- `GOOGLE_CLIENT_SECRET`: segredo OAuth do cliente. Nunca coloque no frontend ou no repositório.
-- `GOOGLE_REDIRECT_URI`: URL completa `https://SEU-WORKER.workers.dev/oauth/callback`.
+- `GOOGLE_CLIENT_SECRET`: segredo OAuth; nunca o exponha no frontend ou no Git.
+- `GOOGLE_REDIRECT_URI`: `https://reciclapac-drive-auth.reciclapac.workers.dev/oauth/callback`.
 - `APP_ORIGIN`: `https://reciclapac.com.br`.
-- `TOKEN_ENCRYPTION_KEY`: saída Base64 gerada acima. Guarde uma cópia segura; perder essa chave invalida os tokens criptografados.
 
-Depois de adicionar a URI de redirecionamento no Google Cloud Console e definir os cinco valores, implante novamente:
+No Google Cloud Console, a Google Drive API deve estar habilitada, e o cliente OAuth Web deve autorizar a URI de callback exata. A tela de consentimento deve incluir os administradores de teste enquanto o app estiver no modo de teste, ou usar o público interno quando apropriado para a organização. Não remova origens autorizadas ainda usadas pelo site.
+
+Se precisar alterar segredos, faça isso pelo painel Cloudflare ou por Wrangler autenticado, sem copiar os valores para issues, logs, commits ou mensagens. Depois de uma mudança de configuração ou código, publique o Worker e repita os testes de saúde e do fluxo de backup.
+
+## Fluxo e segurança
+
+- `GET /health`: verificação básica de disponibilidade.
+- `POST /oauth/start`: inicia o OAuth para usuário com token Firebase válido e papel `admin`.
+- `GET /oauth/callback`: processa o retorno do Google e persiste o vínculo.
+- `POST /token`: fornece token de acesso temporário ao administrador autorizado.
+- `DELETE /link`: remove o vínculo e o token de renovação mantido no KV.
+
+O Worker valida assinatura, emissor, audiência e expiração do token Firebase e consulta o papel no Firestore. O estado OAuth é aleatório, criptografado e expira em 10 minutos. O navegador não recebe o token de renovação; ele recebe somente tokens de acesso temporários. O escopo do Drive é `drive.file`, junto aos escopos básicos de identidade necessários para associar a conta Google ao administrador.
+
+Desvincular a conta remove o vínculo e o token de renovação guardado pelo Worker, mas não exclui arquivos existentes no Drive. O backup continua sendo uma ação manual; os backups automáticos do GitHub Actions e a exportação/importação local são fluxos separados.
+
+## Testes e desenvolvimento
+
+Na pasta `cloudflare/drive-auth`:
 
 ```powershell
-npx wrangler deploy
+npm ci
+npm test
 ```
 
-Teste `https://SEU-WORKER.workers.dev/health`; deve retornar `{"ok":true,"service":"reciclapac-drive-auth"}`.
+Para executar localmente com Wrangler:
 
-## 4. Fluxo e segurança
+```powershell
+npm run dev
+```
 
-- O Worker verifica assinatura, emissor, audiência e expiração do token Firebase.
-- Confere no Firestore se o usuário autenticado tem papel `admin`.
-- Confere a conta Google autorizada com a conta já vinculada.
-- Mantém o refresh token criptografado no KV; o navegador nunca recebe esse refresh token.
-- O endpoint `POST /token` emite somente um access token temporário para o administrador autenticado.
-- O estado OAuth é aleatório, criptografado e expira em 10 minutos.
-- `DELETE /link` remove o vínculo no Firestore e o token de renovação armazenado no KV.
-
-O endpoint de autorização inicial é `POST /oauth/start` com `Authorization: Bearer FIREBASE_ID_TOKEN` e JSON `{"mode":"connect"}`. Ele retorna uma URL Google para abrir em popup. O callback envia uma mensagem `postMessage` à origem configurada e tenta fechar a janela.
-
-## Importante antes de usar em produção
-
-Este é o backend preparado para a integração, não uma migração concluída. Não use os endpoints até implantar e validar as variáveis, OAuth redirect URI, CORS e KV. A integração frontend será ativada somente depois de conhecer a URL real do Worker e testar o fluxo com a conta vinculada. O backend não modifica os backups automáticos do GitHub Actions.
+Antes de implantar, confirme o ambiente de destino e os segredos. O workflow de CI valida o código e executa um dry-run; um dry-run bem-sucedido não equivale a uma publicação em produção.
