@@ -27,7 +27,11 @@ const REQUESTS = 'reciclar-apac-transfer-requests';
 const RECORDS = ['reciclar-apac', 'transferencias', 'records'];
 
 let env;
-const db = context => context.firestore();
+const firestoreByContext = new WeakMap();
+const db = context => {
+  if (!firestoreByContext.has(context)) firestoreByContext.set(context, context.firestore());
+  return firestoreByContext.get(context);
+};
 const requestRef = (context, id = 'pedido-1') => doc(db(context), REQUESTS, id);
 const transferRef = (context, id) => doc(db(context), ...RECORDS, id);
 
