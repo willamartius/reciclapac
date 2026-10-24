@@ -785,3 +785,67 @@ select{text-overflow:ellipsis;}
   .public-site-footer{gap:8px;padding-inline:12px;}
   .public-site-footer nav{gap:8px 12px;}
 }
+
+
+/* Lixeira: ações com hierarquia visual e interação consistente com o tema */
+.trash-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  width:290px;
+}
+.trash-actions .btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  width:100%;
+  min-width:0;
+  min-height:42px;
+  padding:9px 11px;
+  border-radius:10px;
+  font-size:12px;
+  font-weight:750;
+  line-height:1.25;
+  white-space:normal;
+  text-align:center;
+  transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease,border-color .16s ease;
+}
+.trash-actions .btn svg{width:16px;height:16px;flex:none;}
+.trash-actions .btn-outline{
+  color:var(--verde-800);
+  background:var(--verde-100);
+  border:1px solid #c5dfcc;
+}
+.trash-actions .btn-outline:hover{
+  background:#d5ead9;
+  border-color:var(--verde-500);
+  box-shadow:0 3px 9px rgba(18,48,31,.09);
+  transform:translateY(-1px);
+}
+.trash-actions .btn-danger{
+  background:#fff5f4;
+  color:#b42318;
+  border:1px solid #f1c5c1;
+}
+.trash-actions .btn-danger:hover{
+  background:#fee8e6;
+  border-color:#d92d20;
+  box-shadow:0 3px 9px rgba(180,35,24,.10);
+  transform:translateY(-1px);
+}
+.trash-actions .btn:focus-visible{
+  outline:3px solid var(--verde-300);
+  outline-offset:2px;
+}
+@media(max-width:600px){
+  .trash-actions{grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px;}
+  .trash-actions .btn{min-height:46px;padding:9px 7px;font-size:12px;}
+}
+@media(max-width:360px){
+  .trash-actions{grid-template-columns:minmax(0,1fr);}
+}
+@media(prefers-reduced-motion:reduce){
+  .trash-actions .btn{transition:none;}
+  .trash-actions .btn:hover{transform:none;}
+}
