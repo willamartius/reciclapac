@@ -366,7 +366,8 @@ export default {
     if (url.pathname === "/oauth/callback" && request.method === "GET") {
       const fallbackOrigin = parseAllowedOrigins(env)[0] || env.APP_ORIGIN || "*";
       try {
-        validateWorkerConfig(url.pathname, env);
+        // Preserve the cancellation/denial response even if other OAuth settings are incomplete.
+        if (!url.searchParams.has("error")) validateWorkerConfig(url.pathname, env);
         return await handleOAuthCallback(request, env);
       } catch (error) {
         const message = error instanceof HttpError
