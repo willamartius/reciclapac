@@ -292,7 +292,7 @@ service cloud.firestore {
         && second.categoriaOrigem == resource.data.categoriaDestino
         && second.quantidade == resource.data.quantidadeDestino
         && second.colaboradorDestinoId == resource.data.colaboradorOrigemId
-        && second.categoriaDestino == resource.data.categoriaOrigem
+        && second.categoriaDestino == resource.data.categoriaDestino
         && first.data == second.data
         && first.motivo == 'Troca aprovada a partir da solicitação pública ' + requestId
         && second.motivo == first.motivo;
