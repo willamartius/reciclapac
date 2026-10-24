@@ -134,7 +134,7 @@ test('troca pública: aprovação exige duas transferências correspondentes e s
   await assertFails(updateDoc(request, approval));
   await assertFails(updateDoc(requestRef(operator), approval));
   await assertFails(deleteDoc(requestRef(admin)));
-  await assertFails(setDoc(requestRef(anon, 'anotacao'), requestPayload('anotacao')));
+  await assertFails(setDoc(requestRef(anon, 'anotacao'), requestPayload('anotacao', { status: 'aprovada' })));
 
   const batch = writeBatch(db(admin));
   batch.set(transferRef(admin, 'transf-1'), first);
