@@ -87,7 +87,7 @@ test('o cálculo real de saldos reflete a troca nos dois colaboradores e nas dua
     chaveMA: (mes, ano) => `${ano}-${String(mes).padStart(2, '0')}`,
   };
   vm.createContext(sandbox);
-  vm.runInContext(transfersMatch[0] + '\\n' + calcMatch[0] +
+  vm.runInContext(transfersMatch[0] + '\n' + calcMatch[0] +
     '\\nglobalThis.calcular = calcularSaldosAcumulados;', sandbox);
 
   const montarSandbox = {};
