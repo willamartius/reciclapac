@@ -88,7 +88,7 @@ test('histórico padroniza registro e coleta; navegação usa Registro express',
   const main = read('js/main.js');
   const auth = read('js/auth.js');
   const views = read('js/views.js');
-  assert.match(main, /dataPrincipal=ev\.tipo==='Entrega'\?formatarDataHoraRegistro\(ev\.criadoEm\)/);
+  assert.match(main, /dataPrincipal=\['Entrega','Transferência'\]\.includes\(ev\.tipo\)\?formatarDataHoraRegistro\(ev\.criadoEm\)/);
   assert.ok(main.includes('<th>Registro no sistema</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th>'));
   assert.match(views, /label:'Registro express'/);
   assert.ok(read('js/registro-express.js').includes('<h1>Registro express</h1>'));
