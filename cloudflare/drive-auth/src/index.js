@@ -324,15 +324,29 @@ function validateWorkerConfig(pathname, env) {
       || typeof env.DRIVE_TOKENS.put !== "function" || typeof env.DRIVE_TOKENS.delete !== "function") {
     throw new HttpError(503, "Armazenamento KV do Google Drive não está configurado no Worker.");
   }
-  if (pathname === "/oauth/start" || pathname === "/token") {
+  const needsOAuth = pathname === "/oauth/start" || pathname === "/token" || pathname === "/oauth/callback";
+  if (needsOAuth) {
     if (!env.TOKEN_ENCRYPTION_KEY) {
       throw new HttpError(503, "Configuração incompleta do Google Drive: o segredo de criptografia não está configurado no Worker.");
+    }
+    let keyBytes;
+    try {
+      if (typeof env.TOKEN_ENCRYPTION_KEY !== "string"
+          || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(env.TOKEN_ENCRYPTION_KEY)) {
+        throw new Error("Formato Base64 inválido.");
+      }
+      keyBytes = base64ToBytes(env.TOKEN_ENCRYPTION_KEY);
+    } catch {
+      throw new HttpError(503, "Configuração inválida do Google Drive: o segredo de criptografia precisa estar em Base64.");
+    }
+    if (keyBytes.length !== 32) {
+      throw new HttpError(503, "Configuração inválida do Google Drive: o segredo de criptografia precisa conter 32 bytes em Base64.");
     }
     if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
       throw new HttpError(503, "Configuração OAuth do Google incompleta no Worker. Confira o Client ID e o Client Secret.");
     }
   }
-  if (pathname === "/oauth/start" && !env.GOOGLE_REDIRECT_URI) {
+  if ((pathname === "/oauth/start" || pathname === "/oauth/callback") && !env.GOOGLE_REDIRECT_URI) {
     throw new HttpError(503, "Configuração incompleta do Google Drive: a URI de retorno OAuth não está configurada no Worker.");
   }
 }
@@ -344,7 +358,21 @@ export default {
       if (origin && !parseAllowedOrigins(env).includes(origin)) return json({ error: "Origem não autorizada." }, 403);
       return new Response(null, { status: 204, headers: corsHeaders(request, env) });
     }
-    if (url.pathname === "/oauth/callback" && request.method === "GET") return handleOAuthCallback(request, env);
+    if (url.pathname === "/oauth/callback" && request.method === "GET") {
+      const fallbackOrigin = parseAllowedOrigins(env)[0] || env.APP_ORIGIN || "*";
+      try {
+        validateWorkerConfig(url.pathname, env);
+        return await handleOAuthCallback(request, env);
+      } catch (error) {
+        const message = error instanceof HttpError
+          ? error.message
+          : "Não foi possível concluir a autorização. Volte ao Reciclapac e tente novamente.";
+        if (!(error instanceof HttpError) || error.status >= 500) {
+          console.error("Cloudflare Drive OAuth callback failed:", error);
+        }
+        return callbackPage("error", message, fallbackOrigin);
+      }
+    }
     if (url.pathname === "/health" && request.method === "GET") {
       return json({ ok: true, service: "reciclapac-drive-auth" }, 200, corsHeaders(request, env));
     }
