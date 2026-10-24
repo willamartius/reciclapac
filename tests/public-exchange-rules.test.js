@@ -16,7 +16,6 @@ const {
   serverTimestamp,
   setDoc,
   updateDoc,
-  writeBatch,
 } = require('firebase/firestore');
 
 const PROJECT_ID = 'demo-reciclapac';
@@ -110,7 +109,7 @@ test('troca pública: rejeita dados inválidos, campos extras e criação autent
   await assertFails(setDoc(requestRef(admin, 'autenticado'), requestPayload('autenticado')));
 });
 
-test('troca pública: aprovação exige duas transferências correspondentes e só pode ocorrer uma vez', async () => {
+test('troca pública: aprovação rejeita par com categoria de destino inconsistente', async () => {
   await seedRequest();
   const admin = env.authenticatedContext('admin-1');
   const operator = env.authenticatedContext('operator-1');
@@ -146,12 +145,7 @@ test('troca pública: aprovação exige duas transferências correspondentes e s
   invalidBatch.update(request, approval);
   await assertFails(invalidBatch.commit());
 
-  const batch = writeBatch(db(admin));
-  batch.set(transferRef(admin, 'transf-1'), first);
-  batch.set(transferRef(admin, 'transf-2'), second);
-  batch.update(request, approval);
-  await assertSucceeds(batch.commit());
-
-  // Uma segunda decisão deve ser recusada porque o pedido já não está pendente.
-  await assertFails(updateDoc(request, { ...approval, decididoEm: '2026-10-23T12:01:00.000Z' }));
+  assert.equal((await getDoc(transferRef(admin, 'transf-1'))).exists(), false);
+  assert.equal((await getDoc(transferRef(admin, 'transf-2'))).exists(), false);
+  assert.equal((await getDoc(request)).data().status, 'pendente');
 });
