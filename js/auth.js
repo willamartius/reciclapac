@@ -865,7 +865,7 @@ function renderTabelaTransferencias(mes,ano){
         const campanhaOutra = t.entreCampanhas?campanhaPorId(t.campanhaDestinoId||t.campanhaOrigemId):null;
         const etiquetaCampanha = campanhaOutra?`<br><span class="badge">${t.campanhaDestinoId?'Enviado para':'Recebido de'}: ${escapeHtml(campanhaOutra.nome)}</span>`:'';
         return `<tr>
-          <td>${formatarData(t.data)}${normalizarTimestampRegistro(t.criadoEm)!==null?`<div class="small-note" style="white-space:nowrap;">Horário&nbsp;${new Date(normalizarTimestampRegistro(t.criadoEm)).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'})}</div>`:''}</td>
+          <td>${formatarData(t.data)}${normalizarTimestampRegistro(t.criadoEm)!==null?`<div class="small-note"><span style="display:inline-block;white-space:nowrap;">Horário ${new Date(normalizarTimestampRegistro(t.criadoEm)).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'})}</span></div>`:''}</td>
           <td>${escapeHtml(origem?origem.nome:'(removido)')} <span class="small-note">— ${catOrigem?escapeHtml(catOrigem.label.split(' (')[0]):''}</span>${t.campanhaOrigemId?etiquetaCampanha:''}</td>
           <td>${escapeHtml(destino?destino.nome:'(removido)')} <span class="small-note">— ${catDestino?escapeHtml(catDestino.label.split(' (')[0]):''}</span>${t.campanhaDestinoId?etiquetaCampanha:''}</td>
           <td class="table-cell-center">${t.quantidade}</td>
