@@ -188,11 +188,16 @@ function bearerToken(request) {
   return value.slice(7);
 }
 async function googleTokenRequest(params, env) {
-  const response = await fetch(GOOGLE_TOKEN_URL, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ ...params, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET }),
-  });
+  let response;
+  try {
+    response = await fetch(GOOGLE_TOKEN_URL, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ ...params, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET }),
+    });
+  } catch {
+    throw new HttpError(502, "Não foi possível conectar ao serviço OAuth do Google.");
+  }
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (result.error === "invalid_client") {
