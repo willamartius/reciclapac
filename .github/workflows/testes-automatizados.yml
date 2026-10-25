@@ -37,7 +37,7 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Executar smoke test do navegador
-        run: node --test tests/browser-smoke.test.js
+        run: node --test tests/browser-smoke.test.js tests/layout-regression.test.js
 
       - name: Executar testes unitários e regras do Firestore no Emulator
         run: npm test
