@@ -922,7 +922,7 @@ function renderApp(){
         <div class="admin-pill">
           <button class="account-summary" style="padding:0;border:0;background:transparent;text-align:left;border-radius:0;" onclick="abrirPerfilUsuario()" title="Editar meu perfil">
             <span class="account-name"><span class="account-name-text">${escapeHtml(nomeExibicaoUsuario())}</span></span>
-            <span class="account-role">${STATE.isAdmin?'🔓 Administrador':'📝 Operador'}</span>
+            <span class="account-role">${STATE.isAdmin?'Administrador':'Operador'}</span>
           </button>
           <button onclick="${STATE.authUser? 'sairAdmin()':'abrirLoginAdmin()'}">${STATE.authUser?icon('logout',15):icon('login',15)}<span>${STATE.authUser?'Sair':'Entrar'}</span></button>
         </div>

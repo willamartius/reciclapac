@@ -1037,3 +1037,136 @@ select{text-overflow:ellipsis;}
   .sidebar-foot { margin-top: 4px; padding-top: 4px; }
   .admin-pill { padding: 5px; gap: 4px; }
 }
+
+
+/* Revisão geral de largura e espaçamento do painel desktop */
+@media (min-width: 921px) {
+  .main {
+    width: calc(100% - 252px);
+    max-width: none;
+    min-width: 0;
+  }
+  #viewContent.content {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  #viewContent > *,
+  #viewContent > .card,
+  #viewContent > .toolbar,
+  #viewContent > .grid,
+  #viewContent > .section-tabs,
+  #viewContent > .podium-wrap {
+    min-width: 0;
+    max-width: none;
+  }
+  #viewContent > .card,
+  #viewContent > .grid,
+  #viewContent > .podium-wrap,
+  #viewContent > .dashboard-ranking-table {
+    width: 100%;
+  }
+
+  /* Mais respiro entre os nomes do menu sem reintroduzir a rolagem. */
+  .sidebar {
+    overflow: hidden;
+    padding: 14px 12px 10px;
+  }
+  .brand {
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+  .nav {
+    gap: 5px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .nav button {
+    min-height: 34px;
+    padding: 8px 10px;
+    gap: 10px;
+    font-size: 13.5px;
+    line-height: 1.25;
+  }
+  .nav button svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+  }
+  .nav .nav-help {
+    margin-top: 4px;
+    padding-top: 8px;
+  }
+
+  /* Perfil: nome e função juntos; botão Sair em uma linha separada. */
+  .admin-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    padding: 9px;
+  }
+  .admin-pill .account-summary {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 2px 4px;
+    line-height: 1.35;
+  }
+  .admin-pill .account-name {
+    display: inline;
+    width: auto;
+    max-width: none;
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .admin-pill .account-name-text {
+    display: inline;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+  }
+  .admin-pill .account-role {
+    display: inline;
+    padding-left: 0;
+    font-size: 11px;
+    white-space: normal;
+  }
+  .admin-pill .account-role::before { content: " ("; }
+  .admin-pill .account-role::after { content: ")"; }
+  .admin-pill > button:last-child {
+    width: 100%;
+    min-height: 32px;
+    justify-content: center;
+    padding: 6px 10px;
+  }
+  .admin-pill > button:last-child svg { display: none !important; }
+}
+@media (min-width: 921px) and (max-height: 760px) {
+  .sidebar { padding-top: 9px; padding-bottom: 7px; }
+  .brand { padding-bottom: 7px; margin-bottom: 6px; }
+  .nav { gap: 3px; }
+  .nav button { min-height: 31px; padding-top: 6px; padding-bottom: 6px; font-size: 13px; }
+  .sidebar-foot { margin-top: 6px; padding-top: 6px; }
+  .admin-pill { gap: 5px; padding: 7px; }
+}
+@media (min-width: 921px) and (max-height: 640px) {
+  .brand { margin-bottom: 3px; padding-bottom: 4px; }
+  .brand-icon { width: 24px; height: 24px; }
+  .brand-title { font-size: 14px; }
+  .nav { gap: 1px; }
+  .nav button { min-height: 27px; padding-top: 4px; padding-bottom: 4px; font-size: 12px; }
+  .nav button svg { width: 15px; height: 15px; flex-basis: 15px; }
+  .sidebar-foot { margin-top: 3px; padding-top: 4px; }
+  .admin-pill { padding: 5px; gap: 3px; }
+}
