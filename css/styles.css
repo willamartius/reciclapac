@@ -1212,3 +1212,15 @@ select{text-overflow:ellipsis;}
   .nav { gap: 2px; }
   .nav button { min-height: 26px; padding-top: 4px; padding-bottom: 4px; }
 }
+
+
+/* Em alturas desktop comuns, preservar o espaçamento sem sobrepor a ajuda ao perfil. */
+@media (min-width: 921px) and (max-height: 800px) {
+  .sidebar { padding-top: 9px; padding-bottom: 7px; }
+  .brand { padding-bottom: 7px; margin-bottom: 6px; }
+  .nav { gap: 4px; }
+  .nav button { min-height: 30px; padding-top: 6px; padding-bottom: 6px; }
+  .nav .nav-help { margin-top: 2px; padding-top: 6px; }
+  .sidebar-foot { margin-top: 5px; padding-top: 5px; }
+  .admin-pill { gap: 5px; padding: 7px; }
+}
