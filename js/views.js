@@ -10,6 +10,8 @@ const ICONS = {
   relatorios:'<path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h3"/>',
   config:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/>',
   more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  logout:'<path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>',
+  login:'<path d="M14 7l5 5-5 5"/><path d="M19 12H7"/><path d="M12 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>',
   trash:'<path d="M3 6h18"/><path d="M8 6V4h8v2M6 6l1 15h10l1-15"/>',
@@ -922,7 +924,7 @@ function renderApp(){
             <span class="account-name">${icon('users',14)}<span class="account-name-text">${escapeHtml(nomeExibicaoUsuario())}</span></span>
             <span class="account-role">${STATE.isAdmin?'🔓 Administrador':'📝 Operador'}</span>
           </button>
-          <button onclick="${STATE.authUser? 'sairAdmin()':'abrirLoginAdmin()'}">${STATE.authUser?'Sair':'Entrar'}</button>
+          <button onclick="${STATE.authUser? 'sairAdmin()':'abrirLoginAdmin()'}">${STATE.authUser?icon('logout',15):icon('login',15)}<span>${STATE.authUser?'Sair':'Entrar'}</span></button>
         </div>
       </div>
     </div>
