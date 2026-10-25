@@ -920,7 +920,7 @@ function renderApp(){
       </div>
       <div class="sidebar-foot">
         <div class="admin-pill">
-          <button class="account-summary" style="padding:0;border:0;background:transparent;text-align:left;border-radius:0;" onclick="abrirPerfilUsuario()" title="Editar meu perfil">
+          <button class="account-summary" style="padding:0;border:0;background:transparent;text-align:center;border-radius:0;" onclick="abrirPerfilUsuario()" title="Editar meu perfil">
             <span class="account-name"><span class="account-name-text">${escapeHtml(nomeExibicaoUsuario())}</span></span>
             <span class="account-role">${STATE.isAdmin?'Administrador':'Operador'}</span>
           </button>
