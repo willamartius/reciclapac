@@ -158,6 +158,23 @@ async function requireAdmin(idToken, env) {
   return { uid: claims.sub, claims };
 }
 
+// A lista é exclusiva da rota de métricas para que o diagnóstico continue acessível
+// quando o Firestore atingir a cota. As demais rotas continuam consultando o papel no Firestore.
+async function requireFirestoreUsageAdmin(idToken, env) {
+  const claims = await verifyFirebaseIdToken(idToken, env);
+  const allowedUids = (env.FIRESTORE_USAGE_ADMIN_UIDS || "")
+    .split(",")
+    .map(uid => uid.trim())
+    .filter(Boolean);
+  if (allowedUids.length === 0) {
+    throw new HttpError(503, "A consulta oficial ainda não está habilitada: configure FIRESTORE_USAGE_ADMIN_UIDS no Worker com o UID Firebase do administrador.");
+  }
+  if (!allowedUids.includes(claims.sub)) {
+    throw new HttpError(403, "Apenas administradores autorizados podem consultar as métricas oficiais.");
+  }
+  return { uid: claims.sub, claims };
+}
+
 function base64UrlEncodeText(value) {
   return base64UrlEncode(new TextEncoder().encode(value));
 }
@@ -238,7 +255,7 @@ function pacificDayInterval(now = new Date()) {
 }
 async function handleFirestoreUsage(request, env) {
   const idToken = bearerToken(request);
-  await requireAdmin(idToken, env);
+  await requireFirestoreUsageAdmin(idToken, env);
   if (!env.GCP_MONITORING_SERVICE_ACCOUNT_JSON) {
     throw new HttpError(503, "As métricas oficiais ainda não estão configuradas. Configure GCP_MONITORING_SERVICE_ACCOUNT_JSON no Worker.");
   }
