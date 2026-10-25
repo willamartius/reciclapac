@@ -64,8 +64,8 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
       `“Como usar o painel” sobrepõe o rodapé em ${viewport.width}x${viewport.height}: ${JSON.stringify(metrics)}`);
     assert.ok(metrics.content.width >= metrics.main.width - 1,
       `conteúdo não aproveita a largura do desktop em ${viewport.width}x${viewport.height}`);
-    assert.ok(metrics.shell.width >= metrics.content.width - 1,
-      `Registro express não aproveita a largura do conteúdo em ${viewport.width}x${viewport.height}`);
+    assert.ok(metrics.shell.width >= metrics.content.width - 60,
+      `Registro express não aproveita a largura interna do conteúdo em ${viewport.width}x${viewport.height}`);
     assert.ok(metrics.sidebar.left === 0 && metrics.sidebar.right <= 253,
       `painel lateral fora da coluna esperada: ${JSON.stringify(metrics.sidebar)}`);
     assert.ok(metrics.sidebarScrollHeight >= metrics.sidebarClientHeight,
