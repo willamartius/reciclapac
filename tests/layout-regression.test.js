@@ -60,6 +60,12 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
         sidebarScrollHeight: sidebar.scrollHeight, sidebarClientHeight: sidebar.clientHeight,
         sidebarOverflowY: getComputedStyle(sidebar).overflowY,
         navGap: parseFloat(getComputedStyle(document.querySelector('.nav')).gap),
+        navButtonGap: (() => {
+          const buttons = [...document.querySelectorAll('.nav button')];
+          const first = buttons[0].getBoundingClientRect();
+          const second = buttons[1].getBoundingClientRect();
+          return second.top - first.bottom;
+        })(),
         accountSummaryTextAlign: getComputedStyle(document.querySelector('.account-summary')).textAlign,
         accountNameTextAlign: getComputedStyle(document.querySelector('.account-name')).textAlign,
         accountName: rect(document.querySelector('.account-name')),
