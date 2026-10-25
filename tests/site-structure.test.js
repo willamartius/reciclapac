@@ -128,3 +128,13 @@ test('Área técnica do Firestore é carregada e fica nas Configurações admini
   assert.match(monitor, /emulator/);
   assert.match(monitor, /não geram gravações no Firestore/);
 });
+
+test('navegação retorna ao topo antes de renderizar a nova seção', () => {
+  const views = read('js/views.js');
+  const start = views.indexOf('function irPara(view)');
+  const end = views.indexOf('window.irPara = irPara;', start);
+  assert.ok(start >= 0 && end > start);
+  const navigation = views.slice(start, end);
+  assert.ok(navigation.indexOf('window.scrollTo(0,0);') < navigation.indexOf('renderApp();'),
+    'a rolagem deve ser zerada antes da renderização para evitar salto visual');
+});
