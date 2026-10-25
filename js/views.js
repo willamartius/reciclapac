@@ -165,12 +165,10 @@ window.salvarSenhaSolicitacaoTroca=salvarSenhaSolicitacaoTroca;
 function irPara(view){
   if((view==='config' || view==='relatorios' || view==='lixeira' || view==='folhas') && !STATE.isAdmin){ exigirAdmin(); return; }
   if(view==='registro-express' && !exigirOperador()) return;
+  // Reseta antes de substituir o conteúdo para evitar salto após o render.
+  window.scrollTo(0,0);
   STATE.view=view;
   renderApp();
-  // Um único reset imediato após trocar o conteúdo evita dois saltos visuais.
-  window.scrollTo({top:0,left:0,behavior:'instant'});
-  document.documentElement.scrollTop=0;
-  document.body.scrollTop=0;
 }
 window.irPara = irPara;
 function renderTelaAutenticacao(){
