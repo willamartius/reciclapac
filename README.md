@@ -77,3 +77,17 @@ A implantação do Worker é independente da publicação do frontend. O código
 O Worker valida o token Firebase e o papel administrativo, guarda o token de renovação criptografado no KV e fornece ao frontend apenas tokens de acesso temporários. O escopo do Drive é `drive.file`, limitado aos arquivos e à pasta criados pelo app, junto aos escopos básicos de identidade. Desvincular uma conta remove o vínculo e o token mantido pelo Worker, mas não apaga os arquivos já existentes no Google Drive.
 
 A API do Google Drive está sujeita a cotas e políticas do Google. A tela de consentimento ou a verificação OAuth podem exigir providências adicionais de acordo com o tipo de publicação.
+
+
+### Área técnica: monitoramento do Firestore
+
+A seção **Configurações > Área técnica** apresenta estimativas de leituras observadas neste navegador e, quando configurada, a métrica agregada oficial do Google Cloud Monitoring. A estimativa local fica no armazenamento local do navegador, não cria documentos no Firestore e não representa a utilização dos outros dispositivos. Ela é aproximada: cache, consultas vazias, transações e listeners podem divergir da contagem faturável. O ambiente com `?emulator=1` é excluído da estimativa.
+
+Para habilitar a métrica oficial no Worker Cloudflare `reciclapac-drive-auth`:
+
+1. No Google Cloud do projeto `apac-reciclar`, habilite a API Cloud Monitoring e crie uma conta de serviço dedicada, concedendo somente a permissão de leitura de séries temporais (por exemplo, papel **Monitoring Viewer**).
+2. Gere uma chave JSON para essa conta e, na pasta `cloudflare/drive-auth`, execute `npx wrangler secret put GCP_MONITORING_SERVICE_ACCOUNT_JSON`; cole o conteúdo completo do JSON quando solicitado. Nunca inclua esse segredo no repositório ou no JavaScript do site.
+3. A consulta usa `apac-reciclar` por padrão. Se precisar explicitar outro projeto, configure a variável `GCP_MONITORING_PROJECT_ID` no Worker.
+4. Publique o Worker e teste **Configurações > Área técnica > Consultar métricas oficiais** com uma conta administradora.
+
+A rota `GET /firestore-usage` valida o token Firebase e confirma o papel `admin` no documento `reciclar-apac-roles/{uid}` antes de consultar Cloud Monitoring. Sem o secret configurado, a interface continua mostrando as estimativas locais e informa que as métricas oficiais estão indisponíveis. As métricas oficiais são agregadas por projeto e podem ter atraso de alguns minutos; não identificam a função JavaScript responsável por cada leitura.

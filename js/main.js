@@ -444,6 +444,11 @@ function renderConfig(){
       ${renderCardBackupGoogleDriveConteudo()}
     </div>
 
+    <div class="section-title">Área técnica</div>
+    <div class="card" id="firestoreMonitorContent" style="display:grid;gap:12px;">
+      <p class="small-note">Preparando o monitoramento de leituras do Firestore…</p>
+    </div>
+
     <div class="section-title">Sobre a campanha</div>
     <div class="card">
       <p style="font-size:13.5px;line-height:1.7;">
@@ -1794,5 +1799,6 @@ renderApp = function(){
   if(STATE.view==='colaboradores') setTimeout(renderTabelaColaboradores,0);
   if(STATE.view==='entregas') setTimeout(renderTabelaEntregas,0);
   if(STATE.view==='config') setTimeout(renderTabelaCampanhas,0);
+  if(STATE.view==='config' && STATE.isAdmin && typeof renderMonitoramentoFirestore==='function') setTimeout(renderMonitoramentoFirestore,0);
 };
 iniciar();

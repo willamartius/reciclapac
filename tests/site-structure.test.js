@@ -13,7 +13,7 @@ const appScripts = scriptTags.filter(src => src.startsWith('js/'));
 test('index.html carrega CSS e scripts do app em arquivos separados, em ordem', () => {
   assert.match(html, /<link rel="stylesheet" href="css\/styles\.css/);
   assert.deepEqual(appScripts, [
-    'js/core.js', 'js/views.js', 'js/delivery-timestamps.js', 'js/auth.js', 'js/fichas.js', 'js/registro-express.js', 'js/transfers-exchange.js', 'js/share.js', 'js/main.js'
+    'js/core.js', 'js/views.js', 'js/delivery-timestamps.js', 'js/auth.js', 'js/fichas.js', 'js/registro-express.js', 'js/transfers-exchange.js', 'js/share.js', 'js/monitoramento.js', 'js/main.js'
   ]);
   assert.ok(scriptTags.indexOf('ranking-logic.js') < scriptTags.indexOf('js/core.js'));
   assert.ok(scriptTags.indexOf('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js') < scriptTags.indexOf('js/core.js'));
@@ -113,4 +113,18 @@ test('modo de manutenção pública não exibe solicitação de troca nem rodap�
   assert.match(normalRanking, /if\(STATE\.manutencaoPublica\) return renderAvisoManutencaoPublica\(\)/);
   assert.match(normalRanking, /Solicitar troca/);
   assert.match(normalRanking, /renderRodapePublico\(\)/);
+});
+
+
+test('Área técnica do Firestore é carregada e fica nas Configurações administrativas', () => {
+  const monitor = read('js/monitoramento.js');
+  const main = read('js/main.js');
+  assert.ok(appScripts.includes('js/monitoramento.js'));
+  assert.match(main, /Área técnica/);
+  assert.match(main, /firestoreMonitorContent/);
+  assert.match(main, /renderMonitoramentoFirestore/);
+  assert.match(monitor, /firestore-usage/);
+  assert.match(monitor, /reciclapac:firestore-read-monitor:v1/);
+  assert.match(monitor, /emulator/);
+  assert.match(monitor, /não geram gravações no Firestore/);
 });

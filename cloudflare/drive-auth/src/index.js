@@ -157,6 +157,138 @@ async function requireAdmin(idToken, env) {
   }
   return { uid: claims.sub, claims };
 }
+
+function base64UrlEncodeText(value) {
+  return base64UrlEncode(new TextEncoder().encode(value));
+}
+async function createMonitoringAccessToken(serviceAccount) {
+  if (!serviceAccount || !serviceAccount.client_email || !serviceAccount.private_key) {
+    throw new HttpError(503, "A conta de serviço do Cloud Monitoring não está configurada corretamente no Worker.");
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64UrlEncodeText(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const claims = base64UrlEncodeText(JSON.stringify({
+    iss: serviceAccount.client_email,
+    scope: "https://www.googleapis.com/auth/monitoring.read",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  }));
+  const unsigned = header + "." + claims;
+  let privateKeyBytes;
+  try {
+    const pem = serviceAccount.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, "");
+    privateKeyBytes = base64ToBytes(pem);
+  } catch {
+    throw new HttpError(503, "A chave privada da conta de serviço do Cloud Monitoring é inválida.");
+  }
+  let key;
+  try {
+    key = await crypto.subtle.importKey("pkcs8", privateKeyBytes, {
+      name: "RSASSA-PKCS1-v1_5", hash: "SHA-256",
+    }, false, ["sign"]);
+  } catch {
+    throw new HttpError(503, "Não foi possível carregar a chave privada do Cloud Monitoring.");
+  }
+  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
+  const assertion = unsigned + "." + base64UrlEncode(new Uint8Array(signature));
+  let tokenResponse;
+  try {
+    tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion,
+      }),
+    });
+  } catch {
+    throw new HttpError(502, "Não foi possível autenticar no Google Cloud Monitoring.");
+  }
+  if (!tokenResponse.ok) throw new HttpError(502, "O Google Cloud recusou a autenticação para consultar métricas.");
+  const tokenData = await tokenResponse.json();
+  if (typeof tokenData.access_token !== "string" || !tokenData.access_token) {
+    throw new HttpError(502, "O Google Cloud não retornou um token de acesso para métricas.");
+  }
+  return tokenData.access_token;
+}
+function pacificDayInterval(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  }).formatToParts(now).reduce((result, part) => {
+    if (part.type !== "literal") result[part.type] = Number(part.value);
+    return result;
+  }, {});
+  const localAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  const offset = localAsUtc - now.getTime();
+  const startTime = new Date(Date.UTC(parts.year, parts.month - 1, parts.day) - offset);
+  const tomorrow = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1, 12));
+  const nextParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  }).formatToParts(tomorrow).reduce((result, part) => {
+    if (part.type !== "literal") result[part.type] = Number(part.value);
+    return result;
+  }, {});
+  const nextLocalAsUtc = Date.UTC(nextParts.year, nextParts.month - 1, nextParts.day, nextParts.hour, nextParts.minute, nextParts.second);
+  const nextOffset = nextLocalAsUtc - tomorrow.getTime();
+  const endTime = new Date(Date.UTC(nextParts.year, nextParts.month - 1, nextParts.day) - nextOffset);
+  return { startTime: startTime.toISOString(), endTime: endTime.toISOString() };
+}
+async function handleFirestoreUsage(request, env) {
+  const idToken = bearerToken(request);
+  await requireAdmin(idToken, env);
+  if (!env.GCP_MONITORING_SERVICE_ACCOUNT_JSON) {
+    throw new HttpError(503, "As métricas oficiais ainda não estão configuradas. Configure GCP_MONITORING_SERVICE_ACCOUNT_JSON no Worker.");
+  }
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(env.GCP_MONITORING_SERVICE_ACCOUNT_JSON);
+  } catch {
+    throw new HttpError(503, "O secret da conta de serviço do Cloud Monitoring não contém JSON válido.");
+  }
+  const projectId = env.GCP_MONITORING_PROJECT_ID || FIREBASE_PROJECT_ID;
+  const accessToken = await createMonitoringAccessToken(serviceAccount);
+  const interval = pacificDayInterval();
+  const endpoint = new URL("https://monitoring.googleapis.com/v3/projects/" + encodeURIComponent(projectId) + "/timeSeries");
+  endpoint.searchParams.set("filter", 'metric.type = "firestore.googleapis.com/document/read_count"');
+  endpoint.searchParams.set("interval.startTime", interval.startTime);
+  endpoint.searchParams.set("interval.endTime", interval.endTime);
+  endpoint.searchParams.set("aggregation.alignmentPeriod", "60s");
+  endpoint.searchParams.set("aggregation.perSeriesAligner", "ALIGN_SUM");
+  endpoint.searchParams.set("aggregation.crossSeriesReducer", "REDUCE_SUM");
+  endpoint.searchParams.set("view", "FULL");
+  endpoint.searchParams.set("pageSize", "1000");
+  let response;
+  try {
+    response = await fetch(endpoint.toString(), {
+      headers: { Authorization: "Bearer " + accessToken },
+    });
+  } catch {
+    throw new HttpError(502, "Não foi possível consultar as métricas do Cloud Monitoring.");
+  }
+  if (!response.ok) {
+    const detail = response.status === 403
+      ? "A conta de serviço não tem permissão para ler as métricas do projeto."
+      : "O Cloud Monitoring não conseguiu retornar as leituras do Firestore.";
+    throw new HttpError(502, detail);
+  }
+  const data = await response.json();
+  const readsToday = (data.timeSeries || []).reduce((total, series) => total + (series.points || []).reduce((subtotal, point) => {
+    const value = point.value || {};
+    const count = Number(value.int64Value !== undefined ? value.int64Value : value.doubleValue);
+    return subtotal + (Number.isFinite(count) && count > 0 ? count : 0);
+  }, 0), 0);
+  return json({
+    readsToday: Math.round(readsToday),
+    fetchedAt: new Date().toISOString(),
+    interval,
+    projectId,
+    source: "cloud-monitoring",
+  });
+}
+
 async function getDriveLink(uid, idToken) {
   const doc = await firebaseGet(`${DRIVE_LINK_COLLECTION}/${encodeURIComponent(uid)}`, idToken);
   if (!doc) return null;
@@ -384,7 +516,8 @@ export default {
     }
     const protectedRoute = (url.pathname === "/oauth/start" && request.method === "POST")
       || (url.pathname === "/token" && request.method === "POST")
-      || (url.pathname === "/link" && request.method === "DELETE");
+      || (url.pathname === "/link" && request.method === "DELETE")
+      || (url.pathname === "/firestore-usage" && request.method === "GET");
     if (!protectedRoute) return json({ error: "Rota não encontrada." }, 404, corsHeaders(request, env));
     if (!originAllowed(request, env)) return json({ error: "Origem não autorizada." }, 403, corsHeaders(request, env));
     try {
@@ -392,6 +525,7 @@ export default {
       let response;
       if (url.pathname === "/oauth/start") response = await handleOAuthStart(request, env);
       else if (url.pathname === "/token") response = await handleAccessToken(request, env);
+      else if (url.pathname === "/firestore-usage") response = await handleFirestoreUsage(request, env);
       else response = await handleUnlink(request, env);
       const headers = new Headers(response.headers);
       for (const [key, value] of Object.entries(corsHeaders(request, env))) headers.set(key, value);
