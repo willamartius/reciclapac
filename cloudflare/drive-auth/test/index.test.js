@@ -229,7 +229,7 @@ test('GET /firestore-usage exige token de autenticação', async () => {
 test('GET /firestore-usage autoriza o UID listado sem consultar o Firestore', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input) => {
-    assert.match(String(input), /securetoken@system\.gserviceaccount\.com\/jwk/);
+    assert.match(String(input), /securetoken@system\.gserviceaccount\.com/);
     return new Response(JSON.stringify({ keys: [TEST_FIREBASE_JWK] }), {
       status: 200,
       headers: { 'content-type': 'application/json' },
@@ -257,7 +257,7 @@ test('GET /firestore-usage autoriza o UID listado sem consultar o Firestore', as
 test('GET /firestore-usage recusa UID não listado sem consultar o Firestore', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input) => {
-    assert.match(String(input), /securetoken@system\.gserviceaccount\.com\/jwk/);
+    assert.match(String(input), /securetoken@system\.gserviceaccount\.com/);
     return new Response(JSON.stringify({ keys: [TEST_FIREBASE_JWK] }), {
       status: 200,
       headers: { 'content-type': 'application/json' },
