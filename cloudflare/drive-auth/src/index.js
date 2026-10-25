@@ -223,7 +223,7 @@ function pacificDayInterval(now = new Date()) {
   const localAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
   const offset = localAsUtc - now.getTime();
   const startTime = new Date(Date.UTC(parts.year, parts.month - 1, parts.day) - offset);
-  const tomorrow = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1));
+  const tomorrow = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1, 12));
   const nextParts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
