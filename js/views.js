@@ -165,18 +165,12 @@ window.salvarSenhaSolicitacaoTroca=salvarSenhaSolicitacaoTroca;
 function irPara(view){
   if((view==='config' || view==='relatorios' || view==='lixeira' || view==='folhas') && !STATE.isAdmin){ exigirAdmin(); return; }
   if(view==='registro-express' && !exigirOperador()) return;
-  window.scrollTo(0,0);
-  document.documentElement.scrollTop=0;
-  document.body.scrollTop=0;
   STATE.view=view;
   renderApp();
-  requestAnimationFrame(()=>{
-    window.scrollTo(0,0);
-    document.documentElement.scrollTop=0;
-    document.body.scrollTop=0;
-    const content=document.getElementById('viewContent');
-    if(content) content.scrollTop=0;
-  });
+  // Um único reset imediato após trocar o conteúdo evita dois saltos visuais.
+  window.scrollTo({top:0,left:0,behavior:'instant'});
+  document.documentElement.scrollTop=0;
+  document.body.scrollTop=0;
 }
 window.irPara = irPara;
 function renderTelaAutenticacao(){
