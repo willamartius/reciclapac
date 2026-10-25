@@ -166,8 +166,17 @@ function irPara(view){
   if((view==='config' || view==='relatorios' || view==='lixeira' || view==='folhas') && !STATE.isAdmin){ exigirAdmin(); return; }
   if(view==='registro-express' && !exigirOperador()) return;
   window.scrollTo(0,0);
+  document.documentElement.scrollTop=0;
+  document.body.scrollTop=0;
   STATE.view=view;
   renderApp();
+  requestAnimationFrame(()=>{
+    window.scrollTo(0,0);
+    document.documentElement.scrollTop=0;
+    document.body.scrollTop=0;
+    const content=document.getElementById('viewContent');
+    if(content) content.scrollTop=0;
+  });
 }
 window.irPara = irPara;
 function renderTelaAutenticacao(){
