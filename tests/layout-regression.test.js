@@ -83,7 +83,7 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
       `painel lateral fora da coluna esperada: ${JSON.stringify(metrics.sidebar)}`);
     assert.equal(metrics.sidebarOverflowY, 'hidden',
       'a navegação lateral não deve ter rolagem no desktop');
-    const expectedGap = viewport.height <= 500 ? 1 : viewport.height <= 640 ? 3 : viewport.height <= 760 ? 6 : 10;
+    const expectedGap = viewport.height <= 500 ? 1 : viewport.height <= 640 ? 3 : viewport.height <= 800 ? 6 : 10;
     assert.equal(metrics.navGap, expectedGap,
       `o espaçamento do menu deve ser ${expectedGap}px em ${viewport.width}x${viewport.height}`);
     assert.ok(metrics.navButtonGap >= expectedGap - 1,
