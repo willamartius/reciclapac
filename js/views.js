@@ -165,10 +165,10 @@ window.salvarSenhaSolicitacaoTroca=salvarSenhaSolicitacaoTroca;
 function irPara(view){
   if((view==='config' || view==='relatorios' || view==='lixeira' || view==='folhas') && !STATE.isAdmin){ exigirAdmin(); return; }
   if(view==='registro-express' && !exigirOperador()) return;
-  // Reseta antes de substituir o conteúdo para evitar salto após o render.
-  window.scrollTo(0,0);
   STATE.view=view;
   renderApp();
+  // O shell fica no lugar; zera a rolagem depois de trocar apenas o conteúdo.
+  window.scrollTo({top:0,left:0,behavior:'auto'});
 }
 window.irPara = irPara;
 function renderTelaAutenticacao(){
@@ -906,7 +906,8 @@ function renderApp(){
   const navItems = navItemsVisiveis();
   if(!navItems.some(n=>n.key===STATE.view)) STATE.view='dashboard';
   const current = navItems.find(n=>n.key===STATE.view) || navItems[0];
-  app.innerHTML = `
+  if(!app.querySelector('.sidebar')) {
+    app.innerHTML = `
     <div class="sidebar">
       <div class="brand">
         <svg class="brand-icon" viewBox="0 0 40 40" fill="none" stroke="#8FCB9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -918,7 +919,7 @@ function renderApp(){
         </div>
       </div>
       <div class="nav">
-        ${navItems.map(n=>`<button class="${n.key===STATE.view?'active':''}" onclick="irPara('${n.key}')">${icon(n.icon)}${n.label}</button>`).join('')}
+        ${navItems.map(n=>`<button data-view="${n.key}" class="${n.key===STATE.view?'active':''}" onclick="irPara('${n.key}')">${icon(n.icon)}${n.label}</button>`).join('')}
         <button class="nav-help" type="button" onclick="abrirAjuda()">${icon('help')}Como usar o painel</button>
       </div>
       <div class="sidebar-foot">
@@ -953,6 +954,20 @@ function renderApp(){
       </div>
     </div>
   `;
+  } else {
+    // Reutiliza o shell: recriar a sidebar inteira em cada troca causava o flash lateral.
+    app.querySelectorAll('.nav button[data-view]').forEach(button => {
+      button.classList.toggle('active', button.dataset.view === STATE.view);
+    });
+    const title = app.querySelector('.topbar h1');
+    if(title) title.textContent = current.label;
+    const bottomButtons = app.querySelectorAll('.bottomnav button');
+    bottomButtons.forEach((button, index) => {
+      const keys = navItems.slice(0,4).map(n=>n.key);
+      const extraActive = ['historico','relatorios','lixeira','config','registro-express'].includes(STATE.view);
+      button.classList.toggle('active', index < 4 ? keys[index] === STATE.view : extraActive);
+    });
+  }
   const content = document.getElementById('viewContent');
   const renderers = {
     dashboard: renderDashboard, colaboradores: renderColaboradores, entregas: renderEntregas,
