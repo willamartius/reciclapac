@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { generateKeyPairSync, sign as signJwt } from 'node:crypto';
 import worker from '../src/index.js';
 
 function createMockKV(initial = {}) {
@@ -10,6 +11,28 @@ function createMockKV(initial = {}) {
     async delete(key) { store.delete(key); },
     _store: store,
   };
+}
+
+
+const TEST_FIREBASE_UID = 'admin-metrics-test';
+const TEST_FIREBASE_KID = 'metrics-test-kid';
+const { privateKey: TEST_FIREBASE_PRIVATE_KEY, publicKey: TEST_FIREBASE_PUBLIC_KEY } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+});
+const TEST_FIREBASE_JWK = { ...TEST_FIREBASE_PUBLIC_KEY.export({ format: 'jwk' }), kid: TEST_FIREBASE_KID, alg: 'RS256', use: 'sig' };
+function createFirebaseIdToken(uid = TEST_FIREBASE_UID) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: TEST_FIREBASE_KID })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({
+    aud: 'apac-reciclar',
+    iss: 'https://securetoken.google.com/apac-reciclar',
+    sub: uid,
+    iat: now,
+    exp: now + 3600,
+    auth_time: now,
+  })).toString('base64url');
+  const unsigned = header + '.' + payload;
+  return unsigned + '.' + signJwt('RSA-SHA256', Buffer.from(unsigned), TEST_FIREBASE_PRIVATE_KEY).toString('base64url');
 }
 
 const TEST_KEY = Buffer.alloc(32, 7).toString('base64');
@@ -200,4 +223,61 @@ test('GET /firestore-usage exige token de autenticação', async () => {
   const res = await worker.fetch(req, TEST_ENV);
   assert.equal(res.status, 401);
   assert.deepEqual(await res.json(), { error: 'Entre novamente no Reciclapac.' });
+});
+
+
+test('GET /firestore-usage autoriza o UID listado sem consultar o Firestore', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    assert.match(String(input), /securetoken@system\.gserviceaccount\.com/);
+    return new Response(JSON.stringify({ keys: [TEST_FIREBASE_JWK] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  try {
+    const req = new Request('https://worker.local/firestore-usage', {
+      method: 'GET',
+      headers: {
+        Origin: 'https://reciclapac.com.br',
+        Authorization: 'Bearer ' + createFirebaseIdToken(),
+      },
+    });
+    const res = await worker.fetch(req, {
+      ...TEST_ENV,
+      FIRESTORE_USAGE_ADMIN_UIDS: TEST_FIREBASE_UID,
+    });
+    assert.equal(res.status, 503);
+    assert.match((await res.json()).error, /GCP_MONITORING_SERVICE_ACCOUNT_JSON/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('GET /firestore-usage recusa UID não listado sem consultar o Firestore', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    assert.match(String(input), /securetoken@system\.gserviceaccount\.com/);
+    return new Response(JSON.stringify({ keys: [TEST_FIREBASE_JWK] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  try {
+    const req = new Request('https://worker.local/firestore-usage', {
+      method: 'GET',
+      headers: {
+        Origin: 'https://reciclapac.com.br',
+        Authorization: 'Bearer ' + createFirebaseIdToken('ordinary-user'),
+      },
+    });
+    const res = await worker.fetch(req, {
+      ...TEST_ENV,
+      FIRESTORE_USAGE_ADMIN_UIDS: TEST_FIREBASE_UID,
+    });
+    assert.equal(res.status, 403);
+    assert.match((await res.json()).error, /UID|administradores autorizados/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
