@@ -74,8 +74,12 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
       `Registro express não aproveita a largura interna do conteúdo em ${viewport.width}x${viewport.height}`);
     assert.ok(metrics.sidebar.left === 0 && metrics.sidebar.right <= 253,
       `painel lateral fora da coluna esperada: ${JSON.stringify(metrics.sidebar)}`);
-    assert.ok(metrics.sidebarScrollHeight >= metrics.sidebarClientHeight,
-      'a navegação lateral deve continuar rolável quando o conteúdo exceder a altura');
+    assert.equal(metrics.sidebarOverflowY, 'hidden',
+      'a navegação lateral não deve ter rolagem no desktop');
+    assert.ok(metrics.accountName.bottom <= metrics.accountButton.top,
+      'o botão Sair deve ficar abaixo do nome do perfil');
+    assert.equal(metrics.hasAccountIcon, false,
+      'o nome do perfil não deve exibir ícone decorativo');
   }
 
   const transform = await page.locator('.nav button').first().evaluate(button => getComputedStyle(button.querySelector('svg')).transform);
