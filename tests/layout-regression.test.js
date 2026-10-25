@@ -62,6 +62,10 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
         navGap: parseFloat(getComputedStyle(document.querySelector('.nav')).gap),
         navButtonGap: (() => {
           const buttons = [...document.querySelectorAll('.nav button')];
+          return buttons[1].getBoundingClientRect().top - buttons[0].getBoundingClientRect().bottom;
+        })(),
+        navButtonGap: (() => {
+          const buttons = [...document.querySelectorAll('.nav button')];
           const first = buttons[0].getBoundingClientRect();
           const second = buttons[1].getBoundingClientRect();
           return second.top - first.bottom;
