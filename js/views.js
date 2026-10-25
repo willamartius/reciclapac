@@ -165,7 +165,7 @@ window.salvarSenhaSolicitacaoTroca=salvarSenhaSolicitacaoTroca;
 function irPara(view){
   if((view==='config' || view==='relatorios' || view==='lixeira' || view==='folhas') && !STATE.isAdmin){ exigirAdmin(); return; }
   if(view==='registro-express' && !exigirOperador()) return;
-  STATE.view=view; renderApp(); window.scrollTo(0,0);
+  window.scrollTo(0,0);\n  STATE.view=view;\n  renderApp();
 }
 window.irPara = irPara;
 function renderTelaAutenticacao(){
