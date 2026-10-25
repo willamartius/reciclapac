@@ -182,3 +182,22 @@ test('Página de retorno do OAuth inclui temporizador para fechamento do popup',
   const html = await res.text();
   assert.ok(html.includes('setTimeout(function(){window.close();},800)'), 'Deve conter atraso de fechamento para garantir o postMessage');
 });
+
+
+test('GET /firestore-usage exige origem autorizada', async () => {
+  const req = new Request('https://worker.local/firestore-usage', {
+    method: 'GET', headers: { Origin: 'https://origem-estranha.com' },
+  });
+  const res = await worker.fetch(req, TEST_ENV);
+  assert.equal(res.status, 403);
+  assert.deepEqual(await res.json(), { error: 'Origem não autorizada.' });
+});
+
+test('GET /firestore-usage exige token de autenticação', async () => {
+  const req = new Request('https://worker.local/firestore-usage', {
+    method: 'GET', headers: { Origin: 'https://reciclapac.com.br' },
+  });
+  const res = await worker.fetch(req, TEST_ENV);
+  assert.equal(res.status, 401);
+  assert.deepEqual(await res.json(), { error: 'Entre novamente no Reciclapac.' });
+});
