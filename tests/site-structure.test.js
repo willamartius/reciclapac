@@ -129,14 +129,14 @@ test('Área técnica do Firestore é carregada e fica nas Configurações admini
   assert.match(monitor, /não geram gravações no Firestore/);
 });
 
-test('navegação retorna ao topo uma única vez após renderizar a nova seção', () => {
+test('navegação reseta a rolagem uma única vez antes de renderizar a seção', () => {
   const views = read('js/views.js');
   const start = views.indexOf('function irPara(view)');
   const end = views.indexOf('window.irPara = irPara;', start);
   assert.ok(start >= 0 && end > start);
   const navigation = views.slice(start, end);
-  assert.ok(navigation.indexOf('renderApp();') < navigation.indexOf('window.scrollTo({top:0,left:0,behavior:\'instant\'});'),
-    'a rolagem deve ser zerada depois da renderização');
+  assert.ok(navigation.indexOf('window.scrollTo(0,0);') < navigation.indexOf('renderApp();'),
+    'a rolagem deve ser zerada antes de substituir o conteúdo');
   assert.equal((navigation.match(/window\.scrollTo\(/g) || []).length, 1,
     'a navegação deve fazer apenas um reset de rolagem');
 });
