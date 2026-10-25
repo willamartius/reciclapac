@@ -444,8 +444,12 @@ function totaisAcumuladosColaborador(campanhaId, colaboradorId){
   const saldos = calcularSaldosAcumulados(campanhaId, mes, ano);
   const categorias = categoriasDaCampanha(campanhaPorId(campanhaId));
   const totais = {};
+  const chaveAtual=chaveMA(mes,ano);
   categorias.forEach(cat=>{
-    totais[cat.key] = Object.values(saldos[colaboradorId]?.[cat.key]||{}).reduce((a,x)=>a+x.creditos,0);
+    // Usa o saldo efetivamente disponível no mês atual, já com excedente transportado,
+    // transferências e materiais consumidos nos resgates. Somar "creditos" históricos
+    // recontava valores de meses anteriores e podia devolver cartelas já resgatadas.
+    totais[cat.key] = saldos[colaboradorId]?.[cat.key]?.[chaveAtual]?.totalDisponivel || 0;
   });
   return totais;
 }
