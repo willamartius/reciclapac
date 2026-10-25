@@ -38,7 +38,7 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
         ${Array.from({ length: 13 }, (_, i) => `<button type="button"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg><span>Seção ${i + 1}</span></button>`).join('')}
         <button class="nav-help" type="button">Como usar o painel</button>
       </nav>
-      <div class="sidebar-foot"><div class="admin-pill"><div class="account-summary"><span class="account-name">Conta administrativa</span></div><button type="button">Sair</button></div></div>
+      <div class="sidebar-foot"><div class="admin-pill"><div class="account-summary"><span class="account-name"><span class="account-name-text">William Martins de Souza Oliveira</span></span><span class="account-role">Administrador</span></div><button type="button">Sair</button></div></div>
     </div>
     <main class="main"><div class="content"><section class="registro-express-shell"><div class="registro-express-intro">Registro express</div></section></div></main>
   `);
@@ -58,6 +58,12 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
         footer: rect(document.querySelector('.sidebar-foot')), main: rect(main),
         content: rect(content), shell: rect(document.querySelector('.registro-express-shell')),
         sidebarScrollHeight: sidebar.scrollHeight, sidebarClientHeight: sidebar.clientHeight,
+        sidebarOverflowY: getComputedStyle(sidebar).overflowY,
+        accountName: rect(document.querySelector('.account-name')),
+        accountNameText: rect(document.querySelector('.account-name-text')),
+        accountButton: rect(document.querySelector('.admin-pill > button:last-child')),
+        accountTextContent: document.querySelector('.account-name').textContent.trim(),
+        hasAccountIcon: Boolean(document.querySelector('.account-name svg')),
       };
     });
     assert.ok(metrics.help.bottom <= metrics.footer.top,
