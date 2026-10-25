@@ -292,7 +292,7 @@ async function handleFirestoreUsage(request, env) {
       ? googleError.error.status.slice(0, 80)
       : "";
     const errorMessage = typeof googleError.error?.message === "string"
-      ? googleError.error.message.replace(/[\\r\\n\\t]+/g, " ").slice(0, 300)
+      ? googleError.error.message.replace(/[\r\n\t]+/g, " ").slice(0, 300)
       : "";
     const diagnostic = [
       `HTTP ${response.status}`,
