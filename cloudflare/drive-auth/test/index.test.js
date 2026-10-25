@@ -268,7 +268,7 @@ test('GET /firestore-usage mostra diagnóstico seguro retornado pelo Cloud Monit
         status: 200, headers: { 'content-type': 'application/json' },
       });
     }
-    assert.match(url, /monitoring.googleapis.com\/v3\/projects\/apac-reciclar\/timeSeries/);
+    assert.match(url, /monitoring\.googleapis\.com\/v3\/projects\/apac-reciclar\/timeSeries/);
     assert.equal(options.headers.Authorization, 'Bearer test-monitoring-access-token');
     return new Response(JSON.stringify({
       error: {
