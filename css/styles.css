@@ -874,3 +874,52 @@ select{text-overflow:ellipsis;}
 #firestoreMonitorContent .table-wrap{max-width:100%;overflow-x:auto;}
 @media(max-width:600px){.firestore-monitor-grid{grid-template-columns:minmax(0,1fr);gap:8px;}}
 @media(prefers-reduced-motion:reduce){.firestore-monitor-track span{transition:none;}}
+
+
+/* Ajustes de layout após revisão em desktop e telas baixas */
+@media (min-width: 921px) {
+  /* A navegação e o rodapé fazem parte do fluxo rolável da sidebar.
+     Evita que itens do menu ultrapassem a área flex e fiquem atrás do rodapé. */
+  .sidebar {
+    align-items: stretch;
+  }
+  .nav {
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+  .sidebar-foot {
+    position: static;
+    margin-top: auto;
+  }
+
+  /* Aproveita a largura disponível depois da navegação fixa. */
+  .content {
+    width: 100%;
+    max-width: none;
+  }
+  .registro-express-shell {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* Navegação discreta: sem deslocamento dos ícones nem animação no hover. */
+.nav button svg {
+  transform: none !important;
+  transition: none !important;
+}
+.nav button:hover svg {
+  transform: none !important;
+}
+.nav button {
+  transition: none !important;
+}
+.nav button:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.045);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav button,
+  .nav button svg {
+    transition: none !important;
+  }
+}
