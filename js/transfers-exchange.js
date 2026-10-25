@@ -444,8 +444,12 @@ function totaisAcumuladosColaborador(campanhaId, colaboradorId){
   const saldos = calcularSaldosAcumulados(campanhaId, mes, ano);
   const categorias = categoriasDaCampanha(campanhaPorId(campanhaId));
   const totais = {};
+  const chaveAtual=chaveMA(mes,ano);
   categorias.forEach(cat=>{
-    totais[cat.key] = Object.values(saldos[colaboradorId]?.[cat.key]||{}).reduce((a,x)=>a+x.creditos,0);
+    // Usa o saldo efetivamente disponível no mês atual, já com excedente transportado,
+    // transferências e materiais consumidos nos resgates. Somar "creditos" históricos
+    // recontava valores de meses anteriores e podia devolver cartelas já resgatadas.
+    totais[cat.key] = saldos[colaboradorId]?.[cat.key]?.[chaveAtual]?.totalDisponivel || 0;
   });
   return totais;
 }
@@ -626,7 +630,8 @@ function renderTabelaRanking(resultados, completa, mes, ano){
     </tr></thead>
     <tbody>
       ${resultados.map(r=>{
-        const kits = cfgTroca ? kitsDisponiveis(campanha, r.totaisAcumulados) : 0;
+        const kits = cfgTroca ? kitsDisponiveis(campanha, r.totais) : 0;
+        const itensDisponiveis = kits * (Number(cfgTroca && cfgTroca.cartelasPorKit) || 1);
         return `
         <tr>
           <td class="ranking-position-cell">${r.posicao? `<span class="ranking-position-content"><b>${r.posicao}º</b>${r.posicao<=3?`<span class="ranking-medal" aria-hidden="true">${({1:'🥇',2:'🥈',3:'🥉'}[r.posicao]||'')}</span>`:''}</span>` : '<span class="small-note">—</span>'}</td>
@@ -636,7 +641,7 @@ function renderTabelaRanking(resultados, completa, mes, ano){
           <td>${r.mediaReal.toFixed(0)}%</td>
           ${completa?`<td>${r.totalMateriais.toLocaleString('pt-BR')}</td>`:''}
           <td>${r.metaAtingida? '<span class="badge badge-green">Atingida</span>' : '<span class="badge badge-grey">Em andamento</span>'}</td>
-          ${cfgTroca?`<td class="table-cell-center">${kits>0?`<span class="badge badge-green">${kits} disponíve${kits===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</td>`:''}
+          ${cfgTroca?`<td class="table-cell-center">${itensDisponiveis>0?`<span class="badge badge-green">${itensDisponiveis} disponíve${itensDisponiveis===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</td>`:''}
           <td>${mes&&ano? `<button class="btn btn-ghost btn-sm" onclick="abrirDetalhesColaborador('${r.colaborador.id}',${mes},${ano})">Detalhes</button>` : ''}</td>
         </tr>`;
       }).join('')}
