@@ -286,10 +286,20 @@ async function handleFirestoreUsage(request, env) {
     throw new HttpError(502, "Não foi possível consultar as métricas do Cloud Monitoring.");
   }
   if (!response.ok) {
-    const detail = response.status === 403
-      ? "A conta de serviço não tem permissão para ler as métricas do projeto."
-      : "O Cloud Monitoring não conseguiu retornar as leituras do Firestore.";
-    throw new HttpError(502, detail);
+    // Preserve o diagnóstico retornado pelo Google sem registrar credenciais ou tokens.
+    const googleError = await response.json().catch(() => ({}));
+    const errorStatus = typeof googleError.error?.status === "string"
+      ? googleError.error.status.slice(0, 80)
+      : "";
+    const errorMessage = typeof googleError.error?.message === "string"
+      ? googleError.error.message.replace(/[\r\n\t]+/g, " ").slice(0, 300)
+      : "";
+    const diagnostic = [
+      `HTTP ${response.status}`,
+      errorStatus,
+      errorMessage,
+    ].filter(Boolean).join("; ");
+    throw new HttpError(502, `Cloud Monitoring recusou a consulta (${diagnostic || "erro sem detalhes retornados"}).`);
   }
   const data = await response.json();
   const readsToday = (data.timeSeries || []).reduce((total, series) => total + (series.points || []).reduce((subtotal, point) => {

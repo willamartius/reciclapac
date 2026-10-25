@@ -254,6 +254,58 @@ test('GET /firestore-usage autoriza o UID listado sem consultar o Firestore', as
   }
 });
 
+test('GET /firestore-usage mostra diagnóstico seguro retornado pelo Cloud Monitoring', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, options = {}) => {
+    const url = String(input);
+    if (url.includes('securetoken@system.gserviceaccount.com')) {
+      return new Response(JSON.stringify({ keys: [TEST_FIREBASE_JWK] }), {
+        status: 200, headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (url === 'https://oauth2.googleapis.com/token') {
+      return new Response(JSON.stringify({ access_token: 'test-monitoring-access-token' }), {
+        status: 200, headers: { 'content-type': 'application/json' },
+      });
+    }
+    assert.match(url, /monitoring\.googleapis\.com\/v3\/projects\/apac-reciclar\/timeSeries/);
+    assert.equal(options.headers.Authorization, 'Bearer test-monitoring-access-token');
+    return new Response(JSON.stringify({
+      error: {
+        code: 403,
+        status: 'PERMISSION_DENIED',
+        message: 'Cloud Monitoring API has not been used in project apac-reciclar or it is disabled.',
+      },
+    }), { status: 403, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    const monitoringPrivateKey = TEST_FIREBASE_PRIVATE_KEY.export({ type: 'pkcs8', format: 'pem' });
+    const req = new Request('https://worker.local/firestore-usage', {
+      method: 'GET',
+      headers: {
+        Origin: 'https://reciclapac.com.br',
+        Authorization: 'Bearer ' + createFirebaseIdToken(),
+      },
+    });
+    const res = await worker.fetch(req, {
+      ...TEST_ENV,
+      FIRESTORE_USAGE_ADMIN_UIDS: TEST_FIREBASE_UID,
+      GCP_MONITORING_SERVICE_ACCOUNT_JSON: JSON.stringify({
+        client_email: 'monitor@example.iam.gserviceaccount.com',
+        private_key: monitoringPrivateKey,
+      }),
+    });
+    assert.equal(res.status, 502);
+    const data = await res.json();
+    assert.match(data.error, /HTTP 403/);
+    assert.match(data.error, /PERMISSION_DENIED/);
+    assert.match(data.error, /API has not been used/);
+    assert.doesNotMatch(data.error, /test-monitoring-access-token|PRIVATE KEY/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('GET /firestore-usage recusa UID não listado sem consultar o Firestore', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input) => {
