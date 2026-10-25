@@ -64,12 +64,6 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
           const buttons = [...document.querySelectorAll('.nav button')];
           return buttons[1].getBoundingClientRect().top - buttons[0].getBoundingClientRect().bottom;
         })(),
-        navButtonGap: (() => {
-          const buttons = [...document.querySelectorAll('.nav button')];
-          const first = buttons[0].getBoundingClientRect();
-          const second = buttons[1].getBoundingClientRect();
-          return second.top - first.bottom;
-        })(),
         accountSummaryTextAlign: getComputedStyle(document.querySelector('.account-summary')).textAlign,
         accountNameTextAlign: getComputedStyle(document.querySelector('.account-name')).textAlign,
         accountName: rect(document.querySelector('.account-name')),
@@ -89,6 +83,11 @@ test('layout desktop: rodapé não cobre a navegação e conteúdo usa a largura
       `painel lateral fora da coluna esperada: ${JSON.stringify(metrics.sidebar)}`);
     assert.equal(metrics.sidebarOverflowY, 'hidden',
       'a navegação lateral não deve ter rolagem no desktop');
+    const expectedGap = viewport.height <= 500 ? 1 : viewport.height <= 640 ? 3 : viewport.height <= 760 ? 6 : 10;
+    assert.equal(metrics.navGap, expectedGap,
+      `o espaçamento do menu deve ser ${expectedGap}px em ${viewport.width}x${viewport.height}`);
+    assert.ok(metrics.navButtonGap >= expectedGap - 1,
+      'os itens do menu não podem ficar visualmente colados');
     assert.ok(metrics.accountName.bottom <= metrics.accountButton.top,
       'o botão Sair deve ficar abaixo do nome do perfil');
     assert.equal(metrics.hasAccountIcon, false,
