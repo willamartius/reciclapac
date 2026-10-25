@@ -34,7 +34,7 @@ test('saldo usado no formulário de resgate é o disponível no mês atual, não
     chaveMA: (mes, ano) => String(ano) + '-' + String(mes).padStart(2, '0'),
   };
   vm.createContext(sandbox);
-  vm.runInContext(helper + '\\nglobalThis.calcularTotais = totaisAcumuladosColaborador;', sandbox);
+  vm.runInContext(helper + '\nglobalThis.calcularTotais = totaisAcumuladosColaborador;', sandbox);
 
   assert.deepEqual(
     JSON.parse(JSON.stringify(sandbox.calcularTotais('campanha1', 'colaborador1'))),
@@ -44,12 +44,14 @@ test('saldo usado no formulário de resgate é o disponível no mês atual, não
 
 test('ranking calcula kits disponíveis com os mesmos totais do período usados nos detalhes', () => {
   const ranking = extractFunction(transfers, 'renderTabelaRanking');
-  assert.match(ranking, /kitsDisponiveis\\(campanha, r\\.totais\\)/);
-  assert.doesNotMatch(ranking, /kitsDisponiveis\\(campanha, r\\.totaisAcumulados\\)/);
+  assert.match(ranking, /kitsDisponiveis\(campanha, r\.totais\)/);
+  assert.doesNotMatch(ranking, /kitsDisponiveis\(campanha, r\.totaisAcumulados\)/);
+  assert.match(ranking, /itensDisponiveis = kits \* \(Number\(cfgTroca && cfgTroca\.cartelasPorKit\) \|\| 1\)/);
+  assert.match(ranking, /\$\{itensDisponiveis\} disponíve/);
 });
 
 test('saldo disponível no formulário continua sendo calculado pela função central de saldo acumulado', () => {
   const helper = extractFunction(transfers, 'totaisAcumuladosColaborador');
-  assert.match(helper, /calcularSaldosAcumulados\\(campanhaId, mes, ano\\)/);
-  assert.match(helper, /\\[chaveAtual\\]\\?\\.totalDisponivel/);
+  assert.match(helper, /calcularSaldosAcumulados\(campanhaId, mes, ano\)/);
+  assert.match(helper, /\[chaveAtual\]\?\.totalDisponivel/);
 });
