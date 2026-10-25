@@ -2,7 +2,7 @@
 (function(){
   const STORAGE_KEY='reciclapac:firestore-read-monitor:v1', LIMIT=50000;
   const nomes={dashboard:'Painel geral',colaboradores:'Colaboradores',entregas:'Entregas','registro-express':'Registro express',ranking:'Ranking mensal',historico:'Histórico',relatorios:'Relatórios',lixeira:'Itens apagados',config:'Configurações',inicializacao:'Carregamento inicial',rankingPublico:'Sincronização dos rankings',listener:'Listeners em tempo real',outros:'Outras operações'};
-  let ultimoErro='';
+  let ultimoErro='', renderTimer=null;
   function diaLocal(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
   function ler(){try{const v=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');return v&&typeof v==='object'?v:{}}catch{return {}}}
   function salvar(v){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(v))}catch{}}
@@ -21,6 +21,6 @@
   async function carregarOficiais(){const status=document.getElementById('firestoreMonitorOfficialStatus');if(status)status.textContent='Consultando métricas oficiais…';try{if(!FIREBASE_AUTH||!FIREBASE_AUTH.currentUser)throw new Error('Entre com uma conta administradora para consultar as métricas.');const token=await FIREBASE_AUTH.currentUser.getIdToken(),r=await fetch('https://reciclapac-drive-auth.reciclapac.workers.dev/firestore-usage',{method:'GET',headers:{Authorization:'Bearer '+token}}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Consulta indisponível (HTTP '+r.status+').');window.FIRESTORE_USAGE_OFFICIAL=Object.assign({},data,{ok:true});ultimoErro='';}catch(e){window.FIRESTORE_USAGE_OFFICIAL={ok:false,message:e.message||'Não foi possível consultar métricas oficiais.'};ultimoErro=e.message||'Falha ao consultar métricas oficiais.';}render();const s=document.getElementById('firestoreMonitorOfficialStatus');if(s)s.textContent=window.FIRESTORE_USAGE_OFFICIAL.ok?'Métricas oficiais atualizadas.':window.FIRESTORE_USAGE_OFFICIAL.message;}
   function limpar(){const d=ler();delete d[diaLocal()];salvar(d);render();}
   window.renderMonitoramentoFirestore=render;window.atualizarMonitoramentoFirestore=render;window.limparMonitoramentoFirestore=limpar;window.carregarMetricasOficiaisFirestore=carregarOficiais;
-  document.addEventListener('reciclapac:firestore-usage-updated',function(){if(typeof STATE!=='undefined'&&STATE.view==='config'&&STATE.isAdmin)render();});
+  document.addEventListener('reciclapac:firestore-usage-updated',function(){if(typeof STATE!=='undefined'&&STATE.view==='config'&&STATE.isAdmin&&!renderTimer)renderTimer=setTimeout(function(){renderTimer=null;render();},1000);});
   instalar();
 })();
