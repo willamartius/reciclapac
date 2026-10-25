@@ -631,6 +631,7 @@ function renderTabelaRanking(resultados, completa, mes, ano){
     <tbody>
       ${resultados.map(r=>{
         const kits = cfgTroca ? kitsDisponiveis(campanha, r.totais) : 0;
+        const itensDisponiveis = kits * (Number(cfgTroca && cfgTroca.cartelasPorKit) || 1);
         return `
         <tr>
           <td class="ranking-position-cell">${r.posicao? `<span class="ranking-position-content"><b>${r.posicao}º</b>${r.posicao<=3?`<span class="ranking-medal" aria-hidden="true">${({1:'🥇',2:'🥈',3:'🥉'}[r.posicao]||'')}</span>`:''}</span>` : '<span class="small-note">—</span>'}</td>
@@ -640,7 +641,7 @@ function renderTabelaRanking(resultados, completa, mes, ano){
           <td>${r.mediaReal.toFixed(0)}%</td>
           ${completa?`<td>${r.totalMateriais.toLocaleString('pt-BR')}</td>`:''}
           <td>${r.metaAtingida? '<span class="badge badge-green">Atingida</span>' : '<span class="badge badge-grey">Em andamento</span>'}</td>
-          ${cfgTroca?`<td class="table-cell-center">${kits>0?`<span class="badge badge-green">${kits} disponíve${kits===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</td>`:''}
+          ${cfgTroca?`<td class="table-cell-center">${itensDisponiveis>0?`<span class="badge badge-green">${itensDisponiveis} disponíve${itensDisponiveis===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</td>`:''}
           <td>${mes&&ano? `<button class="btn btn-ghost btn-sm" onclick="abrirDetalhesColaborador('${r.colaborador.id}',${mes},${ano})">Detalhes</button>` : ''}</td>
         </tr>`;
       }).join('')}
