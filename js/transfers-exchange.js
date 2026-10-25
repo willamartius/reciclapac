@@ -630,7 +630,7 @@ function renderTabelaRanking(resultados, completa, mes, ano){
     </tr></thead>
     <tbody>
       ${resultados.map(r=>{
-        const kits = cfgTroca ? kitsDisponiveis(campanha, r.totaisAcumulados) : 0;
+        const kits = cfgTroca ? kitsDisponiveis(campanha, r.totais) : 0;
         return `
         <tr>
           <td class="ranking-position-cell">${r.posicao? `<span class="ranking-position-content"><b>${r.posicao}º</b>${r.posicao<=3?`<span class="ranking-medal" aria-hidden="true">${({1:'🥇',2:'🥈',3:'🥉'}[r.posicao]||'')}</span>`:''}</span>` : '<span class="small-note">—</span>'}</td>
