@@ -678,7 +678,7 @@ function confirmarExcluirColaborador(id){
 }
 async function excluirColaborador(id){
   if(!exigirAdmin()) return;
-  if(!await moverRegistroParaLixeira('colaboradores',id)){ alert('Não foi possível mover o colaborador para Itens apagados. Atualize a página e tente novamente.'); return; }
+  if(!await moverRegistroParaLixeira('colaboradores',id)){ mostrarErroOperacao(formatarMensagemErroFirestore(STORAGE_ERRORS.get('colaboradores'),'Não foi possível mover o colaborador para Itens apagados.')); return; }
   fecharModal(); renderApp();
 }
 function abrirImportarCsv(){
@@ -985,7 +985,7 @@ function confirmarExcluirEntrega(id){
 }
 async function excluirEntrega(id){
   if(!exigirAdmin()) return;
-  if(!await moverRegistroParaLixeira('entregas',id)){ alert('Não foi possível mover a entrega para Itens apagados. Atualize a página e tente novamente.'); return; }
+  if(!await moverRegistroParaLixeira('entregas',id)){ mostrarErroOperacao(formatarMensagemErroFirestore(STORAGE_ERRORS.get('entregas'),'Não foi possível mover a entrega para Itens apagados.')); return; }
   fecharModal(); renderApp();
 }
 function renderSaldoTransportado(mes,ano){
