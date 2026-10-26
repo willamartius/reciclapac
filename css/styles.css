@@ -191,6 +191,7 @@ select:disabled{background-color:#F1F4F1;color:#87958B;cursor:not-allowed;opacit
 .btn-ghost{background:transparent;color:var(--text-muted);}
 .btn-ghost:hover{color:var(--text);}
 .btn-danger{background:#fff;border:1.5px solid var(--vermelho);color:var(--vermelho);}
+.btn-danger:hover{background:#fee8e6;border-color:#d92d20;color:#b42318;}
 .btn-sm{padding:6px 11px;font-size:12.5px;border-radius:8px;}
 .btn-block{width:100%;justify-content:center;}
 .btn:disabled{opacity:.45;cursor:not-allowed;}
