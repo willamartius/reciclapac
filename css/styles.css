@@ -894,8 +894,8 @@ select{text-overflow:ellipsis;}
   }
   .nav button {
     flex: 0 0 auto;
-    min-height: 40px;
-    padding: 9px 12px;
+    min-height: 38px;
+    padding: 7px 12px;
     gap: 10px;
     transition: background .15s;
   }
@@ -948,4 +948,16 @@ select{text-overflow:ellipsis;}
   #viewContent > .card, #viewContent > .grid, #viewContent > .podium-wrap,
   #viewContent > .dashboard-ranking-table, .registro-express-shell { max-width:none; }
   html, body, #app, .main, #viewContent { overflow-anchor:none; }
+}
+
+/* Em telas de notebook, manter o botão Sair visível sem exigir zoom do navegador. */
+@media (min-width: 921px) and (max-height: 800px) {
+  .sidebar { padding-top: 12px; padding-bottom: 12px; }
+  .brand { padding-bottom: 10px; margin-bottom: 8px; }
+  .nav { gap: 4px; }
+  .nav button { min-height: 34px; padding-top: 5px; padding-bottom: 5px; }
+  .nav .nav-help { margin-top: 2px; padding-top: 7px; }
+  .sidebar-foot { padding-top: 7px; }
+  .admin-pill { gap: 4px; padding: 6px; }
+  .admin-pill > button:last-child { min-height: 28px; }
 }
