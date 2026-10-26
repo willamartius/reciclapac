@@ -138,6 +138,28 @@ let rankingPublicoUltimoMesSincronizado = '';
 let rankingsPublicosUnsubscribe = null;
 let manutencaoPublicaUnsubscribe = null;
 let senhaSolicitacaoTrocaUnsubscribe = null;
+function formatarMensagemErroFirestore(erro, fallback='Não foi possível concluir a operação. Tente novamente.'){
+  const codigo=String(erro&&erro.code||'').toLowerCase();
+  if(codigo.includes('resource-exhausted') || /quota|quota exceeded|resource exhausted/i.test(String(erro&&erro.message||''))){
+    return 'O limite de uso do Firestore foi atingido. Esta operação não foi concluída. Aguarde a renovação da quota e tente novamente.';
+  }
+  if(codigo.includes('permission-denied') || codigo.includes('unauthenticated')){
+    return 'O Firebase recusou esta operação por falta de permissão ou sessão válida. Entre novamente com uma conta autorizada e tente de novo.';
+  }
+  if(codigo.includes('unavailable') || codigo.includes('deadline-exceeded') || codigo.includes('network')){
+    return 'O Firestore está temporariamente indisponível ou a conexão falhou. Nenhuma alteração foi confirmada; verifique a conexão e tente novamente.';
+  }
+  if(erro && typeof erro.message==='string' && erro.message.trim()) return erro.message;
+  return fallback;
+}
+function mostrarErroOperacao(mensagem){
+  const texto=String(mensagem||'Não foi possível concluir a operação. Tente novamente.');
+  if(typeof abrirModal==='function'){
+    abrirModal(`<div class="modal-head"><h3>Não foi possível concluir</h3><button class="modal-close" type="button" onclick="fecharModal()" aria-label="Fechar">${icon('x')}</button></div><p class="auth-error" role="alert">${escapeHtml(texto)}</p><div class="modal-actions"><button class="btn btn-outline btn-block" type="button" onclick="fecharModal()">Entendi</button></div>`);
+    return;
+  }
+  console.error(texto);
+}
 function serializarEstavel(valor){
   if(Array.isArray(valor)) return `[${valor.map(serializarEstavel).join(',')}]`;
   if(valor && typeof valor==='object'){
@@ -290,6 +312,7 @@ async function storageDeleteRecord(key,id){
     return true;
   }catch(e){
     console.error('Erro ao excluir registro',key,id,e);
+    STORAGE_ERRORS.set(key,e);
     return false;
   }
 }
@@ -342,6 +365,7 @@ async function moverRegistroParaLixeira(colecao,id){
     return true;
   }catch(erro){
     console.error('Erro ao mover registro para a lixeira',colecao,id,erro);
+    STORAGE_ERRORS.set(colecao,erro);
     return false;
   }
 }
