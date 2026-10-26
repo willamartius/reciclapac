@@ -431,7 +431,7 @@ async function excluirTransferencia(id){
   const alvo=STATE.transferencias.find(t=>t.id===id);
   const ids=alvo&&alvo.vinculoId?STATE.transferencias.filter(t=>t.vinculoId===alvo.vinculoId).map(t=>t.id):[id];
   for(const registroId of ids){
-    if(!await moverRegistroParaLixeira('transferencias',registroId)){ alert('Não foi possível mover a transferência para Itens apagados. Atualize a página e tente novamente.'); return; }
+    if(!await moverRegistroParaLixeira('transferencias',registroId)){ mostrarErroOperacao(formatarMensagemErroFirestore(STORAGE_ERRORS.get('transferencias'),'Não foi possível mover a transferência para Itens apagados.')); return; }
   }
   fecharModal(); renderApp();
 }
@@ -562,7 +562,7 @@ function confirmarExcluirTroca(id){
 }
 async function excluirTroca(id){
   if(!exigirAdmin()) return;
-  if(!await moverRegistroParaLixeira('trocas',id)){ alert('Não foi possível mover o resgate para Itens apagados. Atualize a página e tente novamente.'); return; }
+  if(!await moverRegistroParaLixeira('trocas',id)){ mostrarErroOperacao(formatarMensagemErroFirestore(STORAGE_ERRORS.get('trocas'),'Não foi possível mover o resgate para Itens apagados.')); return; }
   fecharModal(); renderApp();
 }
 window.confirmarExcluirTroca=confirmarExcluirTroca; window.excluirTroca=excluirTroca;
