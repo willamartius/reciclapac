@@ -170,3 +170,16 @@ test('renderização das tabelas ocorre após montar a seção, sem duplicação
   assert.doesNotMatch(main, /if\(STATE\.view==='entregas'\) setTimeout\(renderTabelaEntregas,0\)/);
   assert.match(read('css/styles.css'), /\.nav button:hover svg\{opacity:1;\}/);
 });
+
+
+test('monitoramento distingue estimativa agregada das métricas oficiais e usa endpoint centralizado', () => {
+  const monitor = read('js/monitoramento.js');
+  const worker = read('cloudflare/drive-auth/src/index.js');
+  assert.match(monitor, /firestore-usage-estimate/);
+  assert.match(monitor, /Estimativa agregada entre dispositivos/);
+  assert.match(monitor, /não substitui métricas oficiais/);
+  assert.match(worker, /async function handleFirestoreUsageEstimate/);
+  assert.match(worker, /requireFirestoreUsageAdmin\(idToken, env\)/);
+  assert.match(worker, /FIRESTORE_ESTIMATE_PREFIX/);
+  assert.match(worker, /expirationTtl: FIRESTORE_ESTIMATE_TTL/);
+});
