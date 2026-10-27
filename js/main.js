@@ -422,9 +422,12 @@ function renderConfig(){
 
     <div class="section-title">Página pública</div>
     <div class="card">
-      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;color:var(--text);font-size:14px;">
-        <input id="manutencaoPublicaCheckbox" type="checkbox" ${STATE.manutencaoPublica?'checked':''} ${STATE.salvandoManutencaoPublica?'disabled':''} onchange="alterarManutencaoPublica(this.checked)" style="width:auto;margin-top:3px;">
+      <label class="maintenance-toggle-row">
         <span><b>Exibir aviso de manutenção</b><span class="small-note" style="display:block;font-weight:400;margin-top:4px;">Substitui temporariamente o ranking público por um aviso de manutenção. O acesso administrativo permanece disponível.</span></span>
+        <span class="toggle-switch">
+          <input id="manutencaoPublicaCheckbox" type="checkbox" ${STATE.manutencaoPublica?'checked':''} ${STATE.salvandoManutencaoPublica?'disabled':''} onchange="alterarManutencaoPublica(this.checked)" role="switch" aria-label="Exibir aviso de manutenção">
+          <span class="toggle-switch-track" aria-hidden="true"></span>
+        </span>
       </label>
       <p id="manutencaoPublicaErro" class="auth-error" role="alert" ${STATE.erroManutencaoPublica?'':'hidden'}>${escapeHtml(STATE.erroManutencaoPublica)}</p>
     </div>
