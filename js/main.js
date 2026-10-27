@@ -482,10 +482,12 @@ function renderConfig(){
 
     <div class="card" style="display:grid;gap:18px;">
       <section class="public-notice-editor">
+        <h3>Manutenção</h3>
         <div class="field"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label><textarea id="avisoManutencaoPublicaInput" rows="3" maxlength="1000" placeholder="Opcional: aparece abaixo do aviso padrão">${escapeHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</textarea></div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('manutencao')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('manutencao')">Salvar</button></div>
       </section>
       <section class="public-notice-editor">
+        <h3>Ranking público</h3>
         <div class="field"><label for="avisoRankingPublicoInput">Mensagem extra no ranking público</label><textarea id="avisoRankingPublicoInput" rows="3" maxlength="1000" placeholder="Opcional: aparece acima dos filtros do ranking">${escapeHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</textarea></div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('ranking')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('ranking')">Salvar</button></div>
       </section>
