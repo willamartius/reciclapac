@@ -207,8 +207,8 @@ test('Configurações administrativas têm abas, mantêm alvos de funções e do
   assert.match(views, /selecionarAbaConfiguracoes\('perfil'\)/);
   for (const id of ['filtroStatusCampanha','tabelaCampanhasWrap','manutencaoPublicaCheckbox','cardBackupGoogleDrive','firestoreMonitorContent']) assert.ok(main.includes('id="' + id + '"'), 'preserva o alvo ' + id);
   assert.match(monitor, /reciclapac:firestore-reference-plan:v1/);
-  assert.match(monitor, /Spark \(gratuito\)/);
-  assert.match(monitor, /Blaze \(pague conforme o uso\)/);
+  assert.match(monitor, /<option value="spark"/);
+  assert.match(monitor, /<option value="blaze"/);
   assert.match(privacy, /Política de Privacidade da Cloudflare/);
   assert.doesNotMatch(main, /Sobre a campanha/);
 });
