@@ -120,7 +120,7 @@ test('Área técnica do Firestore é carregada e fica nas Configurações admini
   const monitor = read('js/monitoramento.js');
   const main = read('js/main.js');
   assert.ok(appScripts.includes('js/monitoramento.js'));
-  assert.match(main, /Área técnica/);
+  assert.match(main, /Desenvolvedor/);
   assert.match(main, /firestoreMonitorContent/);
   assert.match(main, /renderMonitoramentoFirestore/);
   assert.match(monitor, /firestore-usage/);
