@@ -396,7 +396,7 @@ async function salvarAvisoPublico(tipo){
   const mostrar=mensagem.length>0;
   const anteriorTexto=STATE[chaveTexto]||'';
   const anteriorMostrar=!!STATE[chaveMostrar];
-  if(erroElemento){erroElemento.hidden=true;erroElemento.textContent='';}
+  if(erroElemento){erroElemento.textContent='';}
   try{
     if(STORAGE_MODE==='firestore'){
       await FIREBASE_DB.collection('reciclar-apac-public-settings').doc('maintenance').set({
@@ -412,11 +412,11 @@ async function salvarAvisoPublico(tipo){
     }
     STATE[chaveTexto]=mensagem;
     STATE[chaveMostrar]=mostrar;
-    if(erroElemento){erroElemento.textContent=mensagem?'Mensagem salva e ativada.':'Mensagem removida e desativada.';erroElemento.hidden=false;}
+    if(erroElemento){erroElemento.textContent=mensagem?'Mensagem salva e ativada.':'Mensagem removida e desativada.';}
   }catch(erro){
     STATE[chaveTexto]=anteriorTexto;
     STATE[chaveMostrar]=anteriorMostrar;
-    if(erroElemento){erroElemento.textContent=erro.message||'Não foi possível salvar a mensagem.';erroElemento.hidden=false;}
+    if(erroElemento){erroElemento.textContent=erro.message||'Não foi possível salvar a mensagem.';}
     console.error('Erro ao salvar aviso público',erro);
   }finally{}
 }
@@ -488,7 +488,7 @@ function renderConfig(){
         <div class="field"><label for="avisoRankingPublicoInput">Mensagem extra no ranking público</label><textarea id="avisoRankingPublicoInput" rows="3" maxlength="1000" placeholder="Opcional: aparece acima dos filtros do ranking">${escapeHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</textarea></div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('ranking')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('ranking')">Salvar</button></div>
       </section>
-      <p id="avisosPublicosErro" class="small-note" role="status" aria-live="polite" hidden></p>
+      <p id="avisosPublicosErro" class="small-note" role="status" aria-live="polite" style="min-height:1.4em;margin:0;"></p>
     </div>
 
     <div class="section-title">Senha de solicitação de troca</div>
