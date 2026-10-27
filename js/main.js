@@ -1676,8 +1676,16 @@ function carregarRankingsPublicos(){
             throw new Error('A configuração pública de manutenção tem formato inválido.');
           }
           STATE.manutencaoPublica=dados.ativada;
+          STATE.avisoManutencaoPublico=typeof dados.avisoManutencao==='string'?dados.avisoManutencao.slice(0,1000):'';
+          STATE.mostrarAvisoManutencaoPublico=dados.mostrarAvisoManutencao===true;
+          STATE.avisoRankingPublico=typeof dados.avisoRanking==='string'?dados.avisoRanking.slice(0,1000):'';
+          STATE.mostrarAvisoRankingPublico=dados.mostrarAvisoRanking===true;
         }else{
           STATE.manutencaoPublica=false;
+          STATE.avisoManutencaoPublico='';
+          STATE.mostrarAvisoManutencaoPublico=false;
+          STATE.avisoRankingPublico='';
+          STATE.mostrarAvisoRankingPublico=false;
         }
         const primeiraLeitura=!STATE.manutencaoPublicaCarregada;
         STATE.manutencaoPublicaCarregada=true;
