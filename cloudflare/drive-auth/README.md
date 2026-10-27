@@ -71,3 +71,10 @@ npm run dev
 ```
 
 Antes de implantar, confirme o ambiente de destino e os segredos. O workflow de CI valida o código e executa um dry-run; um dry-run bem-sucedido não equivale a uma publicação em produção.
+
+
+## Estimativa agregada de leituras Firestore
+
+A rota `POST /firestore-usage-estimate` recebe estimativas cumulativas por navegador autenticado e as guarda no KV sob um prefixo separado dos tokens OAuth, com expiração de 48 horas. A rota `GET /firestore-usage-estimate` agrega os registros do dia (fuso America/Los_Angeles) e exige UID incluído em `FIRESTORE_USAGE_ADMIN_UIDS`, a mesma allowlist usada pelas métricas oficiais. O frontend envia snapshots no máximo a cada minuto; não são criadas gravações adicionais no Firestore.
+
+Esses números são aproximados: o KV é eventualmente consistente, pode haver atraso, sessões de navegador não identificadas ou diferenças entre a instrumentação local e a cobrança real. Não use essa estimativa como fonte oficial de faturamento. A rota reutiliza o binding KV existente `DRIVE_TOKENS`, com chaves separadas e TTL; não reutiliza os dados dos tokens. Após publicar o Worker, configure `FIRESTORE_USAGE_ADMIN_UIDS` com o UID Firebase do administrador para consultar a agregação.
