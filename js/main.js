@@ -390,14 +390,12 @@ async function salvarAvisoPublico(tipo){
   const campo=document.getElementById(manutencao?'avisoManutencaoPublicaInput':'avisoRankingPublicoInput');
   const mensagem=(campo?.value||'').trim().slice(0,1000);
   const erroElemento=document.getElementById('avisosPublicosErro');
-  const botao=document.querySelector('[onclick="salvarAvisoPublico(\\''+tipo+'\\')"]');
   const chaveTexto=manutencao?'avisoManutencaoPublico':'avisoRankingPublico';
   const chaveMostrar=manutencao?'mostrarAvisoManutencaoPublico':'mostrarAvisoRankingPublico';
   const campoFirestore=manutencao?'avisoManutencao':'avisoRanking';
   const mostrar=mensagem.length>0;
   const anteriorTexto=STATE[chaveTexto]||'';
   const anteriorMostrar=!!STATE[chaveMostrar];
-  if(botao) botao.disabled=true;
   if(erroElemento){erroElemento.hidden=true;erroElemento.textContent='';}
   try{
     if(STORAGE_MODE==='firestore'){
@@ -420,7 +418,7 @@ async function salvarAvisoPublico(tipo){
     STATE[chaveMostrar]=anteriorMostrar;
     if(erroElemento){erroElemento.textContent=erro.message||'Não foi possível salvar a mensagem.';erroElemento.hidden=false;}
     console.error('Erro ao salvar aviso público',erro);
-  }finally{if(botao) botao.disabled=false;}
+  }finally{}
 }
 window.limparAvisoPublico=limparAvisoPublico;
 window.salvarAvisoPublico=salvarAvisoPublico;
