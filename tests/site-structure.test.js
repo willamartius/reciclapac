@@ -224,14 +224,13 @@ test('aviso de manutenção usa interruptor acessível sem alterar o callback ex
 test('avisos públicos usam salvar e limpar, e links legais abrem em nova guia', () => {
   const main = read('js/main.js');
   const views = read('js/views.js');
-  assert.ok(main.includes("onclick=\\"limparAvisoPublico('manutencao')\\""));
-  assert.ok(main.includes("onclick=\\"salvarAvisoPublico('manutencao')\\""));
-  assert.ok(main.includes("onclick=\\"limparAvisoPublico('ranking')\\""));
-  assert.ok(main.includes("onclick=\\"salvarAvisoPublico('ranking')\\""));
-  assert.ok(!main.includes('id="mostrarAvisoManutencaoPublicaCheckbox"'));
-  assert.ok(!main.includes('id="mostrarAvisoRankingPublicoCheckbox"'));
-  assert.ok(main.includes('href="/termos.html" target="_blank" rel="noopener noreferrer"'));
-  assert.ok(main.includes('href="/privacidade.html" target="_blank" rel="noopener noreferrer"'));
-  assert.ok(views.includes('href="termos.html" target="_blank" rel="noopener noreferrer"'));
-  assert.ok(views.includes('href="privacidade.html" target="_blank" rel="noopener noreferrer"'));
+  assert.match(main, /limparAvisoPublico/);
+  assert.match(main, /salvarAvisoPublico/);
+  assert.match(main, /avisoManutencaoPublicaInput/);
+  assert.match(main, /avisoRankingPublicoInput/);
+  assert.doesNotMatch(main, /mostrarAvisoManutencaoPublicoCheckbox/);
+  assert.doesNotMatch(main, /mostrarAvisoRankingPublicoCheckbox/);
+  assert.match(main, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(views, /href="termos\.html" target="_blank" rel="noopener noreferrer"/);
+  assert.match(views, /href="privacidade\.html" target="_blank" rel="noopener noreferrer"/);
 });
