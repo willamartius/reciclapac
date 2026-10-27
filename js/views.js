@@ -272,6 +272,7 @@ function renderRankingPublico(){
           <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
         </div>
       </div>
+      ${STATE.mostrarAvisoRankingPublico&&STATE.avisoRankingPublico?`<div class="public-configured-notice" role="status">${escapeHtml(STATE.avisoRankingPublico)}</div>`:''}
       ${STATE.erroRankingPublico? `<p class="auth-error" role="alert">${escapeHtml(STATE.erroRankingPublico)}</p>`:''}
       ${STATE.rankingsPublicos.length? `
         <div class="public-ranking-filters">
