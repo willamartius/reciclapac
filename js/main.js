@@ -539,7 +539,7 @@ function renderConfig(){
         <li><a href="https://firebase.google.com/docs/projects/billing/firebase-pricing-plans" target="_blank" rel="noopener noreferrer">Planos e preços do Firebase</a></li>
         <li><a href="https://developers.cloudflare.com/workers/" target="_blank" rel="noopener noreferrer">Documentação do Cloudflare Workers</a></li>
         <li><a href="https://developers.google.com/drive/api/guides/about-sdk" target="_blank" rel="noopener noreferrer">Documentação da API do Google Drive</a></li>
-        <li><a href="/termos.html">Termos de uso</a> · <a href="/privacidade.html">Política de privacidade</a></li>
+        <li><a href="/termos.html" target="_blank" rel="noopener noreferrer">Termos de uso</a> · <a href="/privacidade.html" target="_blank" rel="noopener noreferrer">Política de privacidade</a></li>
       </ul>
     </div>
     </div>
