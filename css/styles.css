@@ -989,3 +989,8 @@ select{text-overflow:ellipsis;}
 /* Avisos públicos e respiro entre métricas e recursos. */
 .settings-resources{margin-top:24px!important;}
 .public-configured-notice{margin:14px 0 18px;padding:12px 16px;border:1px solid var(--verde-600);border-left:4px solid var(--verde-600);border-radius:10px;background:var(--surface-2,var(--surface));color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;}
+
+.public-notice-editor{display:grid;gap:10px;padding-bottom:16px;border-bottom:1px solid var(--border-color,var(--border));}
+.public-notice-editor:last-of-type{padding-bottom:0;border-bottom:0;}
+.public-notice-editor h3{margin:0;font-size:1rem;color:var(--verde-900);}
+.public-notice-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
