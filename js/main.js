@@ -1796,9 +1796,6 @@ function carregarRankingsPublicos(){
 const _origRenderApp = renderApp;
 renderApp = function(){
   _origRenderApp();
-  if(STATE.view==='colaboradores') setTimeout(renderTabelaColaboradores,0);
-  if(STATE.view==='entregas') setTimeout(renderTabelaEntregas,0);
-  if(STATE.view==='config') setTimeout(renderTabelaCampanhas,0);
   if(STATE.view==='config' && STATE.isAdmin && typeof renderMonitoramentoFirestore==='function') setTimeout(renderMonitoramentoFirestore,0);
 };
 iniciar();
