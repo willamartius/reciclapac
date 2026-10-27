@@ -183,3 +183,22 @@ test('monitoramento distingue estimativa agregada das métricas oficiais e usa e
   assert.match(worker, /FIRESTORE_ESTIMATE_PREFIX/);
   assert.match(worker, /expirationTtl: FIRESTORE_ESTIMATE_TTL/);
 });
+
+test('Configurações administrativas têm abas, mantêm alvos de funções e documentam serviços usados', () => {
+  const main = read('js/main.js');
+  const views = read('js/views.js');
+  const monitor = read('js/monitoramento.js');
+  const privacy = read('privacidade.html');
+  for (const aba of ['perfil','campanhas','backup','manutencao','tecnica']) {
+    assert.match(main, new RegExp('data-settings-panel="' + aba + '"'));
+    assert.match(main, new RegExp('data-settings-tab="' + aba + '"'));
+  }
+  assert.match(main, /function selecionarAbaConfiguracoes\(aba\)/);
+  assert.match(views, /selecionarAbaConfiguracoes\('perfil'\)/);
+  for (const id of ['filtroStatusCampanha','tabelaCampanhasWrap','manutencaoPublicaCheckbox','cardBackupGoogleDrive','firestoreMonitorContent']) assert.ok(main.includes('id="' + id + '"'), 'preserva o alvo ' + id);
+  assert.match(monitor, /reciclapac:firestore-reference-plan:v1/);
+  assert.match(monitor, /Spark \(gratuito\)/);
+  assert.match(monitor, /Blaze \(pague conforme o uso\)/);
+  assert.match(privacy, /Política de Privacidade da Cloudflare/);
+  assert.doesNotMatch(main, /Sobre a campanha/);
+});
