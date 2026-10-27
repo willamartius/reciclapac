@@ -230,7 +230,7 @@ test('avisos públicos usam salvar e limpar, e links legais abrem em nova guia',
   assert.match(main, /onclick="limparAvisoPublico\('ranking'\)"/);
   assert.match(main, /onclick="salvarAvisoPublico\('ranking'\)"/);
   assert.doesNotMatch(main, /id="mostrarAviso(?:Manutencao|Ranking)PublicoCheckbox"/);
-  assert.match(main, /target="_blank" rel="noopener noreferrer">Termos de uso/);
+  assert.match(main, /href="\\/termos.html" target="_blank" rel="noopener noreferrer">Termos de uso/);
   assert.match(views, /href="termos\.html" target="_blank" rel="noopener noreferrer"/);
   assert.match(views, /href="privacidade\.html" target="_blank" rel="noopener noreferrer"/);
   assert.match(html, /href="termos\.html" target="_blank" rel="noopener noreferrer"/);
