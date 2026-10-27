@@ -378,6 +378,39 @@ function renderLixeira(){
     </table></div>
   </div>`;
 }
+async function salvarAvisosPublicos(){
+  if(!exigirAdmin()) return;
+  const lerTexto=id=>(document.getElementById(id)?.value||'').trim().slice(0,1000);
+  const avisoManutencao=lerTexto('avisoManutencaoPublicaInput');
+  const avisoRanking=lerTexto('avisoRankingPublicoInput');
+  const mostrarManutencao=!!document.getElementById('mostrarAvisoManutencaoPublicaCheckbox')?.checked;
+  const mostrarRanking=!!document.getElementById('mostrarAvisoRankingPublicoCheckbox')?.checked;
+  const erroElemento=document.getElementById('avisosPublicosErro');
+  const botao=document.querySelector('[onclick="salvarAvisosPublicos()"]');
+  const anterior={avisoManutencaoPublico:STATE.avisoManutencaoPublico||'',mostrarAvisoManutencaoPublico:!!STATE.mostrarAvisoManutencaoPublico,avisoRankingPublico:STATE.avisoRankingPublico||'',mostrarAvisoRankingPublico:!!STATE.mostrarAvisoRankingPublico};
+  Object.assign(STATE,{avisoManutencaoPublico:avisoManutencao,mostrarAvisoManutencaoPublico:mostrarManutencao,avisoRankingPublico:avisoRanking,mostrarAvisoRankingPublico:mostrarRanking});
+  if(botao) botao.disabled=true;
+  if(erroElemento){erroElemento.hidden=true;erroElemento.textContent='';}
+  try{
+    if(STORAGE_MODE==='firestore'){
+      await FIREBASE_DB.collection('reciclar-apac-public-settings').doc('maintenance').set({
+        ativada:!!STATE.manutencaoPublica, atualizadoEm:new Date().toISOString(),
+        mostrarAvisoManutencao:mostrarManutencao,avisoManutencao,
+        mostrarAvisoRanking:mostrarRanking,avisoRanking,
+      },{merge:true});
+    }else{
+      Object.assign(STATE.config,{avisoManutencaoPublico:avisoManutencao,mostrarAvisoManutencaoPublico:mostrarManutencao,avisoRankingPublico:avisoRanking,mostrarAvisoRankingPublico:mostrarRanking});
+      if(!await salvarConfig()) throw STORAGE_ERRORS.get('config')||new Error('Não foi possível salvar os avisos públicos.');
+    }
+    if(erroElemento){erroElemento.textContent='Avisos públicos salvos.';erroElemento.hidden=false;erroElemento.classList.remove('auth-error');erroElemento.classList.add('small-note');}
+  }catch(erro){
+    Object.assign(STATE,anterior);
+    if(erroElemento){erroElemento.textContent=erro.message||'Não foi possível salvar os avisos públicos.';erroElemento.hidden=false;}
+    console.error('Erro ao salvar avisos públicos',erro);
+  }finally{if(botao) botao.disabled=false;}
+}
+window.salvarAvisosPublicos=salvarAvisosPublicos;
+
 function renderConfig(){
   if(!STATE.isAdmin){
     return `<div class="card"><div class="empty-state">Esta área é restrita ao administrador.</div></div>`;
@@ -388,7 +421,7 @@ function renderConfig(){
       <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="campanhas" onclick="selecionarAbaConfiguracoes('campanhas')">Campanhas</button>
       <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="backup" onclick="selecionarAbaConfiguracoes('backup')">Backup</button>
       <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="manutencao" onclick="selecionarAbaConfiguracoes('manutencao')">Manutenção</button>
-      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="tecnica" onclick="selecionarAbaConfiguracoes('tecnica')">Área técnica</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="tecnica" onclick="selecionarAbaConfiguracoes('tecnica')">Desenvolvedor</button>
     </div>
     <div class="settings-panel" data-settings-panel="perfil">
     <div class="section-title">Meu perfil</div>
@@ -432,6 +465,15 @@ function renderConfig(){
       <p id="manutencaoPublicaErro" class="auth-error" role="alert" ${STATE.erroManutencaoPublica?'':'hidden'}>${escapeHtml(STATE.erroManutencaoPublica)}</p>
     </div>
 
+    <div class="card" style="display:grid;gap:12px;">
+      <div class="field" style="margin-top:16px;"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label><textarea id="avisoManutencaoPublicaInput" rows="3" maxlength="1000" placeholder="Mensagem opcional exibida abaixo do aviso padrão">${escapeHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</textarea></div>
+      <label class="maintenance-toggle-row"><span><b>Exibir aviso extra na página de manutenção</b><span class="small-note" style="display:block;font-weight:400;margin-top:4px;">Mostra a mensagem acima junto de “Estamos em manutenção”.</span></span><span class="toggle-switch"><input id="mostrarAvisoManutencaoPublicaCheckbox" type="checkbox" ${(STATE.mostrarAvisoManutencaoPublico??STATE.config?.mostrarAvisoManutencaoPublico)?'checked':''} role="switch" aria-label="Exibir aviso extra na página de manutenção"><span class="toggle-switch-track" aria-hidden="true"></span></span></label>
+      <div class="field" style="margin-top:16px;"><label for="avisoRankingPublicoInput">Mensagem extra no ranking público</label><textarea id="avisoRankingPublicoInput" rows="3" maxlength="1000" placeholder="Mensagem opcional exibida no topo do ranking">${escapeHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</textarea></div>
+      <label class="maintenance-toggle-row"><span><b>Exibir aviso no ranking público</b><span class="small-note" style="display:block;font-weight:400;margin-top:4px;">A mensagem aparece no início do ranking, acima dos filtros.</span></span><span class="toggle-switch"><input id="mostrarAvisoRankingPublicoCheckbox" type="checkbox" ${(STATE.mostrarAvisoRankingPublico??STATE.config?.mostrarAvisoRankingPublico)?'checked':''} role="switch" aria-label="Exibir aviso no ranking público"><span class="toggle-switch-track" aria-hidden="true"></span></span></label>
+      <button class="btn btn-primary" type="button" style="margin-top:12px;" onclick="salvarAvisosPublicos()">Salvar avisos públicos</button>
+      <p id="avisosPublicosErro" class="auth-error" role="alert" hidden></p>
+    </div>
+
     <div class="section-title">Senha de solicitação de troca</div>
     <div class="card">
       <p class="small-note">Defina uma senha que será pedida na página pública depois que o colaborador clicar em "Solicitar troca". Deixe em branco para não exigir senha.</p>
@@ -463,7 +505,7 @@ function renderConfig(){
 
     </div>
     <div class="settings-panel" data-settings-panel="tecnica" hidden>
-    <div class="section-title">Área técnica</div>
+    <div class="section-title">Desenvolvedor</div>
     <div class="card" id="firestoreMonitorContent" style="display:grid;gap:12px;">
       <p class="small-note">Preparando o monitoramento de leituras do Firestore…</p>
     </div>
@@ -1634,8 +1676,16 @@ function carregarRankingsPublicos(){
             throw new Error('A configuração pública de manutenção tem formato inválido.');
           }
           STATE.manutencaoPublica=dados.ativada;
+          STATE.avisoManutencaoPublico=typeof dados.avisoManutencao==='string'?dados.avisoManutencao.slice(0,1000):'';
+          STATE.mostrarAvisoManutencaoPublico=dados.mostrarAvisoManutencao===true;
+          STATE.avisoRankingPublico=typeof dados.avisoRanking==='string'?dados.avisoRanking.slice(0,1000):'';
+          STATE.mostrarAvisoRankingPublico=dados.mostrarAvisoRanking===true;
         }else{
           STATE.manutencaoPublica=false;
+          STATE.avisoManutencaoPublico='';
+          STATE.mostrarAvisoManutencaoPublico=false;
+          STATE.avisoRankingPublico='';
+          STATE.mostrarAvisoRankingPublico=false;
         }
         const primeiraLeitura=!STATE.manutencaoPublicaCarregada;
         STATE.manutencaoPublicaCarregada=true;

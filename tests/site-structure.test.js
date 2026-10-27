@@ -120,7 +120,7 @@ test('Área técnica do Firestore é carregada e fica nas Configurações admini
   const monitor = read('js/monitoramento.js');
   const main = read('js/main.js');
   assert.ok(appScripts.includes('js/monitoramento.js'));
-  assert.match(main, /Área técnica/);
+  assert.match(main, /Desenvolvedor/);
   assert.match(main, /firestoreMonitorContent/);
   assert.match(main, /renderMonitoramentoFirestore/);
   assert.match(monitor, /firestore-usage/);
@@ -194,11 +194,21 @@ test('Configurações administrativas têm abas, mantêm alvos de funções e do
     assert.match(main, new RegExp('data-settings-tab="' + aba + '"'));
   }
   assert.match(main, /function selecionarAbaConfiguracoes\(aba\)/);
+  assert.match(main, />Desenvolvedor<\/button>/);
+  assert.match(main, /async function salvarAvisosPublicos\(\)/);
+  assert.match(main, /avisoManutencaoPublicaInput/);
+  assert.match(main, /avisoRankingPublicoInput/);
+  assert.match(views, /public-configured-notice/);
+  assert.match(views, /mostrarAvisoRankingPublico&&STATE\.avisoRankingPublico/);
+  assert.match(views, /mostrarAvisoManutencaoPublico&&STATE\.avisoManutencaoPublico/);
+  assert.match(read('firestore.rules'), /mostrarAvisoManutencao/);
+  assert.match(read('css/styles.css'), /settings-tab\.is-active\{background:var\(--verde-600\);color:#fff/);
+  assert.match(read('css/styles.css'), /toggle-switch input:checked\+\.toggle-switch-track\{background:var\(--verde-600\);/);
   assert.match(views, /selecionarAbaConfiguracoes\('perfil'\)/);
   for (const id of ['filtroStatusCampanha','tabelaCampanhasWrap','manutencaoPublicaCheckbox','cardBackupGoogleDrive','firestoreMonitorContent']) assert.ok(main.includes('id="' + id + '"'), 'preserva o alvo ' + id);
   assert.match(monitor, /reciclapac:firestore-reference-plan:v1/);
-  assert.match(monitor, /Spark \(gratuito\)/);
-  assert.match(monitor, /Blaze \(pague conforme o uso\)/);
+  assert.match(monitor, /<option value="spark"/);
+  assert.match(monitor, /<option value="blaze"/);
   assert.match(privacy, /Política de Privacidade da Cloudflare/);
   assert.doesNotMatch(main, /Sobre a campanha/);
 });

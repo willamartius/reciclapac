@@ -967,7 +967,7 @@ select{text-overflow:ellipsis;}
 .settings-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;padding:5px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2, var(--surface));}
 .settings-tab{flex:1 1 auto;min-height:40px;padding:9px 14px;border:0;border-radius:10px;background:transparent;color:var(--text-muted,var(--text));font:inherit;font-size:13px;font-weight:650;cursor:pointer;transition:background .15s,color .15s;}
 .settings-tab:hover{background:var(--surface);color:var(--text);}
-.settings-tab.is-active{background:var(--primary);color:#fff;box-shadow:0 2px 8px #00000012;}
+.settings-tab.is-active{background:var(--verde-600);color:#fff;box-shadow:0 2px 8px #00000012;}
 .settings-panel[hidden]{display:none!important;}
 .settings-resources ul{padding-left:20px;line-height:1.9;margin-bottom:0;}
 .settings-resources a{color:var(--primary);text-decoration:none;}
@@ -980,8 +980,12 @@ select{text-overflow:ellipsis;}
 .toggle-switch input{position:absolute;width:1px;height:1px;opacity:0;}
 .toggle-switch-track{width:48px;height:28px;border-radius:999px;background:var(--border);transition:background .18s;position:relative;}
 .toggle-switch-track:after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0003;transition:transform .18s;}
-.toggle-switch input:checked+.toggle-switch-track{background:var(--primary);}
+.toggle-switch input:checked+.toggle-switch-track{background:var(--verde-600);}
 .toggle-switch input:checked+.toggle-switch-track:after{transform:translateX(20px);}
 .toggle-switch input:focus-visible+.toggle-switch-track{outline:3px solid var(--primary);outline-offset:3px;}
 .toggle-switch input:disabled+.toggle-switch-track{opacity:.55;cursor:wait;}
 @media(max-width:420px){.maintenance-toggle-row{align-items:flex-start}.toggle-switch{margin-top:2px}}
+
+/* Avisos públicos e respiro entre métricas e recursos. */
+.settings-resources{margin-top:24px!important;}
+.public-configured-notice{margin:14px 0 18px;padding:12px 16px;border:1px solid var(--verde-600);border-left:4px solid var(--verde-600);border-radius:10px;background:var(--surface-2,var(--surface));color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;}

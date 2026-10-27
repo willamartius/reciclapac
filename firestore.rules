@@ -314,10 +314,14 @@ service cloud.firestore {
         || (settingId == 'trocaSenha' && isAdmin());
       allow create, update: if settingId == 'maintenance'
         ? (isAdmin()
-          && request.resource.data.keys().hasOnly(['ativada', 'atualizadoEm'])
+          && request.resource.data.keys().hasOnly(['ativada', 'atualizadoEm', 'mostrarAvisoManutencao', 'avisoManutencao', 'mostrarAvisoRanking', 'avisoRanking'])
           && request.resource.data.keys().hasAll(['ativada', 'atualizadoEm'])
           && request.resource.data.ativada is bool
-          && request.resource.data.atualizadoEm is string)
+          && request.resource.data.atualizadoEm is string
+          && (!('mostrarAvisoManutencao' in request.resource.data) || request.resource.data.mostrarAvisoManutencao is bool)
+          && (!('avisoManutencao' in request.resource.data) || (request.resource.data.avisoManutencao is string && request.resource.data.avisoManutencao.size() <= 1000))
+          && (!('mostrarAvisoRanking' in request.resource.data) || request.resource.data.mostrarAvisoRanking is bool)
+          && (!('avisoRanking' in request.resource.data) || (request.resource.data.avisoRanking is string && request.resource.data.avisoRanking.size() <= 1000)))
         : settingId == 'trocaSenha'
           && isAdmin()
           && request.resource.data.keys().hasOnly(['senha', 'atualizadoEm'])

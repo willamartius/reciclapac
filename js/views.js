@@ -107,7 +107,7 @@ async function alterarManutencaoPublica(ativada){
       await FIREBASE_DB.collection('reciclar-apac-public-settings').doc('maintenance').set({
         ativada,
         atualizadoEm:new Date().toISOString(),
-      });
+      },{merge:true});
     }else{
       STATE.config.manutencaoPublica=ativada;
       if(!await salvarConfig()) throw STORAGE_ERRORS.get('config')||new Error('Não foi possível salvar a configuração local.');
@@ -231,6 +231,7 @@ function renderAvisoManutencaoPublica(){
       </div>
       <h1 class="maintenance-title">Estamos em manutenção</h1>
       <span class="badge badge-amber maintenance-badge">Voltaremos em breve</span>
+      ${STATE.mostrarAvisoManutencaoPublico&&STATE.avisoManutencaoPublico?`<p class="public-configured-notice">${escapeHtml(STATE.avisoManutencaoPublico)}</p>`:'' }
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
         <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
       </div>
@@ -271,6 +272,7 @@ function renderRankingPublico(){
           <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
         </div>
       </div>
+      ${STATE.mostrarAvisoRankingPublico&&STATE.avisoRankingPublico?`<div class="public-configured-notice" role="status">${escapeHtml(STATE.avisoRankingPublico)}</div>`:''}
       ${STATE.erroRankingPublico? `<p class="auth-error" role="alert">${escapeHtml(STATE.erroRankingPublico)}</p>`:''}
       ${STATE.rankingsPublicos.length? `
         <div class="public-ranking-filters">
