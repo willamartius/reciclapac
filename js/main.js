@@ -415,7 +415,6 @@ async function salvarAvisoPublico(tipo){
     STATE[chaveTexto]=mensagem;
     STATE[chaveMostrar]=mostrar;
     if(erroElemento){erroElemento.textContent=mensagem?'Mensagem salva e ativada.':'Mensagem removida e desativada.';erroElemento.hidden=false;}
-    renderApp();
   }catch(erro){
     STATE[chaveTexto]=anteriorTexto;
     STATE[chaveMostrar]=anteriorMostrar;
