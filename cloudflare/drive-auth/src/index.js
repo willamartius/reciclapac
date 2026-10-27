@@ -253,6 +253,57 @@ function pacificDayInterval(now = new Date()) {
   const endTime = new Date(Date.UTC(nextParts.year, nextParts.month - 1, nextParts.day) - nextOffset);
   return { startTime: startTime.toISOString(), endTime: endTime.toISOString() };
 }
+
+const FIRESTORE_ESTIMATE_PREFIX = "firestore-estimate:v1:";
+const FIRESTORE_ESTIMATE_TTL = 172800;
+async function handleFirestoreUsageEstimate(request, env) {
+  const idToken = bearerToken(request);
+  const claims = await verifyFirebaseIdToken(idToken, env);
+  if (request.method === "POST") {
+    let body;
+    try { body = await request.json(); } catch { throw new HttpError(400, "Payload de estimativa inválido."); }
+    const day = typeof body.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.day) ? body.day : "";
+    const deviceId = typeof body.deviceId === "string" && /^[a-f0-9-]{16,64}$/i.test(body.deviceId) ? body.deviceId : "";
+    const total = Number(body.total);
+    const porOperacao = body.porOperacao && typeof body.porOperacao === "object" && !Array.isArray(body.porOperacao) ? body.porOperacao : {};
+    if (!day || !deviceId || !Number.isSafeInteger(total) || total < 0 || total > 10000000) {
+      throw new HttpError(400, "Os dados da estimativa estão fora do formato esperado.");
+    }
+    const clean = {};
+    for (const [key, value] of Object.entries(porOperacao).slice(0, 30)) {
+      if (/^[a-zA-Z0-9_-]{1,40}$/.test(key) && Number.isSafeInteger(Number(value)) && Number(value) >= 0 && Number(value) <= total) clean[key] = Number(value);
+    }
+    const now = new Date();
+    const key = FIRESTORE_ESTIMATE_PREFIX + day + ":" + claims.sub + ":" + deviceId;
+    await env.DRIVE_TOKENS.put(key, JSON.stringify({ day, total, porOperacao: clean, updatedAt: now.toISOString() }), { expirationTtl: FIRESTORE_ESTIMATE_TTL });
+    return json({ ok: true, updatedAt: now.toISOString() });
+  }
+  if (request.method !== "GET") throw new HttpError(405, "Método não permitido.");
+  await requireFirestoreUsageAdmin(idToken, env);
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  let cursor;
+  let total = 0;
+  const porOperacao = {};
+  let dispositivos = 0;
+  do {
+    const page = await env.DRIVE_TOKENS.list({ prefix: FIRESTORE_ESTIMATE_PREFIX + day + ":", cursor, limit: 1000 });
+    for (const item of page.keys || []) {
+      const raw = await env.DRIVE_TOKENS.get(item.name);
+      if (!raw) continue;
+      let record;
+      try { record = JSON.parse(raw); } catch { continue; }
+      if (record.day !== day || !Number.isSafeInteger(record.total) || record.total < 0) continue;
+      total += record.total;
+      dispositivos++;
+      for (const [key, value] of Object.entries(record.porOperacao || {})) {
+        if (Number.isSafeInteger(value) && value >= 0) porOperacao[key] = (porOperacao[key] || 0) + value;
+      }
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return json({ ok: true, day, total: Math.min(total, 1000000000), porOperacao, dispositivos, fetchedAt: new Date().toISOString(), source: "browser-estimates" });
+}
+
 async function handleFirestoreUsage(request, env) {
   const idToken = bearerToken(request);
   await requireFirestoreUsageAdmin(idToken, env);
@@ -544,7 +595,8 @@ export default {
     const protectedRoute = (url.pathname === "/oauth/start" && request.method === "POST")
       || (url.pathname === "/token" && request.method === "POST")
       || (url.pathname === "/link" && request.method === "DELETE")
-      || (url.pathname === "/firestore-usage" && request.method === "GET");
+      || (url.pathname === "/firestore-usage" && request.method === "GET")
+      || (url.pathname === "/firestore-usage-estimate" && ["GET", "POST"].includes(request.method));
     if (!protectedRoute) return json({ error: "Rota não encontrada." }, 404, corsHeaders(request, env));
     if (!originAllowed(request, env)) return json({ error: "Origem não autorizada." }, 403, corsHeaders(request, env));
     try {
@@ -553,6 +605,7 @@ export default {
       if (url.pathname === "/oauth/start") response = await handleOAuthStart(request, env);
       else if (url.pathname === "/token") response = await handleAccessToken(request, env);
       else if (url.pathname === "/firestore-usage") response = await handleFirestoreUsage(request, env);
+      else if (url.pathname === "/firestore-usage-estimate") response = await handleFirestoreUsageEstimate(request, env);
       else response = await handleUnlink(request, env);
       const headers = new Headers(response.headers);
       for (const [key, value] of Object.entries(corsHeaders(request, env))) headers.set(key, value);
