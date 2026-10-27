@@ -231,6 +231,7 @@ function renderAvisoManutencaoPublica(){
       </div>
       <h1 class="maintenance-title">Estamos em manutenção</h1>
       <span class="badge badge-amber maintenance-badge">Voltaremos em breve</span>
+      ${STATE.mostrarAvisoManutencaoPublico&&STATE.avisoManutencaoPublico?`<p class="public-configured-notice">${escapeHtml(STATE.avisoManutencaoPublico)}</p>`:'' }
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
         <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
       </div>
