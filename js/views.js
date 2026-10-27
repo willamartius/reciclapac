@@ -217,8 +217,8 @@ function renderRodapePublico(){
   return `<footer class="public-site-footer" aria-label="Informações legais">
     <span>© ${anoAtual} Reciclapac · Desenvolvido por <a href="https://github.com/willamartius" target="_blank" rel="noopener noreferrer">willamartius</a></span>
     <nav aria-label="Links legais">
-      <a href="termos.html">Termos de Uso</a>
-      <a href="privacidade.html">Política de Privacidade</a>
+      <a href="termos.html" target="_blank" rel="noopener noreferrer">Termos de Uso</a>
+      <a href="privacidade.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>
     </nav>
   </footer>`;
 }
