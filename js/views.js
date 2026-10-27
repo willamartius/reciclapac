@@ -974,6 +974,7 @@ function renderApp(){
     ranking: renderRanking, historico: renderHistorico, relatorios: renderRelatorios, lixeira: renderLixeira, config: renderConfig, 'registro-express': renderRegistroExpress,
   };
   content.innerHTML = renderers[STATE.view] ? renderers[STATE.view]() : '';
+  if(STATE.view==='config' && STATE.isAdmin) selecionarAbaConfiguracoes('perfil');
   aprimorarSeletoresNativos(content);
   if(STATE.view==='colaboradores') renderTabelaColaboradores();
   if(STATE.view==='entregas') renderTabelaEntregas();
