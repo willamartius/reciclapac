@@ -465,6 +465,7 @@ function renderConfig(){
       <p id="manutencaoPublicaErro" class="auth-error" role="alert" ${STATE.erroManutencaoPublica?'':'hidden'}>${escapeHtml(STATE.erroManutencaoPublica)}</p>
     </div>
 
+    <div class="card" style="display:grid;gap:12px;">
       <div class="field" style="margin-top:16px;"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label><textarea id="avisoManutencaoPublicaInput" rows="3" maxlength="1000" placeholder="Mensagem opcional exibida abaixo do aviso padrão">${escapeHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</textarea></div>
       <label class="maintenance-toggle-row"><span><b>Exibir aviso extra na página de manutenção</b><span class="small-note" style="display:block;font-weight:400;margin-top:4px;">Mostra a mensagem acima junto de “Estamos em manutenção”.</span></span><span class="toggle-switch"><input id="mostrarAvisoManutencaoPublicaCheckbox" type="checkbox" ${(STATE.mostrarAvisoManutencaoPublico??STATE.config?.mostrarAvisoManutencaoPublico)?'checked':''} role="switch" aria-label="Exibir aviso extra na página de manutenção"><span class="toggle-switch-track" aria-hidden="true"></span></span></label>
       <div class="field" style="margin-top:16px;"><label for="avisoRankingPublicoInput">Mensagem extra no ranking público</label><textarea id="avisoRankingPublicoInput" rows="3" maxlength="1000" placeholder="Mensagem opcional exibida no topo do ranking">${escapeHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</textarea></div>
