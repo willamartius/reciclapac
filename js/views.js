@@ -844,16 +844,19 @@ function abrirDetalhesRankingPublico(indice){
   abrirModal(`
     <div class="modal-head"><h3>${escapeHtml(item.nome)} — ${nomeMes(ranking.mes)}/${ranking.ano}</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
     <p class="small-note" style="margin-top:-6px;">Como é calculada a pontuação: a posição no ranking é definida pela média do percentual de cumprimento das 6 categorias. Para o cálculo da média, cada categoria é limitada a 100%, evitando que resultados acima da meta compensem categorias abaixo dela.</p>
-    <div class="table-wrap public-ranking-table">${renderTabelaDetalhesMateriais(categorias)}
+    <div class="table-wrap public-ranking-table">${renderTabelaDetalhesMateriais(categorias, !((campanhaPorId(ranking.campanhaId)||{}).trocaCartela||{}).ativo)}
     </div>
     <p class="small-note" style="margin-top:12px;">Sobre os valores: o percentual de cumprimento mostra o resultado real de cada categoria e pode ultrapassar 100% quando a meta é superada. Os indicadores ao lado das categorias representam saldos transferidos de meses anteriores ou para o mês seguinte.</p>
     <p class="small-note material-balance-legend"><span class="material-balance-legend-item"><span class="material-balance-swatch previous" aria-hidden="true"></span>Saldo mês anterior</span><span class="material-balance-legend-item"><span class="material-balance-swatch next" aria-hidden="true"></span>Saldo mês seguinte</span></p>
   `, true, 'public-details');
 }
 window.abrirDetalhesRankingPublico=abrirDetalhesRankingPublico;
-function renderTabelaDetalhesMateriais(categorias){
+function renderTabelaDetalhesMateriais(categorias, ordemPublicaFixa=false){
   const formatarQuantidade=valor=>valor.toLocaleString('pt-BR',{maximumFractionDigits:2});
-  return `<table class="material-detail-table"><thead><tr><th>Categoria</th><th class="material-markers-column">Excedente</th><th>Disponível</th><th>META MENSAL</th><th>Cumprimento %</th></tr></thead>
+  const cabecalho=ordemPublicaFixa
+    ?'<th>Categoria</th><th>NECESSÁRIO</th><th>Disponível</th><th class="material-markers-column">Excedente</th><th>Cumprimento %</th>'
+    :'<th>Categoria</th><th class="material-markers-column">Excedente</th><th>Disponível</th><th>META MENSAL</th><th>Cumprimento %</th>';
+  return `<table class="material-detail-table"><thead><tr>${cabecalho}</tr></thead>
     <tbody>${categorias.map(cat=>{
       const cumprimento=ReciclarRankingLogic.resumirCategoria(cat.quantidade,cat.meta);
       const excedente=Math.max(0,cumprimento.quantidade-cat.meta);
@@ -862,13 +865,11 @@ function renderTabelaDetalhesMateriais(categorias){
       const umaPilha=temSaldoAnterior!==temSaldoSeguinte;
       const metaAtingida=cumprimento.atingida;
       const percentualExibido=Math.floor(cumprimento.percentual).toFixed(0);
-      return `<tr>
-        <td>${escapeHtml(cat.nome)}</td>
-        <td class="material-markers-column">${temSaldoAnterior||temSaldoSeguinte?`<span class="material-balance-markers${umaPilha?' is-single':''}"><span class="badge badge-carryover material-balance-marker${temSaldoAnterior?'':' is-empty'}" title="Saldo mês anterior">${temSaldoAnterior?'+'+formatarQuantidade(cat.carryIn):'+'}</span><span class="badge badge-green badge-surplus material-balance-marker${temSaldoSeguinte?'':' is-empty'}" title="Saldo mês seguinte">${temSaldoSeguinte?'+'+formatarQuantidade(excedente):'+'}</span></span>`:''}</td>
-        <td><span class="material-quantity"><span>${formatarQuantidade(cumprimento.quantidade)}</span><span>${escapeHtml(cat.unidade)}</span></span></td>
-        <td><span class="material-quantity"><span>${cat.meta.toLocaleString('pt-BR')}</span><span>${escapeHtml(cat.unidade)}</span></span></td>
-        <td>${metaAtingida?'<span class="badge badge-green">'+percentualExibido+'%</span>':percentualExibido+'%'}</td>
-      </tr>`;
+      const colunaExcedente=`<td class="material-markers-column">${temSaldoAnterior||temSaldoSeguinte?`<span class="material-balance-markers${umaPilha?' is-single':''}"><span class="badge badge-carryover material-balance-marker${temSaldoAnterior?'':' is-empty'}" title="Saldo mês anterior">${temSaldoAnterior?'+'+formatarQuantidade(cat.carryIn):'+'}</span><span class="badge badge-green badge-surplus material-balance-marker${temSaldoSeguinte?'':' is-empty'}" title="Saldo mês seguinte">${temSaldoSeguinte?'+'+formatarQuantidade(excedente):'+'}</span></span>`:''}</td>`;
+      const colunaDisponivel=`<td><span class="material-quantity"><span>${formatarQuantidade(cumprimento.quantidade)}</span><span>${escapeHtml(cat.unidade)}</span></span></td>`;
+      const colunaNecessario=`<td><span class="material-quantity"><span>${cat.meta.toLocaleString('pt-BR')}</span><span>${escapeHtml(cat.unidade)}</span></span></td>`;
+      const colunaCumprimento=`<td>${metaAtingida?'<span class="badge badge-green">'+percentualExibido+'%</span>':percentualExibido+'%'}</td>`;
+      return `<tr><td>${escapeHtml(cat.nome)}</td>${ordemPublicaFixa?colunaNecessario+colunaDisponivel+colunaExcedente:colunaExcedente+colunaDisponivel+colunaNecessario}${colunaCumprimento}</tr>`;
     }).join('')}</tbody></table>`;
 }
 async function voltarAoRankingPublico(){
