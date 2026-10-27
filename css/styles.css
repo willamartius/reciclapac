@@ -372,7 +372,8 @@ select{text-overflow:ellipsis;}
 .ranking-position-cell{white-space:nowrap;text-align:center;}
 .ranking-position-content{display:inline-flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap;}
 .ranking-medal{font-size:.9em;line-height:1;flex:none;}
-.material-detail-table{width:100%;table-layout:fixed;}
+.material-detail-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;}
+.material-detail-table th,.material-detail-table td{box-sizing:border-box;padding-inline:6px;}
 .kit-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);gap:12px;margin-bottom:12px;align-items:stretch;}
 .kit-detail-side{display:grid;gap:12px;align-content:stretch;}
 .kit-detail-materials{display:flex;flex-direction:column;min-width:0;}
@@ -430,9 +431,10 @@ select{text-overflow:ellipsis;}
   .podium-card{height:116px;box-sizing:border-box;}
   .podium-1{height:130px;}
   .material-detail-table{font-size:11px;}
-  .material-detail-table th{font-size:9px;letter-spacing:0;padding:7px 3px;}
+  .material-detail-table th,.material-detail-table td{padding-inline:5px;}
+  .material-detail-table th{font-size:9px;letter-spacing:0;padding-block:7px;}
   .material-detail-table th:nth-child(4),.material-detail-table th:last-child{font-size:clamp(7px,2.1vw,8.5px);letter-spacing:-.25px;}
-  .material-detail-table td{padding:8px 3px;overflow-wrap:anywhere;}
+  .material-detail-table td{padding-block:8px;overflow-wrap:anywhere;}
   .badge-surplus{font-size:9px;padding:2px 4px;}
   .modal-overlay-public-details{align-items:center;padding:10px;}
   .modal-public-details{padding:16px 12px calc(16px + env(safe-area-inset-bottom));border-radius:18px;}
