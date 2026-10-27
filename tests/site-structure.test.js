@@ -142,3 +142,19 @@ test('navegação mantém o shell e reseta a rolagem uma vez após atualizar a s
   assert.ok(views.includes("if(!app.querySelector('.sidebar'))"),
     'o shell da lateral deve ser criado apenas uma vez, evitando flash entre seções');
 });
+
+
+test('falhas ao excluir registros preservam o erro do Firestore e usam feedback na interface', () => {
+  const core = read('js/core.js');
+  const auth = read('js/auth.js');
+  const transfers = read('js/transfers-exchange.js');
+  assert.match(core, /function formatarMensagemErroFirestore\(erro/);
+  assert.match(core, /resource-exhausted/);
+  assert.match(core, /STORAGE_ERRORS\.set\(colecao,erro\)/);
+  assert.match(core, /function mostrarErroOperacao\(mensagem\)/);
+  assert.match(auth, /mostrarErroOperacao\(formatarMensagemErroFirestore\(STORAGE_ERRORS\.get\('entregas'\)/);
+  assert.match(auth, /mostrarErroOperacao\(formatarMensagemErroFirestore\(STORAGE_ERRORS\.get\('colaboradores'\)/);
+  assert.match(transfers, /mostrarErroOperacao\(formatarMensagemErroFirestore\(STORAGE_ERRORS\.get\('transferencias'\)/);
+  assert.match(transfers, /mostrarErroOperacao\(formatarMensagemErroFirestore\(STORAGE_ERRORS\.get\('trocas'\)/);
+  assert.match(read('css/styles.css'), /\.btn-danger:hover\{background:#fee8e6;border-color:#d92d20;color:#b42318;\}/);
+});
