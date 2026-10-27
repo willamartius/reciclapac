@@ -158,3 +158,15 @@ test('falhas ao excluir registros preservam o erro do Firestore e usam feedback 
   assert.match(transfers, /mostrarErroOperacao\(formatarMensagemErroFirestore\(STORAGE_ERRORS\.get\('trocas'\)/);
   assert.match(read('css/styles.css'), /\.btn-danger:hover\{background:#fee8e6;border-color:#d92d20;color:#b42318;\}/);
 });
+
+
+test('renderização das tabelas ocorre após montar a seção, sem duplicação por setTimeout', () => {
+  const views = read('js/views.js');
+  const main = read('js/main.js');
+  assert.match(views, /if\(STATE\.view==='colaboradores'\) renderTabelaColaboradores\(\);/);
+  assert.match(views, /if\(STATE\.view==='entregas'\) renderTabelaEntregas\(\);/);
+  assert.match(views, /if\(STATE\.view==='config' && STATE\.isAdmin\) renderTabelaCampanhas\(\);/);
+  assert.doesNotMatch(main, /if\(STATE\.view==='colaboradores'\) setTimeout\(renderTabelaColaboradores,0\)/);
+  assert.doesNotMatch(main, /if\(STATE\.view==='entregas'\) setTimeout\(renderTabelaEntregas,0\)/);
+  assert.match(read('css/styles.css'), /\.nav button:hover svg\{opacity:1;\}/);
+});

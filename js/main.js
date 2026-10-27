@@ -1535,9 +1535,7 @@ function finalizarCarregamento(){
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='flex';
   renderApp();
-  // pós-render: preencher tabelas filtráveis que dependem de elementos já no DOM
-  if(STATE.view==='colaboradores') renderTabelaColaboradores();
-  if(STATE.view==='config') renderTabelaCampanhas();
+  // As tabelas das seções são renderizadas pelo renderApp após montar o conteúdo.
 }
 async function processarSessaoFirebase(user){
   pararObservacaoSolicitacoesTroca();
@@ -1796,9 +1794,6 @@ function carregarRankingsPublicos(){
 const _origRenderApp = renderApp;
 renderApp = function(){
   _origRenderApp();
-  if(STATE.view==='colaboradores') setTimeout(renderTabelaColaboradores,0);
-  if(STATE.view==='entregas') setTimeout(renderTabelaEntregas,0);
-  if(STATE.view==='config') setTimeout(renderTabelaCampanhas,0);
   if(STATE.view==='config' && STATE.isAdmin && typeof renderMonitoramentoFirestore==='function') setTimeout(renderMonitoramentoFirestore,0);
 };
 iniciar();

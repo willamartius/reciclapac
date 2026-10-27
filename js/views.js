@@ -975,7 +975,9 @@ function renderApp(){
   };
   content.innerHTML = renderers[STATE.view] ? renderers[STATE.view]() : '';
   aprimorarSeletoresNativos(content);
+  if(STATE.view==='colaboradores') renderTabelaColaboradores();
   if(STATE.view==='entregas') renderTabelaEntregas();
+  if(STATE.view==='config' && STATE.isAdmin) renderTabelaCampanhas();
 }
 
 function abrirMaisSheet(){
