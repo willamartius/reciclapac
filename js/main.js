@@ -378,38 +378,53 @@ function renderLixeira(){
     </table></div>
   </div>`;
 }
-async function salvarAvisosPublicos(){
+function limparAvisoPublico(tipo){
+  const id=tipo==='manutencao'?'avisoManutencaoPublicaInput':'avisoRankingPublicoInput';
+  const campo=document.getElementById(id);
+  if(campo) campo.value='';
+  campo?.focus();
+}
+async function salvarAvisoPublico(tipo){
   if(!exigirAdmin()) return;
-  const lerTexto=id=>(document.getElementById(id)?.value||'').trim().slice(0,1000);
-  const avisoManutencao=lerTexto('avisoManutencaoPublicaInput');
-  const avisoRanking=lerTexto('avisoRankingPublicoInput');
-  const mostrarManutencao=!!document.getElementById('mostrarAvisoManutencaoPublicaCheckbox')?.checked;
-  const mostrarRanking=!!document.getElementById('mostrarAvisoRankingPublicoCheckbox')?.checked;
+  const manutencao=tipo==='manutencao';
+  const campo=document.getElementById(manutencao?'avisoManutencaoPublicaInput':'avisoRankingPublicoInput');
+  const mensagem=(campo?.value||'').trim().slice(0,1000);
   const erroElemento=document.getElementById('avisosPublicosErro');
-  const botao=document.querySelector('[onclick="salvarAvisosPublicos()"]');
-  const anterior={avisoManutencaoPublico:STATE.avisoManutencaoPublico||'',mostrarAvisoManutencaoPublico:!!STATE.mostrarAvisoManutencaoPublico,avisoRankingPublico:STATE.avisoRankingPublico||'',mostrarAvisoRankingPublico:!!STATE.mostrarAvisoRankingPublico};
-  Object.assign(STATE,{avisoManutencaoPublico:avisoManutencao,mostrarAvisoManutencaoPublico:mostrarManutencao,avisoRankingPublico:avisoRanking,mostrarAvisoRankingPublico:mostrarRanking});
+  const botao=document.querySelector('[onclick="salvarAvisoPublico(\\''+tipo+'\\')"]');
+  const chaveTexto=manutencao?'avisoManutencaoPublico':'avisoRankingPublico';
+  const chaveMostrar=manutencao?'mostrarAvisoManutencaoPublico':'mostrarAvisoRankingPublico';
+  const campoFirestore=manutencao?'avisoManutencao':'avisoRanking';
+  const mostrar=mensagem.length>0;
+  const anteriorTexto=STATE[chaveTexto]||'';
+  const anteriorMostrar=!!STATE[chaveMostrar];
   if(botao) botao.disabled=true;
   if(erroElemento){erroElemento.hidden=true;erroElemento.textContent='';}
   try{
     if(STORAGE_MODE==='firestore'){
       await FIREBASE_DB.collection('reciclar-apac-public-settings').doc('maintenance').set({
-        ativada:!!STATE.manutencaoPublica, atualizadoEm:new Date().toISOString(),
-        mostrarAvisoManutencao:mostrarManutencao,avisoManutencao,
-        mostrarAvisoRanking:mostrarRanking,avisoRanking,
+        ativada:!!STATE.manutencaoPublica,
+        atualizadoEm:new Date().toISOString(),
+        [campoFirestore]:mensagem,
+        [manutencao?'mostrarAvisoManutencao':'mostrarAvisoRanking']:mostrar,
       },{merge:true});
     }else{
-      Object.assign(STATE.config,{avisoManutencaoPublico:avisoManutencao,mostrarAvisoManutencaoPublico:mostrarManutencao,avisoRankingPublico:avisoRanking,mostrarAvisoRankingPublico:mostrarRanking});
-      if(!await salvarConfig()) throw STORAGE_ERRORS.get('config')||new Error('Não foi possível salvar os avisos públicos.');
+      STATE.config[chaveTexto]=mensagem;
+      STATE.config[chaveMostrar]=mostrar;
+      if(!await salvarConfig()) throw STORAGE_ERRORS.get('config')||new Error('Não foi possível salvar a mensagem.');
     }
-    if(erroElemento){erroElemento.textContent='Avisos públicos salvos.';erroElemento.hidden=false;erroElemento.classList.remove('auth-error');erroElemento.classList.add('small-note');}
+    STATE[chaveTexto]=mensagem;
+    STATE[chaveMostrar]=mostrar;
+    if(erroElemento){erroElemento.textContent=mensagem?'Mensagem salva e ativada.':'Mensagem removida e desativada.';erroElemento.hidden=false;}
+    renderApp();
   }catch(erro){
-    Object.assign(STATE,anterior);
-    if(erroElemento){erroElemento.textContent=erro.message||'Não foi possível salvar os avisos públicos.';erroElemento.hidden=false;}
-    console.error('Erro ao salvar avisos públicos',erro);
+    STATE[chaveTexto]=anteriorTexto;
+    STATE[chaveMostrar]=anteriorMostrar;
+    if(erroElemento){erroElemento.textContent=erro.message||'Não foi possível salvar a mensagem.';erroElemento.hidden=false;}
+    console.error('Erro ao salvar aviso público',erro);
   }finally{if(botao) botao.disabled=false;}
 }
-window.salvarAvisosPublicos=salvarAvisosPublicos;
+window.limparAvisoPublico=limparAvisoPublico;
+window.salvarAvisoPublico=salvarAvisoPublico;
 
 function renderConfig(){
   if(!STATE.isAdmin){
@@ -465,13 +480,16 @@ function renderConfig(){
       <p id="manutencaoPublicaErro" class="auth-error" role="alert" ${STATE.erroManutencaoPublica?'':'hidden'}>${escapeHtml(STATE.erroManutencaoPublica)}</p>
     </div>
 
-    <div class="card" style="display:grid;gap:12px;">
-      <div class="field" style="margin-top:16px;"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label><textarea id="avisoManutencaoPublicaInput" rows="3" maxlength="1000" placeholder="Mensagem opcional exibida abaixo do aviso padrão">${escapeHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</textarea></div>
-      <label class="maintenance-toggle-row"><span><b>Exibir aviso extra na página de manutenção</b><span class="small-note" style="display:block;font-weight:400;margin-top:4px;">Mostra a mensagem acima junto de “Estamos em manutenção”.</span></span><span class="toggle-switch"><input id="mostrarAvisoManutencaoPublicaCheckbox" type="checkbox" ${(STATE.mostrarAvisoManutencaoPublico??STATE.config?.mostrarAvisoManutencaoPublico)?'checked':''} role="switch" aria-label="Exibir aviso extra na página de manutenção"><span class="toggle-switch-track" aria-hidden="true"></span></span></label>
-      <div class="field" style="margin-top:16px;"><label for="avisoRankingPublicoInput">Mensagem extra no ranking público</label><textarea id="avisoRankingPublicoInput" rows="3" maxlength="1000" placeholder="Mensagem opcional exibida no topo do ranking">${escapeHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</textarea></div>
-      <label class="maintenance-toggle-row"><span><b>Exibir aviso no ranking público</b><span class="small-note" style="display:block;font-weight:400;margin-top:4px;">A mensagem aparece no início do ranking, acima dos filtros.</span></span><span class="toggle-switch"><input id="mostrarAvisoRankingPublicoCheckbox" type="checkbox" ${(STATE.mostrarAvisoRankingPublico??STATE.config?.mostrarAvisoRankingPublico)?'checked':''} role="switch" aria-label="Exibir aviso no ranking público"><span class="toggle-switch-track" aria-hidden="true"></span></span></label>
-      <button class="btn btn-primary" type="button" style="margin-top:12px;" onclick="salvarAvisosPublicos()">Salvar avisos públicos</button>
-      <p id="avisosPublicosErro" class="auth-error" role="alert" hidden></p>
+    <div class="card" style="display:grid;gap:18px;">
+      <section class="public-notice-editor">
+        <div class="field"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label><textarea id="avisoManutencaoPublicaInput" rows="3" maxlength="1000" placeholder="Opcional: aparece abaixo do aviso padrão">${escapeHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</textarea></div>
+        <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('manutencao')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('manutencao')">Salvar</button></div>
+      </section>
+      <section class="public-notice-editor">
+        <div class="field"><label for="avisoRankingPublicoInput">Mensagem extra no ranking público</label><textarea id="avisoRankingPublicoInput" rows="3" maxlength="1000" placeholder="Opcional: aparece acima dos filtros do ranking">${escapeHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</textarea></div>
+        <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('ranking')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('ranking')">Salvar</button></div>
+      </section>
+      <p id="avisosPublicosErro" class="small-note" role="status" aria-live="polite" hidden></p>
     </div>
 
     <div class="section-title">Senha de solicitação de troca</div>
