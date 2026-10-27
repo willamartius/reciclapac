@@ -49,6 +49,17 @@ test('funções chamadas por handlers inline existem no escopo global', () => {
   assert.ok(sandbox);
 });
 
+test('salvar avisos públicos mantém espaço de status estável para evitar salto na rolagem', () => {
+  const main = read('js/main.js');
+  const views = read('js/views.js');
+  assert.match(main, /id="avisosPublicosErro" class="small-note" role="status" aria-live="polite" style="min-height:1\.4em;margin:0;"/);
+  assert.doesNotMatch(main, /avisosPublicosErro[^\n]*hidden/);
+  assert.match(main, /erroElemento\.textContent=mensagem\?'Mensagem salva e ativada\.'\:'Mensagem removida e desativada\.'/);
+  assert.match(main, /erroElemento\.textContent=erro\.message\|\|'Não foi possível salvar a mensagem\.'/);
+  assert.match(views, /STATE\.avisoManutencaoPublico\?\x60<p class="public-configured-notice">/);
+  assert.match(views, /STATE\.avisoRankingPublico\?\x60<div class="public-configured-notice" role="status">/);
+});
+
 test('painel e página pública usam o mesmo renderizador de detalhes de kits', () => {
   const usos = appScripts.filter(file => read(file).includes('renderDetalhesKit(kit,unidadeItem)'));
   assert.deepEqual(usos.sort(), ['js/transfers-exchange.js', 'js/views.js']);
