@@ -107,7 +107,7 @@ async function alterarManutencaoPublica(ativada){
       await FIREBASE_DB.collection('reciclar-apac-public-settings').doc('maintenance').set({
         ativada,
         atualizadoEm:new Date().toISOString(),
-      });
+      },{merge:true});
     }else{
       STATE.config.manutencaoPublica=ativada;
       if(!await salvarConfig()) throw STORAGE_ERRORS.get('config')||new Error('Não foi possível salvar a configuração local.');
