@@ -1535,9 +1535,7 @@ function finalizarCarregamento(){
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='flex';
   renderApp();
-  // pós-render: preencher tabelas filtráveis que dependem de elementos já no DOM
-  if(STATE.view==='colaboradores') renderTabelaColaboradores();
-  if(STATE.view==='config') renderTabelaCampanhas();
+  // As tabelas das seções são renderizadas pelo renderApp após montar o conteúdo.
 }
 async function processarSessaoFirebase(user){
   pararObservacaoSolicitacoesTroca();
