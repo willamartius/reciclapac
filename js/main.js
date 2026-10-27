@@ -378,6 +378,40 @@ function renderLixeira(){
     </table></div>
   </div>`;
 }
+async function salvarAvisosPublicos(){
+  if(!exigirAdmin()) return;
+  const lerTexto=id=>(document.getElementById(id)?.value||'').trim().slice(0,1000);
+  const avisoManutencao=lerTexto('avisoManutencaoPublicaInput');
+  const avisoRanking=lerTexto('avisoRankingPublicoInput');
+  const mostrarManutencao=!!document.getElementById('mostrarAvisoManutencaoPublicaCheckbox')?.checked;
+  const mostrarRanking=!!document.getElementById('mostrarAvisoRankingPublicoCheckbox')?.checked;
+  const erroElemento=document.getElementById('avisosPublicosErro');
+  const botao=document.querySelector('[onclick="salvarAvisosPublicos()"]');
+  const anterior={avisoManutencaoPublico:STATE.avisoManutencaoPublico||'',mostrarAvisoManutencaoPublico:!!STATE.mostrarAvisoManutencaoPublico,avisoRankingPublico:STATE.avisoRankingPublico||'',mostrarAvisoRankingPublico:!!STATE.mostrarAvisoRankingPublico};
+  Object.assign(STATE,{avisoManutencaoPublico:avisoManutencao,mostrarAvisoManutencaoPublico:mostrarManutencao,avisoRankingPublico:avisoRanking,mostrarAvisoRankingPublico:mostrarRanking});
+  if(botao) botao.disabled=true;
+  if(erroElemento){erroElemento.hidden=true;erroElemento.textContent='';}
+  try{
+    if(STORAGE_MODE==='firestore'){
+      await FIREBASE_DB.collection('reciclar-apac-public-settings').doc('maintenance').set({
+        ativada:!!STATE.manutencaoPublica, atualizadoEm:new Date().toISOString(),
+        mostrarAvisoManutencao:mostrarManutencao,avisoManutencao,
+        mostrarAvisoRanking:mostrarRanking,avisoRanking,
+      },{merge:true});
+    }else{
+      Object.assign(STATE.config,{avisoManutencaoPublico:avisoManutencao,mostrarAvisoManutencaoPublico:mostrarManutencao,avisoRankingPublico:avisoRanking,mostrarAvisoRankingPublico:mostrarRanking});
+      if(!await salvarConfig()) throw STORAGE_ERRORS.get('config')||new Error('Não foi possível salvar os avisos públicos.');
+    }
+    if(erroElemento){erroElemento.textContent='Avisos públicos salvos.';erroElemento.hidden=false;erroElemento.classList.remove('auth-error');erroElemento.classList.add('small-note');}
+    renderApp();
+  }catch(erro){
+    Object.assign(STATE,anterior);
+    if(erroElemento){erroElemento.textContent=erro.message||'Não foi possível salvar os avisos públicos.';erroElemento.hidden=false;}
+    console.error('Erro ao salvar avisos públicos',erro);
+  }finally{if(botao) botao.disabled=false;}
+}
+window.salvarAvisosPublicos=salvarAvisosPublicos;
+
 function renderConfig(){
   if(!STATE.isAdmin){
     return `<div class="card"><div class="empty-state">Esta área é restrita ao administrador.</div></div>`;
