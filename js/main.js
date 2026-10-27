@@ -383,6 +383,14 @@ function renderConfig(){
     return `<div class="card"><div class="empty-state">Esta área é restrita ao administrador.</div></div>`;
   }
   return `
+    <div class="settings-tabs" role="tablist" aria-label="Seções das configurações">
+      <button type="button" class="settings-tab is-active" role="tab" aria-selected="true" data-settings-tab="perfil" onclick="selecionarAbaConfiguracoes('perfil')">Perfil</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="campanhas" onclick="selecionarAbaConfiguracoes('campanhas')">Campanhas</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="backup" onclick="selecionarAbaConfiguracoes('backup')">Backup</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="manutencao" onclick="selecionarAbaConfiguracoes('manutencao')">Manutenção</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="tecnica" onclick="selecionarAbaConfiguracoes('tecnica')">Área técnica</button>
+    </div>
+    <div class="settings-panel" data-settings-panel="perfil">
     <div class="section-title">Meu perfil</div>
     <div class="card">
       <p class="small-note">Seu nome aparece junto ao botão de sair. O perfil administrativo ou operacional é carregado do Firebase e não pode ser alterado por este formulário.</p>
@@ -392,6 +400,8 @@ function renderConfig(){
       </form>
     </div>
 
+    </div>
+    <div class="settings-panel" data-settings-panel="campanhas" hidden>
     <div class="section-title">Campanhas</div>
     <div class="card">
       <p class="small-note">Cada campanha é independente: pode coexistir com outras, mesmo com períodos sobrepostos. Uma entrega ou transferência sempre pertence a uma campanha específica, escolhida no momento do registro, nunca deduzida pela data. Cada campanha tem suas próprias metas e seu próprio acúmulo de excedente.</p>
@@ -402,6 +412,8 @@ function renderConfig(){
       <button class="btn btn-primary" style="margin-top:12px;" onclick="abrirFormCampanha()">${icon('plus',16)}Nova campanha</button>
     </div>
 
+    </div>
+    <div class="settings-panel" data-settings-panel="manutencao" hidden>
     <div class="section-title">Segurança</div>
     <div class="card">
       <p class="small-note">A autenticação é gerenciada pelo Firebase Authentication e as permissões são controladas pelos papéis definidos no Firestore. Para alterar sua senha, solicite um link de redefinição por e-mail.</p>
@@ -425,6 +437,8 @@ function renderConfig(){
       <p id="senhaSolicitacaoTrocaErro" class="auth-error" role="alert" ${STATE.erroSenhaSolicitacaoTroca?'':'hidden'}>${escapeHtml(STATE.erroSenhaSolicitacaoTroca)}</p>
     </div>
 
+    </div>
+    <div class="settings-panel" data-settings-panel="backup" hidden>
     <div class="section-title">Backup e restauração</div>
     <div class="card" style="display:grid;gap:12px;">
       <div>
@@ -444,19 +458,25 @@ function renderConfig(){
       ${renderCardBackupGoogleDriveConteudo()}
     </div>
 
+    </div>
+    <div class="settings-panel" data-settings-panel="tecnica" hidden>
     <div class="section-title">Área técnica</div>
     <div class="card" id="firestoreMonitorContent" style="display:grid;gap:12px;">
       <p class="small-note">Preparando o monitoramento de leituras do Firestore…</p>
     </div>
 
-    <div class="section-title">Sobre a campanha</div>
-    <div class="card">
-      <p style="font-size:13.5px;line-height:1.7;">
-        <b>Reciclar é Cuidar da Casa Comum</b> é a campanha de arrecadação de material reciclável da
-        Associação de Proteção e Assistência aos Condenados de Imperatriz, Maranhão. O ranking acompanha
-        o cumprimento das metas mensais estabelecidas no regulamento da campanha e serve como ferramenta
-        de acompanhamento e incentivo, sem substituir as regras oficiais.
-      </p>
+    <div class="card settings-resources">
+      <div class="section-title" style="margin-top:0">Documentação e recursos</div>
+      <p class="small-note">Referências dos serviços usados pelo Reciclapac e documentos do sistema.</p>
+      <ul>
+        <li><a href="https://github.com/willamartius/reciclapac" target="_blank" rel="noopener noreferrer">Repositório do Reciclapac no GitHub</a></li>
+        <li><a href="https://firebase.google.com/docs/firestore" target="_blank" rel="noopener noreferrer">Documentação do Cloud Firestore</a></li>
+        <li><a href="https://firebase.google.com/docs/projects/billing/firebase-pricing-plans" target="_blank" rel="noopener noreferrer">Planos e preços do Firebase</a></li>
+        <li><a href="https://developers.cloudflare.com/workers/" target="_blank" rel="noopener noreferrer">Documentação do Cloudflare Workers</a></li>
+        <li><a href="https://developers.google.com/drive/api/guides/about-sdk" target="_blank" rel="noopener noreferrer">Documentação da API do Google Drive</a></li>
+        <li><a href="/termos.html">Termos de uso</a> · <a href="/privacidade.html">Política de privacidade</a></li>
+      </ul>
+    </div>
     </div>
   `;
 }
@@ -1797,3 +1817,17 @@ renderApp = function(){
   if(STATE.view==='config' && STATE.isAdmin && typeof renderMonitoramentoFirestore==='function') setTimeout(renderMonitoramentoFirestore,0);
 };
 iniciar();
+
+function selecionarAbaConfiguracoes(aba){
+  const raiz=document.querySelector('#viewContent .settings-tabs');
+  if(!raiz)return;
+  const permitidas=['perfil','campanhas','backup','manutencao','tecnica'];
+  const ativa=permitidas.includes(aba)?aba:'perfil';
+  document.querySelectorAll('#viewContent [data-settings-panel]').forEach(p=>{p.hidden=p.dataset.settingsPanel!==ativa;});
+  document.querySelectorAll('#viewContent [data-settings-tab]').forEach(b=>{
+    const selecionada=b.dataset.settingsTab===ativa;
+    b.classList.toggle('is-active',selecionada);
+    b.setAttribute('aria-selected',selecionada?'true':'false');
+    b.tabIndex=selecionada?0:-1;
+  });
+}
