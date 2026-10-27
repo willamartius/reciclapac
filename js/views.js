@@ -217,8 +217,8 @@ function renderRodapePublico(){
   return `<footer class="public-site-footer" aria-label="Informações legais">
     <span>© ${anoAtual} Reciclapac · Desenvolvido por <a href="https://github.com/willamartius" target="_blank" rel="noopener noreferrer">willamartius</a></span>
     <nav aria-label="Links legais">
-      <a href="termos.html">Termos de Uso</a>
-      <a href="privacidade.html">Política de Privacidade</a>
+      <a href="termos.html" target="_blank" rel="noopener noreferrer">Termos de Uso</a>
+      <a href="privacidade.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>
     </nav>
   </footer>`;
 }
@@ -231,7 +231,7 @@ function renderAvisoManutencaoPublica(){
       </div>
       <h1 class="maintenance-title">Estamos em manutenção</h1>
       <span class="badge badge-amber maintenance-badge">Voltaremos em breve</span>
-      ${STATE.mostrarAvisoManutencaoPublico&&STATE.avisoManutencaoPublico?`<p class="public-configured-notice">${escapeHtml(STATE.avisoManutencaoPublico)}</p>`:'' }
+      ${STATE.avisoManutencaoPublico?`<p class="public-configured-notice">${escapeHtml(STATE.avisoManutencaoPublico)}</p>`:'' }
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
         <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
       </div>
@@ -272,7 +272,7 @@ function renderRankingPublico(){
           <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
         </div>
       </div>
-      ${STATE.mostrarAvisoRankingPublico&&STATE.avisoRankingPublico?`<div class="public-configured-notice" role="status">${escapeHtml(STATE.avisoRankingPublico)}</div>`:''}
+      ${STATE.avisoRankingPublico?`<div class="public-configured-notice" role="status">${escapeHtml(STATE.avisoRankingPublico)}</div>`:''}
       ${STATE.erroRankingPublico? `<p class="auth-error" role="alert">${escapeHtml(STATE.erroRankingPublico)}</p>`:''}
       ${STATE.rankingsPublicos.length? `
         <div class="public-ranking-filters">

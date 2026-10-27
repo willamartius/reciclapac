@@ -195,12 +195,12 @@ test('Configurações administrativas têm abas, mantêm alvos de funções e do
   }
   assert.match(main, /function selecionarAbaConfiguracoes\(aba\)/);
   assert.match(main, />Desenvolvedor<\/button>/);
-  assert.match(main, /async function salvarAvisosPublicos\(\)/);
+  assert.match(main, /async function salvarAvisoPublico\(tipo\)/);
   assert.match(main, /avisoManutencaoPublicaInput/);
   assert.match(main, /avisoRankingPublicoInput/);
   assert.match(views, /public-configured-notice/);
-  assert.match(views, /mostrarAvisoRankingPublico&&STATE\.avisoRankingPublico/);
-  assert.match(views, /mostrarAvisoManutencaoPublico&&STATE\.avisoManutencaoPublico/);
+  assert.match(views, /STATE\.avisoRankingPublico\?`<div class=\"public-configured-notice\"/);
+  assert.match(views, /STATE\.avisoManutencaoPublico\?`<p class=\"public-configured-notice\"/);
   assert.match(read('firestore.rules'), /mostrarAvisoManutencao/);
   assert.match(read('css/styles.css'), /settings-tab\.is-active\{background:var\(--verde-600\);color:#fff/);
   assert.match(read('css/styles.css'), /toggle-switch input:checked\+\.toggle-switch-track\{background:var\(--verde-600\);/);
@@ -218,4 +218,19 @@ test('aviso de manutenção usa interruptor acessível sem alterar o callback ex
   assert.match(main, /class="toggle-switch"/);
   assert.match(main, /role="switch" aria-label="Exibir aviso de manutenção"/);
   assert.match(main, /onchange="alterarManutencaoPublica\(this\.checked\)"/);
+});
+
+
+test('avisos públicos usam salvar e limpar, e links legais abrem em nova guia', () => {
+  const main = read('js/main.js');
+  const views = read('js/views.js');
+  assert.match(main, /limparAvisoPublico/);
+  assert.match(main, /salvarAvisoPublico/);
+  assert.match(main, /avisoManutencaoPublicaInput/);
+  assert.match(main, /avisoRankingPublicoInput/);
+  assert.doesNotMatch(main, /mostrarAvisoManutencaoPublicoCheckbox/);
+  assert.doesNotMatch(main, /mostrarAvisoRankingPublicoCheckbox/);
+  assert.match(main, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(views, /href="termos\.html" target="_blank" rel="noopener noreferrer"/);
+  assert.match(views, /href="privacidade\.html" target="_blank" rel="noopener noreferrer"/);
 });
