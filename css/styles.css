@@ -973,3 +973,15 @@ select{text-overflow:ellipsis;}
 .settings-resources a{color:var(--primary);text-decoration:none;}
 .settings-resources a:hover{text-decoration:underline;}
 @media(max-width:560px){.settings-tabs{gap:5px;padding:4px}.settings-tab{flex:1 1 calc(33.333% - 5px);padding:8px 6px;font-size:12px;min-height:38px}}
+
+/* Interruptor acessível para o aviso de manutenção pública. */
+.maintenance-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:18px;cursor:pointer;color:var(--text);font-size:14px;}
+.toggle-switch{position:relative;display:inline-flex;flex:0 0 48px;width:48px;height:28px;align-items:center;}
+.toggle-switch input{position:absolute;width:1px;height:1px;opacity:0;}
+.toggle-switch-track{width:48px;height:28px;border-radius:999px;background:var(--border);transition:background .18s;position:relative;}
+.toggle-switch-track:after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0003;transition:transform .18s;}
+.toggle-switch input:checked+.toggle-switch-track{background:var(--primary);}
+.toggle-switch input:checked+.toggle-switch-track:after{transform:translateX(20px);}
+.toggle-switch input:focus-visible+.toggle-switch-track{outline:3px solid var(--primary);outline-offset:3px;}
+.toggle-switch input:disabled+.toggle-switch-track{opacity:.55;cursor:wait;}
+@media(max-width:420px){.maintenance-toggle-row{align-items:flex-start}.toggle-switch{margin-top:2px}}
