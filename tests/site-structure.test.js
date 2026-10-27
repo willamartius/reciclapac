@@ -202,3 +202,10 @@ test('Configurações administrativas têm abas, mantêm alvos de funções e do
   assert.match(privacy, /Política de Privacidade da Cloudflare/);
   assert.doesNotMatch(main, /Sobre a campanha/);
 });
+
+test('aviso de manutenção usa interruptor acessível sem alterar o callback existente', () => {
+  const main = read('js/main.js');
+  assert.match(main, /class="toggle-switch"/);
+  assert.match(main, /role="switch" aria-label="Exibir aviso de manutenção"/);
+  assert.match(main, /onchange="alterarManutencaoPublica\(this\.checked\)"/);
+});
