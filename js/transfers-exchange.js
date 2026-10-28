@@ -582,11 +582,12 @@ function renderRanking(){
   const chaveRanking=chaveMA(mes,ano);
   const categoriasRanking=categoriasDaCampanha(campanhaRanking);
   if(cfgTrocaRanking){
+    let posicaoResgate=0;
     resultados=resultados.map(r=>({
       ...r,
       _resgatesRanking:montarResumoKitColaborador(campanhaRanking,cfgTrocaRanking,r,chaveRanking,categoriasRanking).resgatesMes
     })).sort((a,b)=>b._resgatesRanking-a._resgatesRanking||String(a.colaborador.nome||'').localeCompare(String(b.colaborador.nome||''),'pt-BR'))
-      .reduce((lista,r)=>{lista.push({...r,posicao:r._resgatesRanking>0?lista.filter(item=>item._resgatesRanking>0).length+1:null});return lista;},[]);
+      .map(r=>({...r,posicao:r._resgatesRanking>0?++posicaoResgate:null}));
   }
   const setores = setoresExistentes();
   const comAtividade = cfgTrocaRanking
