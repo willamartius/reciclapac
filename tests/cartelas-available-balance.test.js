@@ -61,7 +61,7 @@ test('ranking de campanha de troca usa resgates do mês e preserva materiais e i
   assert.match(tabela, /'<th>Materiais<\/th>'/);
   assert.match(tabela, /pluralizarNomeItemRanking\(cfgTroca\.nomeItem\)/);
   assert.match(tabela, /r\._resgatesRanking/);
-  assert.match(tabela, /cfgTroca\?'<th>Resgates<\/th>':'<th>Pontuação<\/th><th>% cumprimento<\/th>'/);
+  assert.match(tabela, /modoResgates\?'<th>Resgates<\/th>':'<th>Pontuação<\/th><th>% cumprimento<\/th>'/);
   assert.match(podium, /usarResgates\?Number\(r\._resgatesRanking\|\|0\)/);
 });
 
