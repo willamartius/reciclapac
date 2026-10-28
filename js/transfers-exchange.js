@@ -648,7 +648,7 @@ function renderTabelaRanking(resultados, completa, mes, ano){
   const modoResgates=!!cfgTroca&&completa;
   const cabecalhoItem=cfgTroca?pluralizarNomeItemRanking(cfgTroca.nomeItem):'';
   return `
-    <table><thead><tr>
+    <table class="ranking-table"><thead><tr>
       <th>Pos.</th><th>Colaborador</th><th>Setor</th>${completa?'<th>Materiais</th>':''}${modoResgates?'':'<th>Pontuação</th><th>% cumprimento</th><th>Meta</th>'}${cfgTroca?`<th class="table-cell-center">${escapeHtml(cabecalhoItem)}</th>`:''}${modoResgates?'<th>Resgates</th>':''}<th></th>
     </tr></thead>
     <tbody>
