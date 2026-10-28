@@ -663,7 +663,7 @@ function renderTabelaRanking(resultados, completa, mes, ano){
           <td>${escapeHtml(r.colaborador.setor||'—')}</td>
           ${completa?`<td>${r.totalMateriais.toLocaleString('pt-BR')}</td>`:''}
           ${modoResgates?'':`<td style="min-width:120px;"><div style="display:flex;align-items:center;gap:8px;"><div class="progress" style="flex:1;"><div style="width:${Math.min(100,r.pontuacao)}%"></div></div><span>${r.pontuacao.toFixed(0)}</span></div></td><td>${r.mediaReal.toFixed(0)}%</td><td>${r.metaAtingida? '<span class="badge badge-green">Atingida</span>' : '<span class="badge badge-grey">Em andamento</span>'}</td>`}
-          ${cfgTroca?`<td class="table-cell-center"><div style="display:flex;justify-content:center;">${itensDisponiveis>0?`<span class="badge badge-green">${itensDisponiveis} disponíve${itensDisponiveis===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</div></td>`:''}
+          ${cfgTroca?`<td class="table-cell-center"><div class="ranking-item-cell-content">${itensDisponiveis>0?`<span class="badge badge-green">${itensDisponiveis} disponíve${itensDisponiveis===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</div></td>`:''}
           ${modoResgates?`<td>${resgatesMes.toLocaleString('pt-BR')}</td>`:''}
           <td>${mes&&ano? `<button class="btn btn-ghost btn-sm" onclick="abrirDetalhesColaborador('${r.colaborador.id}',${mes},${ano})">Detalhes</button>` : ''}</td>
         </tr>`;
