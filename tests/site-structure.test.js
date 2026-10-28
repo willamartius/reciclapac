@@ -306,7 +306,7 @@ test('avisos públicos permitem escolher tamanho e cor do texto com sanitizaçã
   const css = read('css/styles.css');
   assert.equal((main.match(/aria-label="Tamanho da fonte"/g)||[]).length,2);
   assert.equal((main.match(/aria-label="Cor do texto"/g)||[]).length,2);
-  assert.match(main,/comando==='fontSize'/);
+  assert.match(main,/comando==='fontSize'/);\n  assert.match(main,/function preservarSelecaoAvisoPublico/);
   assert.match(main,/comando==='foreColor'/);
   assert.match(views,/const permitidas=new Set\(\['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A','FONT','SPAN'\]\)/);
   assert.match(views,/const coresPermitidas=new Set\(\['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706'\]\)/);
