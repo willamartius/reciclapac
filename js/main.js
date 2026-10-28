@@ -384,7 +384,7 @@ function limparAvisoPublico(tipo){
   if(campo) campo.innerHTML='';
   campo?.focus();
 }
-function formatarAvisoPublico(id, comando){
+function formatarAvisoPublico(id, comando, valor){
   const campo=document.getElementById(id);
   if(!campo)return;
   campo.focus();
@@ -392,6 +392,14 @@ function formatarAvisoPublico(id, comando){
     const url=prompt('Informe o endereço do link (https://...)');
     if(!url||!/^https?:\/\//i.test(url.trim()))return;
     document.execCommand('createLink',false,url.trim());
+  }else if(comando==='fontSize'){
+    const tamanho=String(valor||'').trim();
+    if(!/^[1-7]$/.test(tamanho))return;
+    document.execCommand('fontSize',false,tamanho);
+  }else if(comando==='foreColor'){
+    const cor=String(valor||'').trim();
+    if(!/^#[0-9a-f]{6}$/i.test(cor))return;
+    document.execCommand('foreColor',false,cor);
   }else document.execCommand(comando,false,null);
 }
 window.formatarAvisoPublico=formatarAvisoPublico;
@@ -499,6 +507,18 @@ function renderConfig(){
             <button class="btn btn-outline btn-sm" type="button" aria-label="Lista com marcadores" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','insertUnorderedList')">• Lista</button>
             <button class="btn btn-outline btn-sm" type="button" aria-label="Lista numerada" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','insertOrderedList')">1. Lista</button>
             <button class="btn btn-outline btn-sm" type="button" aria-label="Inserir link" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','createLink')">Link</button>
+            <label class="rich-text-select-label">Tamanho
+              <select class="rich-text-select" aria-label="Tamanho da fonte" onchange="formatarAvisoPublico('avisoManutencaoPublicaInput','fontSize',this.value);this.value=''">
+                <option value="" selected disabled>Fonte</option>
+                <option value="1">Pequena</option><option value="2">12 px</option><option value="3">14 px</option><option value="4">16 px</option><option value="5">18 px</option><option value="6">24 px</option><option value="7">32 px</option>
+              </select>
+            </label>
+            <label class="rich-text-select-label">Cor
+              <select class="rich-text-select" aria-label="Cor do texto" onchange="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor',this.value);this.value=''">
+                <option value="" selected disabled>Cor do texto</option>
+                <option value="#202820">Preto</option><option value="#176b3a">Verde</option><option value="#1d4ed8">Azul</option><option value="#b42318">Vermelho</option><option value="#9333ea">Roxo</option><option value="#d97706">Laranja</option>
+              </select>
+            </label>
           </div>
           <div id="avisoManutencaoPublicaInput" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Mensagem extra na página de manutenção" data-placeholder="Opcional: aparece abaixo do aviso padrão">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</div>
         </div>
@@ -514,6 +534,18 @@ function renderConfig(){
             <button class="btn btn-outline btn-sm" type="button" aria-label="Lista com marcadores" onclick="formatarAvisoPublico('avisoRankingPublicoInput','insertUnorderedList')">• Lista</button>
             <button class="btn btn-outline btn-sm" type="button" aria-label="Lista numerada" onclick="formatarAvisoPublico('avisoRankingPublicoInput','insertOrderedList')">1. Lista</button>
             <button class="btn btn-outline btn-sm" type="button" aria-label="Inserir link" onclick="formatarAvisoPublico('avisoRankingPublicoInput','createLink')">Link</button>
+            <label class="rich-text-select-label">Tamanho
+              <select class="rich-text-select" aria-label="Tamanho da fonte" onchange="formatarAvisoPublico('avisoRankingPublicoInput','fontSize',this.value);this.value=''">
+                <option value="" selected disabled>Fonte</option>
+                <option value="1">Pequena</option><option value="2">12 px</option><option value="3">14 px</option><option value="4">16 px</option><option value="5">18 px</option><option value="6">24 px</option><option value="7">32 px</option>
+              </select>
+            </label>
+            <label class="rich-text-select-label">Cor
+              <select class="rich-text-select" aria-label="Cor do texto" onchange="formatarAvisoPublico('avisoRankingPublicoInput','foreColor',this.value);this.value=''">
+                <option value="" selected disabled>Cor do texto</option>
+                <option value="#202820">Preto</option><option value="#176b3a">Verde</option><option value="#1d4ed8">Azul</option><option value="#b42318">Vermelho</option><option value="#9333ea">Roxo</option><option value="#d97706">Laranja</option>
+              </select>
+            </label>
           </div>
           <div id="avisoRankingPublicoInput" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Mensagem extra no ranking público" data-placeholder="Opcional: aparece acima dos filtros do ranking">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</div>
         </div>
