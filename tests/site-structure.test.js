@@ -211,7 +211,7 @@ test('Configurações administrativas têm abas, mantêm alvos de funções e do
   assert.match(main, /avisoRankingPublicoInput/);
   assert.match(views, /public-configured-notice/);
   assert.match(views, /STATE\.avisoRankingPublico\?`<div class=\"public-configured-notice\"/);
-  assert.match(views, /STATE\.avisoManutencaoPublico\?`<p class=\"public-configured-notice\"/);
+  assert.match(views, /STATE\.avisoManutencaoPublico\?`<div class=\"public-configured-notice\"/);
   assert.match(read('firestore.rules'), /mostrarAvisoManutencao/);
   assert.match(read('css/styles.css'), /settings-tab\.is-active\{background:var\(--verde-600\);color:#fff/);
   assert.match(read('css/styles.css'), /toggle-switch input:checked\+\.toggle-switch-track\{background:var\(--verde-600\);/);
