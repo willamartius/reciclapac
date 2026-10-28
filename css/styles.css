@@ -390,6 +390,7 @@ select{text-overflow:ellipsis;}
 .material-detail-table th:nth-child(5){width:24%;}
 .public-fixed-campaign-detail-table th:nth-child(n){width:20%;}
 .public-fixed-campaign-detail-table th,.public-fixed-campaign-detail-table td{padding-inline:8px;}
+.public-fixed-campaign-detail-table th:last-child{padding-inline:4px;letter-spacing:-.2px;}
 .material-detail-table th:nth-child(4),.material-detail-table th:last-child{white-space:nowrap;}
 .material-detail-table th:nth-child(n+2),
 .material-detail-table td:nth-child(n+2){text-align:center;}
