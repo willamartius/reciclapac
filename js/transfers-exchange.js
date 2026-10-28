@@ -649,7 +649,7 @@ function renderTabelaRanking(resultados, completa, mes, ano){
   const cabecalhoItem=cfgTroca?pluralizarNomeItemRanking(cfgTroca.nomeItem):'';
   return `
     <table><thead><tr>
-      <th>Pos.</th><th>Colaborador</th><th>Setor</th>${completa?'<th>Materiais</th>':''}${modoResgates?'<th>Resgates</th>':'<th>Pontuação</th><th>% cumprimento</th>'}${modoResgates?'':'<th>Meta</th>'}${cfgTroca?`<th class="table-cell-center">${escapeHtml(cabecalhoItem)}</th>`:''}<th></th>
+      <th>Pos.</th><th>Colaborador</th><th>Setor</th>${completa?'<th>Materiais</th>':''}${modoResgates?'':'<th>Pontuação</th><th>% cumprimento</th><th>Meta</th>'}${cfgTroca?`<th class="table-cell-center">${escapeHtml(cabecalhoItem)}</th>`:''}${modoResgates?'<th>Resgates</th>':''}<th></th>
     </tr></thead>
     <tbody>
       ${resultados.map(r=>{
@@ -662,8 +662,9 @@ function renderTabelaRanking(resultados, completa, mes, ano){
           <td style="font-weight:700;">${escapeHtml(r.colaborador.nome)}</td>
           <td>${escapeHtml(r.colaborador.setor||'—')}</td>
           ${completa?`<td>${r.totalMateriais.toLocaleString('pt-BR')}</td>`:''}
-          ${modoResgates?`<td>${resgatesMes.toLocaleString('pt-BR')}</td>`:`<td style="min-width:120px;"><div style="display:flex;align-items:center;gap:8px;"><div class="progress" style="flex:1;"><div style="width:${Math.min(100,r.pontuacao)}%"></div></div><span>${r.pontuacao.toFixed(0)}</span></div></td><td>${r.mediaReal.toFixed(0)}%</td>`}
-          ${modoResgates?'':`<td>${r.metaAtingida? '<span class="badge badge-green">Atingida</span>' : '<span class="badge badge-grey">Em andamento</span>'}</td>`}${cfgTroca?`<td class="table-cell-center">${itensDisponiveis>0?`<span class="badge badge-green">${itensDisponiveis} disponíve${itensDisponiveis===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</td>`:''}
+          ${modoResgates?'':`<td style="min-width:120px;"><div style="display:flex;align-items:center;gap:8px;"><div class="progress" style="flex:1;"><div style="width:${Math.min(100,r.pontuacao)}%"></div></div><span>${r.pontuacao.toFixed(0)}</span></div></td><td>${r.mediaReal.toFixed(0)}%</td><td>${r.metaAtingida? '<span class="badge badge-green">Atingida</span>' : '<span class="badge badge-grey">Em andamento</span>'}</td>`}
+          ${cfgTroca?`<td class="table-cell-center">${itensDisponiveis>0?`<span class="badge badge-green">${itensDisponiveis} disponíve${itensDisponiveis===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</td>`:''}
+          ${modoResgates?`<td>${resgatesMes.toLocaleString('pt-BR')}</td>`:''}
           <td>${mes&&ano? `<button class="btn btn-ghost btn-sm" onclick="abrirDetalhesColaborador('${r.colaborador.id}',${mes},${ano})">Detalhes</button>` : ''}</td>
         </tr>`;
       }).join('')}
