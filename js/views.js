@@ -280,7 +280,7 @@ function renderRankingPublico(){
           <div class="field"><label for="seletorPeriodoPublico">Mês e ano</label><select id="seletorPeriodoPublico" onchange="selecionarRankingPublico(this.value)">${opcoesPeriodo}</select></div>
         </div>
         <h2 style="font-size:18px;color:var(--verde-900);">${escapeHtml(formatarMesRankingPublico(ranking.mes,ranking.ano))}</h2>
-        ${ranking.ranking.length?`<div class="table-wrap public-ranking-table"><table><thead><tr><th>Posição</th><th>Colaborador</th><th>${ranking.ranking.some(item=>item.kit)?'Kits trocados':'Pontuação'}</th>${mostraDetalhes?'<th>Detalhes</th>':''}</tr></thead>
+        ${ranking.ranking.length?`<div class="table-wrap public-ranking-table"><table><thead><tr><th>Posição</th><th>Colaborador</th><th>${ranking.ranking.some(item=>item.kit)?'Resgates':'Pontuação'}</th>${mostraDetalhes?'<th>Detalhes</th>':''}</tr></thead>
           <tbody>${ranking.ranking.map((item,index)=>{
             const detalhesDisponiveis=!!(item.detalhes&&item.detalhes.length);
             const resumoTroca=item.resumoTroca;
@@ -303,7 +303,7 @@ function renderRankingPublico(){
               ?`<button class="btn btn-sm public-details-toggle${botaoDestacado?' is-achieved':''}" type="button" aria-label="Detalhes${resumoTroca?`. ${resumoTroca.quantidade} ${resumoTroca.unidade}.`:`. ${Math.round(item.percentualGeral??item.pontuacao)}% da meta, ${(item.totalMateriais||0).toLocaleString('pt-BR')} materiais.`} Abrir detalhes." onclick="abrirDetalhesRankingPublico(${index})"><span class="public-details-window" aria-hidden="true"><span class="public-details-track">${quadrosDetalhes}</span></span></button>`
               :`<button class="btn btn-ghost btn-sm" type="button" onclick="abrirDetalhesRankingPublico(${index})">Detalhes</button>`;
             const medalha=item.posicao===1?'🥇':item.posicao===2?'🥈':item.posicao===3?'🥉':'';
-            return `<tr><td class="public-ranking-position"><span class="public-ranking-position-content"><b>${item.posicao?`${item.posicao}º`:'—'}</b>${medalha?`<span class="public-ranking-medal" aria-hidden="true">${medalha}</span>`:''}</span></td><td style="font-weight:700;">${escapeHtml(item.nome)}</td><td>${item.kit?`${item.kit.trocadosMes.toLocaleString('pt-BR')} ${item.kit.trocadosMes===1?'kit':'kits'}`:`${item.pontuacao.toFixed(0)} pts`}</td>${mostraDetalhes?`<td>${detalhesDisponiveis?botaoDetalhes:'<span class="small-note">—</span>'}</td>`:''}</tr>`;
+            return `<tr><td class="public-ranking-position"><span class="public-ranking-position-content"><b>${item.posicao?`${item.posicao}º`:'—'}</b>${medalha?`<span class="public-ranking-medal" aria-hidden="true">${medalha}</span>`:''}</span></td><td style="font-weight:700;">${escapeHtml(item.nome)}</td><td>${item.kit?`${(Number(item.kit.resgatesMes)||0).toLocaleString('pt-BR')} ${(Number(item.kit.resgatesMes)||0)===1?'cartela':'cartelas'}`:`${item.pontuacao.toFixed(0)} pts`}</td>${mostraDetalhes?`<td>${detalhesDisponiveis?botaoDetalhes:'<span class="small-note">—</span>'}</td>`:''}</tr>`;
           }).join('')}</tbody>
         </table></div>
         `:`<div class="empty-state">Ainda não há colaboradores com movimentação neste período.</div>`}
@@ -815,7 +815,7 @@ function renderDetalhesKit(kit,unidadeItem){
           ${metaMensal?`<div class="card stat-card"><div class="stat-label">Meta mensal</div><div class="stat-value">${fmt(metaMensal)} ${escapeHtml(unidadeItem)}</div></div>`:''}
           ${kit.disponiveis==null?'':`<div class="card stat-card"><div class="stat-label">${escapeHtml(rotuloItem)} disponíveis</div><div class="stat-value">${fmt(kit.disponiveis*(Number(kit.cartelasPorKit)||1))}</div></div>`}
         </div>
-        ${kit.materiais.length?`<div class="card kit-detail-materials">        <div class="kit-detail-scroll" style="margin-top:0;"><table class="kit-materials-table"><thead><tr><th>KIT DE MATERIAIS</th><th>Necessário</th><th>Disponível</th></tr></thead>
+        ${kit.materiais.length?`<div class="card kit-detail-materials">        <div class="kit-detail-scroll" style="margin-top:0;"><table class="kit-materials-table"><thead><tr><th>MATERIAIS</th><th>Necessário</th><th>Disponível</th></tr></thead>
           <tbody>${kit.materiais.map(mat=>`<tr><td>${escapeHtml(mat.nome)}</td><td>${fmt(mat.porKit)} ${escapeHtml(mat.unidade)}</td><td>${fmt(mat.disponivel)} ${escapeHtml(mat.unidade)}</td></tr>`).join('')}</tbody></table></div></div>`:''}
       </div>
       ${informativo?`<p class="small-note" style="margin-top:12px;white-space:pre-line;">${escapeHtml(informativo)}</p>`:''}`;

@@ -107,7 +107,7 @@ test('histórico padroniza registro e coleta; navegação usa Registro express',
   assert.match(main, /const rotuloData = 'Coleta';/);
   assert.match(auth, /const rotuloData = 'Coleta';/);
   assert.doesNotMatch(main + auth, /Data informada|Data coleta/);
-  assert.match(views, /<th>KIT DE MATERIAIS<\/th><th>Necessário<\/th><th>Disponível<\/th>/);
+  assert.match(views, /<th>MATERIAIS<\/th><th>Necessário<\/th><th>Disponível<\/th>/);
 });
 
 test('modo de manutenção pública não exibe solicitação de troca nem rodapé legal', () => {
