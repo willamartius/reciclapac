@@ -576,9 +576,22 @@ function renderRanking(){
     return `<div class="card"><div class="empty-state">Nenhuma campanha cadastrada ainda.</div></div>`;
   }
   const mes=STATE.rankMes, ano=STATE.rankAno;
-  const resultados = calcularResultadosMes(campanhaId, mes,ano,STATE.rankSetor);
+  let resultados = calcularResultadosMes(campanhaId, mes,ano,STATE.rankSetor);
+  const campanhaRanking=campanhaPorId(campanhaId);
+  const cfgTrocaRanking=campanhaRanking&&campanhaRanking.trocaCartela&&campanhaRanking.trocaCartela.ativo?campanhaRanking.trocaCartela:null;
+  const chaveRanking=chaveMA(mes,ano);
+  const categoriasRanking=categoriasDaCampanha(campanhaRanking);
+  if(cfgTrocaRanking){
+    resultados=resultados.map(r=>({
+      ...r,
+      _resgatesRanking:montarResumoKitColaborador(campanhaRanking,cfgTrocaRanking,r,chaveRanking,categoriasRanking).resgatesMes
+    })).sort((a,b)=>b._resgatesRanking-a._resgatesRanking||String(a.colaborador.nome||'').localeCompare(String(b.colaborador.nome||''),'pt-BR'))
+      .map((r,index)=>({...r,posicao:index+1}));
+  }
   const setores = setoresExistentes();
-  const comAtividade = resultados.filter(r=> r.pontuacao>0 || r.totalMateriais>0);
+  const comAtividade = cfgTrocaRanking
+    ? resultados.filter(r=>r._resgatesRanking>0)
+    : resultados.filter(r=> r.pontuacao>0 || r.totalMateriais>0);
   const top3 = comAtividade.slice(0,3);
   return `
     <div class="toolbar">
@@ -620,28 +633,35 @@ function renderPodium(r,pos,medal){
     <div style="font-size:11px;opacity:.9;">${Math.round(r.mediaReal)}% da meta</div>
   </div>`;
 }
+function pluralizarNomeItemRanking(nome){
+  const texto=String(nome||'item').trim()||'item';
+  const partes=texto.split(/\\s+/);
+  const primeiro=partes.shift();
+  const plural=/s$/i.test(primeiro)?primeiro:/m$/i.test(primeiro)?primeiro.slice(0,-1)+'ns':/l$/i.test(primeiro)?primeiro.slice(0,-1)+'is':primeiro+'s';
+  return [plural,...partes].join(' ');
+}
 function renderTabelaRanking(resultados, completa, mes, ano){
   if(resultados.length===0) return `<div class="table-empty">Nenhum resultado neste período.</div>`;
   const campanha = campanhaPorId(STATE.campanhaSelecionadaId);
   const cfgTroca = campanha && campanha.trocaCartela && campanha.trocaCartela.ativo ? campanha.trocaCartela : null;
+  const cabecalhoItem=cfgTroca?pluralizarNomeItemRanking(cfgTroca.nomeItem):'';
   return `
     <table><thead><tr>
-      <th>Pos.</th><th>Colaborador</th><th>Setor</th><th>Pontuação</th><th>% cumprimento</th>${completa?'<th>Materiais</th>':''}<th>Meta</th>${cfgTroca?`<th class="table-cell-center">${escapeHtml(cfgTroca.nomeItem)}</th>`:''}<th></th>
+      <th>Pos.</th><th>Colaborador</th><th>Setor</th>${cfgTroca?'<th>Resgates</th>':'<th>Pontuação</th><th>% cumprimento</th>'}${completa?'<th>Materiais</th>':''}${cfgTroca?`<th class="table-cell-center">${escapeHtml(cabecalhoItem)}</th>`:'<th>Meta</th>'}<th></th>
     </tr></thead>
     <tbody>
       ${resultados.map(r=>{
         const kits = cfgTroca ? kitsDisponiveis(campanha, r.totais) : 0;
         const itensDisponiveis = kits * (Number(cfgTroca && cfgTroca.cartelasPorKit) || 1);
+        const resgatesMes=cfgTroca?Number(r._resgatesRanking)||0:0;
         return `
         <tr>
           <td class="ranking-position-cell">${r.posicao? `<span class="ranking-position-content"><b>${r.posicao}º</b>${r.posicao<=3?`<span class="ranking-medal" aria-hidden="true">${({1:'🥇',2:'🥈',3:'🥉'}[r.posicao]||'')}</span>`:''}</span>` : '<span class="small-note">—</span>'}</td>
           <td style="font-weight:700;">${escapeHtml(r.colaborador.nome)}</td>
           <td>${escapeHtml(r.colaborador.setor||'—')}</td>
-          <td style="min-width:120px;"><div style="display:flex;align-items:center;gap:8px;"><div class="progress" style="flex:1;"><div style="width:${Math.min(100,r.pontuacao)}%"></div></div><span>${r.pontuacao.toFixed(0)}</span></div></td>
-          <td>${r.mediaReal.toFixed(0)}%</td>
+          ${cfgTroca?`<td>${resgatesMes.toLocaleString('pt-BR')}</td>`:`<td style="min-width:120px;"><div style="display:flex;align-items:center;gap:8px;"><div class="progress" style="flex:1;"><div style="width:${Math.min(100,r.pontuacao)}%"></div></div><span>${r.pontuacao.toFixed(0)}</span></div></td><td>${r.mediaReal.toFixed(0)}%</td>`}
           ${completa?`<td>${r.totalMateriais.toLocaleString('pt-BR')}</td>`:''}
-          <td>${r.metaAtingida? '<span class="badge badge-green">Atingida</span>' : '<span class="badge badge-grey">Em andamento</span>'}</td>
-          ${cfgTroca?`<td class="table-cell-center">${itensDisponiveis>0?`<span class="badge badge-green">${itensDisponiveis} disponíve${itensDisponiveis===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</td>`:''}
+          ${cfgTroca?`<td class="table-cell-center">${itensDisponiveis>0?`<span class="badge badge-green">${itensDisponiveis} disponíve${itensDisponiveis===1?'l':'is'}</span>`:'<span class="small-note">0</span>'}</td>`:`<td>${r.metaAtingida? '<span class="badge badge-green">Atingida</span>' : '<span class="badge badge-grey">Em andamento</span>'}</td>`}
           <td>${mes&&ano? `<button class="btn btn-ghost btn-sm" onclick="abrirDetalhesColaborador('${r.colaborador.id}',${mes},${ano})">Detalhes</button>` : ''}</td>
         </tr>`;
       }).join('')}
