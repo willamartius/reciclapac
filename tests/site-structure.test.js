@@ -56,8 +56,8 @@ test('salvar avisos públicos mantém espaço de status estável para evitar sal
   assert.doesNotMatch(main, /avisosPublicosErro[^\n]*hidden/);
   assert.match(main, /erroElemento\.textContent=mensagem\?'Mensagem salva e ativada\.'\:'Mensagem removida e desativada\.'/);
   assert.match(main, /erroElemento\.textContent=erro\.message\|\|'Não foi possível salvar a mensagem\.'/);
-  assert.match(views, /STATE\.avisoManutencaoPublico\?\x60<p class="public-configured-notice">/);
-  assert.match(views, /STATE\.avisoRankingPublico\?\x60<div class="public-configured-notice" role="status">/);
+  assert.ok(views.includes('STATE.avisoManutencaoPublico?`<div class="public-configured-notice">'));
+  assert.ok(views.includes('STATE.avisoRankingPublico?`<div class="public-configured-notice" role="status">'));
 });
 
 test('painel e página pública usam o mesmo renderizador de detalhes de kits', () => {
@@ -211,7 +211,7 @@ test('Configurações administrativas têm abas, mantêm alvos de funções e do
   assert.match(main, /avisoRankingPublicoInput/);
   assert.match(views, /public-configured-notice/);
   assert.match(views, /STATE\.avisoRankingPublico\?`<div class=\"public-configured-notice\"/);
-  assert.match(views, /STATE\.avisoManutencaoPublico\?`<p class=\"public-configured-notice\"/);
+  assert.match(views, /STATE\.avisoManutencaoPublico\?`<div class=\"public-configured-notice\"/);
   assert.match(read('firestore.rules'), /mostrarAvisoManutencao/);
   assert.match(read('css/styles.css'), /settings-tab\.is-active\{background:var\(--verde-600\);color:#fff/);
   assert.match(read('css/styles.css'), /toggle-switch input:checked\+\.toggle-switch-track\{background:var\(--verde-600\);/);
@@ -273,4 +273,20 @@ test('contador do sino é sincronizado quando o shell do painel é reutilizado',
   assert.match(render, /STATE\.isAdmin \? renderBotaoNotificacoesTroca\(\) : ''/);
   assert.match(render, /notificationActions\.innerHTML !== notificationMarkup/);
   assert.ok(render.indexOf('notificationActions.innerHTML = notificationMarkup') > render.indexOf('if(!app.querySelector(\'.sidebar\'))'));
+});
+
+test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibir', () => {
+  const main = read('js/main.js');
+  const views = read('js/views.js');
+  const css = read('css/styles.css');
+  assert.match(main, /contenteditable="true"/);
+  assert.match(main, /aria-label="Formatação da mensagem de manutenção"/);
+  assert.match(main, /aria-label="Formatação da mensagem do ranking público"/);
+  assert.match(main, /function formatarAvisoPublico\(/);
+  assert.ok(main.includes("sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim(),1000)"));
+  assert.match(views, /function sanitizarAvisoPublicoHtml\(/);
+  assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A'])"));
+  assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico)"));
+  assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico)"));
+  assert.match(css, /\.rich-text-editor:focus/);
 });

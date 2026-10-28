@@ -1008,3 +1008,17 @@ select{text-overflow:ellipsis;}
 .public-notice-editor:last-of-type{padding-bottom:0;border-bottom:0;}
 .public-notice-editor h3{margin:0;font-size:1rem;color:var(--verde-900);}
 .public-notice-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
+
+/* Editor de texto formatado para avisos públicos */
+.rich-text-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--border);border-bottom:0;border-radius:10px 10px 0 0;background:var(--surface-muted,var(--surface));}
+.rich-text-toolbar .btn{min-width:36px;justify-content:center;}
+.rich-text-editor{min-height:96px;max-height:280px;overflow:auto;padding:12px;border:1px solid var(--border);border-radius:0 0 10px 10px;background:var(--surface);color:var(--text);line-height:1.55;overflow-wrap:anywhere;white-space:normal;}
+.rich-text-editor:focus{outline:2px solid var(--verde-500);outline-offset:1px;}
+.rich-text-editor:empty::before{content:attr(data-placeholder);color:var(--text-muted);pointer-events:none;}
+.rich-text-editor p{margin:0 0 8px;}
+.rich-text-editor p:last-child{margin-bottom:0;}
+.rich-text-editor ul,.rich-text-editor ol{padding-left:24px;margin:8px 0;}
+.rich-text-editor a,.public-configured-notice a{color:var(--verde-700);text-decoration:underline;}
+.public-configured-notice p{margin:0 0 8px;}
+.public-configured-notice p:last-child{margin-bottom:0;}
+.public-configured-notice ul,.public-configured-notice ol{display:inline-block;text-align:left;margin:8px auto;padding-left:24px;}

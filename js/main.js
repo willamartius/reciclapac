@@ -381,14 +381,25 @@ function renderLixeira(){
 function limparAvisoPublico(tipo){
   const id=tipo==='manutencao'?'avisoManutencaoPublicaInput':'avisoRankingPublicoInput';
   const campo=document.getElementById(id);
-  if(campo) campo.value='';
+  if(campo) campo.innerHTML='';
   campo?.focus();
 }
+function formatarAvisoPublico(id, comando){
+  const campo=document.getElementById(id);
+  if(!campo)return;
+  campo.focus();
+  if(comando==='createLink'){
+    const url=prompt('Informe o endereço do link (https://...)');
+    if(!url||!/^https?:\/\//i.test(url.trim()))return;
+    document.execCommand('createLink',false,url.trim());
+  }else document.execCommand(comando,false,null);
+}
+window.formatarAvisoPublico=formatarAvisoPublico;
 async function salvarAvisoPublico(tipo){
   if(!exigirAdmin()) return;
   const manutencao=tipo==='manutencao';
   const campo=document.getElementById(manutencao?'avisoManutencaoPublicaInput':'avisoRankingPublicoInput');
-  const mensagem=(campo?.value||'').trim().slice(0,1000);
+  const mensagem=sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim(),1000);
   const erroElemento=document.getElementById('avisosPublicosErro');
   const chaveTexto=manutencao?'avisoManutencaoPublico':'avisoRankingPublico';
   const chaveMostrar=manutencao?'mostrarAvisoManutencaoPublico':'mostrarAvisoRankingPublico';
@@ -480,12 +491,32 @@ function renderConfig(){
     <div class="card" style="display:grid;gap:18px;">
       <section class="public-notice-editor">
         <h3>Manutenção</h3>
-        <div class="field"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label><textarea id="avisoManutencaoPublicaInput" rows="3" maxlength="1000" placeholder="Opcional: aparece abaixo do aviso padrão">${escapeHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</textarea></div>
+        <div class="field"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label>
+          <div class="rich-text-toolbar" role="toolbar" aria-label="Formatação da mensagem de manutenção">
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Negrito" title="Negrito" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','bold')"><b>B</b></button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Itálico" title="Itálico" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','italic')"><i>I</i></button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Sublinhado" title="Sublinhado" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','underline')"><u>U</u></button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Lista com marcadores" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','insertUnorderedList')">• Lista</button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Lista numerada" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','insertOrderedList')">1. Lista</button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Inserir link" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','createLink')">Link</button>
+          </div>
+          <div id="avisoManutencaoPublicaInput" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Mensagem extra na página de manutenção" data-placeholder="Opcional: aparece abaixo do aviso padrão">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</div>
+        </div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('manutencao')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('manutencao')">Salvar</button></div>
       </section>
       <section class="public-notice-editor">
         <h3>Ranking público</h3>
-        <div class="field"><label for="avisoRankingPublicoInput">Mensagem extra no ranking público</label><textarea id="avisoRankingPublicoInput" rows="3" maxlength="1000" placeholder="Opcional: aparece acima dos filtros do ranking">${escapeHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</textarea></div>
+        <div class="field"><label for="avisoRankingPublicoInput">Mensagem extra no ranking público</label>
+          <div class="rich-text-toolbar" role="toolbar" aria-label="Formatação da mensagem do ranking público">
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Negrito" title="Negrito" onclick="formatarAvisoPublico('avisoRankingPublicoInput','bold')"><b>B</b></button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Itálico" title="Itálico" onclick="formatarAvisoPublico('avisoRankingPublicoInput','italic')"><i>I</i></button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Sublinhado" title="Sublinhado" onclick="formatarAvisoPublico('avisoRankingPublicoInput','underline')"><u>U</u></button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Lista com marcadores" onclick="formatarAvisoPublico('avisoRankingPublicoInput','insertUnorderedList')">• Lista</button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Lista numerada" onclick="formatarAvisoPublico('avisoRankingPublicoInput','insertOrderedList')">1. Lista</button>
+            <button class="btn btn-outline btn-sm" type="button" aria-label="Inserir link" onclick="formatarAvisoPublico('avisoRankingPublicoInput','createLink')">Link</button>
+          </div>
+          <div id="avisoRankingPublicoInput" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Mensagem extra no ranking público" data-placeholder="Opcional: aparece acima dos filtros do ranking">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</div>
+        </div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('ranking')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('ranking')">Salvar</button></div>
       </section>
       <p id="avisosPublicosErro" class="small-note" role="status" aria-live="polite" style="min-height:1.4em;margin:0;"></p>
