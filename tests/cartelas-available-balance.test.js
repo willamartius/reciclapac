@@ -50,6 +50,34 @@ test('ranking calcula kits disponíveis com os mesmos totais do período usados 
   assert.match(ranking, /\$\{itensDisponiveis\} disponíve/);
 });
 
+test('ranking de campanha de troca usa resgates do mês e preserva materiais e item configurado no cabeçalho', () => {
+  const ranking = extractFunction(transfers, 'renderRanking');
+  const tabela = extractFunction(transfers, 'renderTabelaRanking');
+  const podium = extractFunction(transfers, 'renderPodium');
+  assert.match(ranking, /montarResumoKitColaborador\(campanhaRanking,cfgTrocaRanking,r,chaveRanking,categoriasRanking\)\.resgatesMes/);
+  assert.match(ranking, /sort\(\(a,b\)=>b\._resgatesRanking-a\._resgatesRanking/);
+  assert.match(ranking, /resultados\.filter\(r=>r\._resgatesRanking>0\)/);
+  assert.match(tabela, /'<th>Resgates<\/th>'/);
+  assert.match(tabela, /'<th>Materiais<\/th>'/);
+  assert.match(tabela, /pluralizarNomeItemRanking\(cfgTroca\.nomeItem\)/);
+  assert.match(tabela, /r\._resgatesRanking/);
+  assert.match(tabela, /\$\{modoResgates\?'':'<th>Pontuação<\/th><th>% cumprimento<\/th><th>Meta<\/th>'\}/);
+  assert.match(tabela, /\$\{modoResgates\?'<th>Resgates<\/th>':''\}/);
+  assert.ok(tabela.indexOf("completa?'<th>Materiais</th>':''") < tabela.indexOf('cfgTroca?`<th class="table-cell-center">${escapeHtml(cabecalhoItem)}'));
+  assert.ok(tabela.indexOf('cfgTroca?`<th class="table-cell-center">${escapeHtml(cabecalhoItem)}') < tabela.indexOf("modoResgates?'<th>Resgates</th>':''"));
+  assert.match(podium, /usarResgates\?Number\(r\._resgatesRanking\|\|0\)/);
+});
+
+test('nome configurado do item é pluralizado no cabeçalho do ranking', () => {
+  const helper = extractFunction(transfers, 'pluralizarNomeItemRanking');
+  const sandbox = {};
+  vm.createContext(sandbox);
+  vm.runInContext(helper + '\nglobalThis.pluralizar = pluralizarNomeItemRanking;', sandbox);
+  assert.equal(sandbox.pluralizar('Cartela'), 'Cartelas');
+  assert.equal(sandbox.pluralizar('Item'), 'Itens');
+  assert.equal(sandbox.pluralizar('Cartelas de bingo'), 'Cartelas de bingo');
+});
+
 test('saldo disponível no formulário continua sendo calculado pela função central de saldo acumulado', () => {
   const helper = extractFunction(transfers, 'totaisAcumuladosColaborador');
   assert.match(helper, /calcularSaldosAcumulados\(campanhaId, mes, ano\)/);
