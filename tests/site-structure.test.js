@@ -279,7 +279,7 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   const main = read('js/main.js');
   const views = read('js/views.js');
   const css = read('css/styles.css');
-  assert.match(main, /contenteditable="true"/);
+  assert.match(main, /contenteditable="true"/);\n  assert.match(main, /let abaConfiguracoesAtiva='perfil'/);\n  assert.match(main, /abaConfiguracoesAtiva=permitidas\.includes\(aba\)\?aba:'perfil'/);
   assert.match(main, /aria-label="Formatação da mensagem de manutenção"/);
   assert.match(main, /aria-label="Formatação da mensagem do ranking público"/);
   assert.match(main, /function formatarAvisoPublico\(/);
