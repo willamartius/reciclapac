@@ -274,3 +274,19 @@ test('contador do sino é sincronizado quando o shell do painel é reutilizado',
   assert.match(render, /notificationActions\.innerHTML !== notificationMarkup/);
   assert.ok(render.indexOf('notificationActions.innerHTML = notificationMarkup') > render.indexOf('if(!app.querySelector(\'.sidebar\'))'));
 });
+
+test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibir', () => {
+  const main = read('js/main.js');
+  const views = read('js/views.js');
+  const css = read('css/styles.css');
+  assert.match(main, /contenteditable="true"/);
+  assert.match(main, /aria-label="Formatação da mensagem de manutenção"/);
+  assert.match(main, /aria-label="Formatação da mensagem do ranking público"/);
+  assert.match(main, /function formatarAvisoPublico\(/);
+  assert.ok(main.includes("sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim())"));
+  assert.match(views, /function sanitizarAvisoPublicoHtml\(/);
+  assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A'])"));
+  assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico)"));
+  assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico)"));
+  assert.match(css, /\.rich-text-editor:focus/);
+});
