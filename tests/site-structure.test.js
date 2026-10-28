@@ -246,6 +246,19 @@ test('avisos públicos usam salvar e limpar, e links legais abrem em nova guia',
   assert.match(views, /href="privacidade\.html" target="_blank" rel="noopener noreferrer"/);
 });
 
+
+test('conteúdo da coluna de itens disponíveis fica centralizado em ambas as configurações de campanha', () => {
+  const ranking = read('js/transfers-exchange.js');
+  const css = read('css/styles.css');
+  const start = ranking.indexOf('function renderTabelaRanking(');
+  const end = ranking.indexOf('function abrirDetalhesColaborador(', start);
+  assert.ok(start >= 0 && end > start);
+  const tabela = ranking.slice(start, end);
+  assert.match(tabela, /const campanha = campanhaPorId\(STATE\.campanhaSelecionadaId\)/);
+  assert.match(tabela, /class="table-cell-center"><div class="ranking-item-cell-content"/);
+  assert.match(css, /\.ranking-item-cell-content\{display:flex;width:100%;min-width:0;align-items:center;justify-content:center;box-sizing:border-box;\}/);
+});
+
 test('contador do sino é sincronizado quando o shell do painel é reutilizado', () => {
   const views = read('js/views.js');
   const renderStart = views.indexOf('function renderApp(){');
