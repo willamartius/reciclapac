@@ -231,12 +231,19 @@ function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
   if(!documento.body.children.length && /<\/?(?:b|strong|i|em|u|p|br|div|ul|ol|li|a)\b/i.test(textoColado)){
     documento=new DOMParser().parseFromString(textoColado,'text/html');
   }
-  const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A']);
+  const permitidas=new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A']);
   const limpar=no=>{
     [...no.childNodes].forEach(filho=>{
       if(filho.nodeType===Node.COMMENT_NODE){filho.remove();return;}
       if(filho.nodeType!==Node.ELEMENT_NODE)return;
       if(!permitidas.has(filho.tagName)){filho.replaceWith(...filho.childNodes);return;}
+      if(filho.tagName==='DIV'){
+        const paragrafo=documento.createElement('p');
+        while(filho.firstChild) paragrafo.appendChild(filho.firstChild);
+        filho.replaceWith(paragrafo);
+        limpar(paragrafo);
+        return;
+      }
       const href=filho.tagName==='A'?filho.getAttribute('href'):null;
       [...filho.attributes].forEach(a=>filho.removeAttribute(a.name));
       if(filho.tagName==='A'){
