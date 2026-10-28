@@ -255,8 +255,11 @@ test('conteúdo da coluna de itens disponíveis fica centralizado em ambas as co
   assert.ok(start >= 0 && end > start);
   const tabela = ranking.slice(start, end);
   assert.match(tabela, /const campanha = campanhaPorId\(STATE\.campanhaSelecionadaId\)/);
+  assert.match(tabela, /<table class="ranking-table">/);
   assert.match(tabela, /class="table-cell-center"><div class="ranking-item-cell-content"/);
   assert.match(css, /\.ranking-item-cell-content\{display:flex;width:100%;min-width:0;align-items:center;justify-content:center;box-sizing:border-box;\}/);
+  assert.match(css, /#viewContent \.ranking-table th,\s*#viewContent \.ranking-table td\{text-align:center;\}/);
+  assert.match(css, /#viewContent \.ranking-table td \.progress\{min-width:0;\}/);
 });
 
 test('contador do sino é sincronizado quando o shell do painel é reutilizado', () => {
