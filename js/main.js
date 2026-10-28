@@ -403,7 +403,7 @@ function formatarAvisoPublico(id, comando, valor){
   }
   if(comando==='createLink'){
     const url=prompt('Informe o endereço do link (https://...)');
-    if(!url||!/^https?:\\/\\//i.test(url.trim()))return;
+    if(!url||!/^https?:\/\//i.test(url.trim()))return;
     document.execCommand('createLink',false,url.trim());
   }else if(comando==='fontSize'){
     const tamanho=String(valor||'').trim();
@@ -524,7 +524,7 @@ function renderConfig(){
             <label class="rich-text-select-label">Tamanho
               <select class="rich-text-select" aria-label="Tamanho da fonte" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onchange="formatarAvisoPublico('avisoManutencaoPublicaInput','fontSize',this.value);this.value=''">
                 <option value="" selected disabled>Fonte</option>
-                <option value="1">Pequena</option><option value="2">12 px</option><option value="3">14 px</option><option value="4">16 px</option><option value="5">18 px</option><option value="6">24 px</option><option value="7">32 px</option>
+                <option value="1">8 px</option><option value="2">12 px</option><option value="3">14 px</option><option value="4">16 px</option><option value="5">18 px</option><option value="6">24 px</option><option value="7">32 px</option>
               </select>
             </label>
             <label class="rich-text-select-label">Cor
@@ -551,7 +551,7 @@ function renderConfig(){
             <label class="rich-text-select-label">Tamanho
               <select class="rich-text-select" aria-label="Tamanho da fonte" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onchange="formatarAvisoPublico('avisoRankingPublicoInput','fontSize',this.value);this.value=''">
                 <option value="" selected disabled>Fonte</option>
-                <option value="1">Pequena</option><option value="2">12 px</option><option value="3">14 px</option><option value="4">16 px</option><option value="5">18 px</option><option value="6">24 px</option><option value="7">32 px</option>
+                <option value="1">8 px</option><option value="2">12 px</option><option value="3">14 px</option><option value="4">16 px</option><option value="5">18 px</option><option value="6">24 px</option><option value="7">32 px</option>
               </select>
             </label>
             <label class="rich-text-select-label">Cor
