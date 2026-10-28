@@ -11,7 +11,7 @@ permissions:
 jobs:
   testes-unitarios:
     name: Testes unitários e Firestore Emulator
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Baixar repositório
         uses: actions/checkout@v7
