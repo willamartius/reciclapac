@@ -399,7 +399,7 @@ async function salvarAvisoPublico(tipo){
   if(!exigirAdmin()) return;
   const manutencao=tipo==='manutencao';
   const campo=document.getElementById(manutencao?'avisoManutencaoPublicaInput':'avisoRankingPublicoInput');
-  const mensagem=sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim()).slice(0,1000);
+  const mensagem=sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim(),1000);
   const erroElemento=document.getElementById('avisosPublicosErro');
   const chaveTexto=manutencao?'avisoManutencaoPublico':'avisoRankingPublico';
   const chaveMostrar=manutencao?'mostrarAvisoManutencaoPublico':'mostrarAvisoRankingPublico';
