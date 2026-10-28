@@ -245,3 +245,15 @@ test('avisos públicos usam salvar e limpar, e links legais abrem em nova guia',
   assert.match(views, /href="termos\.html" target="_blank" rel="noopener noreferrer"/);
   assert.match(views, /href="privacidade\.html" target="_blank" rel="noopener noreferrer"/);
 });
+
+test('contador do sino é sincronizado quando o shell do painel é reutilizado', () => {
+  const views = read('js/views.js');
+  const renderStart = views.indexOf('function renderApp(){');
+  const contentStart = views.indexOf("const content = document.getElementById('viewContent');", renderStart);
+  assert.ok(renderStart >= 0 && contentStart > renderStart);
+  const render = views.slice(renderStart, contentStart);
+  assert.match(render, /app\.querySelector\('\.topbar-icon-actions'\)/);
+  assert.match(render, /STATE\.isAdmin \? renderBotaoNotificacoesTroca\(\) : ''/);
+  assert.match(render, /notificationActions\.innerHTML !== notificationMarkup/);
+  assert.ok(render.indexOf('notificationActions.innerHTML = notificationMarkup') > render.indexOf('if(!app.querySelector(\'.sidebar\'))'));
+});
