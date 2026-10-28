@@ -1015,10 +1015,12 @@ select{text-overflow:ellipsis;}
 .rich-text-editor{min-height:96px;max-height:280px;overflow:auto;padding:12px;border:1px solid var(--border);border-radius:0 0 10px 10px;background:var(--surface);color:var(--text);line-height:1.55;overflow-wrap:anywhere;white-space:normal;}
 .rich-text-editor:focus{outline:2px solid var(--verde-500);outline-offset:1px;}
 .rich-text-editor:empty::before{content:attr(data-placeholder);color:var(--text-muted);pointer-events:none;}
-.rich-text-editor p{margin:0 0 8px;}
+.rich-text-editor p{margin:0 0 12px;}
 .rich-text-editor p:last-child{margin-bottom:0;}
+.rich-text-editor div{margin-bottom:12px;}
+.rich-text-editor div:last-child{margin-bottom:0;}
 .rich-text-editor ul,.rich-text-editor ol{padding-left:24px;margin:8px 0;}
 .rich-text-editor a,.public-configured-notice a{color:var(--verde-700);text-decoration:underline;}
-.public-configured-notice p{margin:0 0 8px;}
+.public-configured-notice p{margin:0 0 12px;}
 .public-configured-notice p:last-child{margin-bottom:0;}
 .public-configured-notice ul,.public-configured-notice ol{display:inline-block;text-align:left;margin:8px auto;padding-left:24px;}
