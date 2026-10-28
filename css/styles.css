@@ -1019,7 +1019,7 @@ select{text-overflow:ellipsis;}
 .rich-text-editor p:last-child{margin-bottom:0;}
 .rich-text-editor div{margin-bottom:12px;}
 .rich-text-editor div:last-child{margin-bottom:0;}
-.rich-text-editor ul,.rich-text-editor ol{padding-left:24px;margin:8px 0;}
+.rich-text-editor ul,.rich-text-editor ol{padding-left:24px;margin:8px 0;}\n.rich-text-editor li,.public-configured-notice li{margin-bottom:8px;}\n.rich-text-editor li:last-child,.public-configured-notice li:last-child{margin-bottom:0;}
 .rich-text-editor a,.public-configured-notice a{color:var(--verde-700);text-decoration:underline;}
 .public-configured-notice p{margin:0 0 12px;}
 .public-configured-notice p:last-child{margin-bottom:0;}
