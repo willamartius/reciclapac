@@ -56,7 +56,7 @@ test('salvar avisos públicos mantém espaço de status estável para evitar sal
   assert.doesNotMatch(main, /avisosPublicosErro[^\n]*hidden/);
   assert.match(main, /erroElemento\.textContent=mensagem\?'Mensagem salva e ativada\.'\:'Mensagem removida e desativada\.'/);
   assert.match(main, /erroElemento\.textContent=erro\.message\|\|'Não foi possível salvar a mensagem\.'/);
-  assert.match(views, /STATE\.avisoManutencaoPublico\?\x60<p class="public-configured-notice">/);
+  assert.match(views, /STATE\\.avisoManutencaoPublico\\?\\x60<div class="public-configured-notice">/);
   assert.match(views, /STATE\.avisoRankingPublico\?\x60<div class="public-configured-notice" role="status">/);
 });
 
