@@ -280,6 +280,8 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   const views = read('js/views.js');
   const css = read('css/styles.css');
   assert.match(main, /contenteditable="true"/);
+  assert.match(main, /let abaConfiguracoesAtiva='perfil'/);
+  assert.match(main, /abaConfiguracoesAtiva=permitidas\.includes\(aba\)\?aba:'perfil'/);
   assert.match(main, /aria-label="Formatação da mensagem de manutenção"/);
   assert.match(main, /aria-label="Formatação da mensagem do ranking público"/);
   assert.match(main, /function formatarAvisoPublico\(/);
@@ -287,7 +289,12 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.match(views, /function sanitizarAvisoPublicoHtml\(/);
   assert.ok(views.includes('const textoColado=documento.body.textContent||\'\''));
   assert.ok(views.includes('documento=new DOMParser().parseFromString(textoColado,\'text/html\')'));
-  assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A'])"));
+  assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A'])"));
+  assert.ok(views.includes("if(filho.tagName==='DIV')"));
+  assert.ok(views.includes('documento.createElement(\'p\')'));
+  assert.ok(css.includes('.public-configured-notice p{margin:0 0 12px;}'));
+  assert.ok(css.includes('.rich-text-editor p{margin:0 0 12px;}'));
+  assert.ok(css.includes('.rich-text-editor li,.public-configured-notice li{margin-bottom:8px;}'));
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico)"));
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico)"));
   assert.match(css, /\.rich-text-editor:focus/);

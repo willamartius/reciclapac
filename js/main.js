@@ -440,13 +440,13 @@ function renderConfig(){
   }
   return `
     <div class="settings-tabs" role="tablist" aria-label="Seções das configurações">
-      <button type="button" class="settings-tab is-active" role="tab" aria-selected="true" data-settings-tab="perfil" onclick="selecionarAbaConfiguracoes('perfil')">Perfil</button>
-      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="campanhas" onclick="selecionarAbaConfiguracoes('campanhas')">Campanhas</button>
-      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="backup" onclick="selecionarAbaConfiguracoes('backup')">Backup</button>
-      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="manutencao" onclick="selecionarAbaConfiguracoes('manutencao')">Manutenção</button>
-      <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="tecnica" onclick="selecionarAbaConfiguracoes('tecnica')">Desenvolvedor</button>
+      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='perfil'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='perfil'?'true':'false'}" data-settings-tab="perfil" onclick="selecionarAbaConfiguracoes('perfil')">Perfil</button>
+      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='campanhas'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='campanhas'?'true':'false'}" data-settings-tab="campanhas" onclick="selecionarAbaConfiguracoes('campanhas')">Campanhas</button>
+      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='backup'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='backup'?'true':'false'}" data-settings-tab="backup" onclick="selecionarAbaConfiguracoes('backup')">Backup</button>
+      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='manutencao'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='manutencao'?'true':'false'}" data-settings-tab="manutencao" onclick="selecionarAbaConfiguracoes('manutencao')">Manutenção</button>
+      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='tecnica'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='tecnica'?'true':'false'}" data-settings-tab="tecnica" onclick="selecionarAbaConfiguracoes('tecnica')">Desenvolvedor</button>
     </div>
-    <div class="settings-panel" data-settings-panel="perfil">
+    <div class="settings-panel" data-settings-panel="perfil" ${abaConfiguracoesAtiva!=='perfil'?'hidden':''}>
     <div class="section-title">Meu perfil</div>
     <div class="card">
       <p class="small-note">Seu nome aparece junto ao botão de sair. O perfil administrativo ou operacional é carregado do Firebase e não pode ser alterado por este formulário.</p>
@@ -457,7 +457,7 @@ function renderConfig(){
     </div>
 
     </div>
-    <div class="settings-panel" data-settings-panel="campanhas" hidden>
+    <div class="settings-panel" data-settings-panel="campanhas" ${abaConfiguracoesAtiva!=='campanhas'?'hidden':''}>
     <div class="section-title">Campanhas</div>
     <div class="card">
       <p class="small-note">Cada campanha é independente: pode coexistir com outras, mesmo com períodos sobrepostos. Uma entrega ou transferência sempre pertence a uma campanha específica, escolhida no momento do registro, nunca deduzida pela data. Cada campanha tem suas próprias metas e seu próprio acúmulo de excedente.</p>
@@ -469,7 +469,7 @@ function renderConfig(){
     </div>
 
     </div>
-    <div class="settings-panel" data-settings-panel="manutencao" hidden>
+    <div class="settings-panel" data-settings-panel="manutencao" ${abaConfiguracoesAtiva!=='manutencao'?'hidden':''}>
     <div class="section-title">Segurança</div>
     <div class="card">
       <p class="small-note">A autenticação é gerenciada pelo Firebase Authentication e as permissões são controladas pelos papéis definidos no Firestore. Para alterar sua senha, solicite um link de redefinição por e-mail.</p>
@@ -531,7 +531,7 @@ function renderConfig(){
     </div>
 
     </div>
-    <div class="settings-panel" data-settings-panel="backup" hidden>
+    <div class="settings-panel" data-settings-panel="backup" ${abaConfiguracoesAtiva!=='backup'?'hidden':''}>
     <div class="section-title">Backup e restauração</div>
     <div class="card" style="display:grid;gap:12px;">
       <div>
@@ -552,7 +552,7 @@ function renderConfig(){
     </div>
 
     </div>
-    <div class="settings-panel" data-settings-panel="tecnica" hidden>
+    <div class="settings-panel" data-settings-panel="tecnica" ${abaConfiguracoesAtiva!=='tecnica'?'hidden':''}>
     <div class="section-title">Desenvolvedor</div>
     <div class="card" id="firestoreMonitorContent" style="display:grid;gap:12px;">
       <p class="small-note">Preparando o monitoramento de leituras do Firestore…</p>
@@ -1919,11 +1919,13 @@ renderApp = function(){
 };
 iniciar();
 
+let abaConfiguracoesAtiva='perfil';
 function selecionarAbaConfiguracoes(aba){
   const raiz=document.querySelector('#viewContent .settings-tabs');
   if(!raiz)return;
   const permitidas=['perfil','campanhas','backup','manutencao','tecnica'];
-  const ativa=permitidas.includes(aba)?aba:'perfil';
+  abaConfiguracoesAtiva=permitidas.includes(aba)?aba:'perfil';
+  const ativa=abaConfiguracoesAtiva;
   document.querySelectorAll('#viewContent [data-settings-panel]').forEach(p=>{p.hidden=p.dataset.settingsPanel!==ativa;});
   document.querySelectorAll('#viewContent [data-settings-tab]').forEach(b=>{
     const selecionada=b.dataset.settingsTab===ativa;
