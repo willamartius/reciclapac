@@ -69,7 +69,7 @@ test('nome configurado do item é pluralizado no cabeçalho do ranking', () => {
   const helper = extractFunction(transfers, 'pluralizarNomeItemRanking');
   const sandbox = {};
   vm.createContext(sandbox);
-  vm.runInContext(helper + '\\nglobalThis.pluralizar = pluralizarNomeItemRanking;', sandbox);
+  vm.runInContext(helper + '\nglobalThis.pluralizar = pluralizarNomeItemRanking;', sandbox);
   assert.equal(sandbox.pluralizar('Cartela'), 'Cartelas');
   assert.equal(sandbox.pluralizar('Item'), 'Itens');
   assert.equal(sandbox.pluralizar('Cartelas de bingo'), 'Cartelas de bingo');
