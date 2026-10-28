@@ -609,16 +609,16 @@ function renderRanking(){
     </div>
     ${resultados.length===0? `<div class="card"><div class="empty-state"><div class="icon">${icon('ranking',44)}</div>Nenhum colaborador com entregas validadas neste período.</div></div>` : `
       <div class="podium-wrap">
-        ${renderPodium(top3[1],'2','🥈')}
-        ${renderPodium(top3[0],'1','🥇')}
-        ${renderPodium(top3[2],'3','🥉')}
+        ${renderPodium(top3[1],'2','🥈',!!cfgTrocaRanking)}
+        ${renderPodium(top3[0],'1','🥇',!!cfgTrocaRanking)}
+        ${renderPodium(top3[2],'3','🥉',!!cfgTrocaRanking)}
       </div>
       <div class="card" style="padding:0;"><div class="table-wrap">${renderTabelaRanking(resultados, true, mes, ano)}</div></div>
     `}
     ${STATE.isAdmin? `<p class="small-note">O ranking público é atualizado automaticamente após salvar alterações nos dados da campanha.</p>`:''}
   `;
 }
-function renderPodium(r,pos,medal){
+function renderPodium(r,pos,medal,usarResgates=false){
   if(!r){
     return `<div class="podium-card podium-${pos} podium-vazio">
       <div class="podium-medal" style="opacity:.35;">${medal}</div>
@@ -629,13 +629,13 @@ function renderPodium(r,pos,medal){
   return `<div class="podium-card podium-${pos}">
     <div class="podium-medal">${medal}</div>
     <div class="podium-name">${escapeHtml(r.colaborador.nome)}</div>
-    <div class="podium-score">${r.pontuacao.toFixed(0)} pts</div>
-    <div style="font-size:11px;opacity:.9;">${Math.round(r.mediaReal)}% da meta</div>
+    <div class="podium-score">${usarResgates?Number(r._resgatesRanking||0).toLocaleString('pt-BR')+' resgates':r.pontuacao.toFixed(0)+' pts'}</div>
+    ${usarResgates?'':`<div style="font-size:11px;opacity:.9;">${Math.round(r.mediaReal)}% da meta</div>`}
   </div>`;
 }
 function pluralizarNomeItemRanking(nome){
   const texto=String(nome||'item').trim()||'item';
-  const partes=texto.split(/\\s+/);
+  const partes=texto.split(/\s+/);
   const primeiro=partes.shift();
   const plural=/s$/i.test(primeiro)?primeiro:/m$/i.test(primeiro)?primeiro.slice(0,-1)+'ns':/l$/i.test(primeiro)?primeiro.slice(0,-1)+'is':primeiro+'s';
   return [plural,...partes].join(' ');
