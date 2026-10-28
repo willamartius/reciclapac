@@ -249,8 +249,8 @@ function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
         const corFonte=filho.tagName==='FONT'?filho.getAttribute('color'):filho.style?.color;
         const tamanhoFonte=filho.tagName==='FONT'?filho.getAttribute('size'):filho.style?.fontSize;
         const coresPermitidas=new Set(['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706']);
-        const mapaTamanhos={'1':'10px','2':'12px','3':'14px','4':'16px','5':'18px','6':'24px','7':'32px'};
-        const tamanhoNormalizado=mapaTamanhos[String(tamanhoFonte||'')]||(/^\\d+(?:\\.\\d+)?px$/.test(String(tamanhoFonte||''))?String(tamanhoFonte):null);
+        const mapaTamanhos={'1':'8px','2':'12px','3':'14px','4':'16px','5':'18px','6':'24px','7':'32px'};
+        const tamanhoNormalizado=mapaTamanhos[String(tamanhoFonte||'')]||(/^\d+(?:\.\d+)?px$/.test(String(tamanhoFonte||''))?String(tamanhoFonte):null);
         const corNormalizada=String(corFonte||'').trim().toLowerCase();
         if(filho.tagName==='FONT'){
           const span=documento.createElement('span');
@@ -269,7 +269,7 @@ function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
       }
       [...filho.attributes].forEach(a=>filho.removeAttribute(a.name));
       if(filho.tagName==='A'){
-        if(href&&/^https?:\\/\\//i.test(href.trim())){
+        if(href&&/^https?:\/\//i.test(href.trim())){
           filho.setAttribute('href',href.trim());
           filho.setAttribute('target','_blank');
           filho.setAttribute('rel','noopener noreferrer');
