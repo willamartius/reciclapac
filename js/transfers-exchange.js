@@ -586,7 +586,7 @@ function renderRanking(){
       ...r,
       _resgatesRanking:montarResumoKitColaborador(campanhaRanking,cfgTrocaRanking,r,chaveRanking,categoriasRanking).resgatesMes
     })).sort((a,b)=>b._resgatesRanking-a._resgatesRanking||String(a.colaborador.nome||'').localeCompare(String(b.colaborador.nome||''),'pt-BR'))
-      .map((r,index)=>({...r,posicao:index+1}));
+      .reduce((lista,r)=>{lista.push({...r,posicao:r._resgatesRanking>0?lista.filter(item=>item._resgatesRanking>0).length+1:null});return lista;},[]);
   }
   const setores = setoresExistentes();
   const comAtividade = cfgTrocaRanking
