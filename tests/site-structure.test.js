@@ -299,3 +299,17 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico)"));
   assert.match(css, /\.rich-text-editor:focus/);
 });
+
+test('avisos públicos permitem escolher tamanho e cor do texto com sanitização restrita', () => {
+  const main = read('js/main.js');
+  const views = read('js/views.js');
+  const css = read('css/styles.css');
+  assert.equal((main.match(/aria-label="Tamanho da fonte"/g)||[]).length,2);
+  assert.equal((main.match(/aria-label="Cor do texto"/g)||[]).length,2);
+  assert.match(main,/comando==='fontSize'/);
+  assert.match(main,/comando==='foreColor'/);
+  assert.match(views,/const permitidas=new Set\(\['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A','FONT','SPAN'\]\)/);
+  assert.match(views,/const coresPermitidas=new Set\(\['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706'\]\)/);
+  assert.match(views,/mapaTamanhos/);
+  assert.ok(css.includes('.rich-text-select{'));
+});
