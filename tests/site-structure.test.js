@@ -287,11 +287,11 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.match(views, /function sanitizarAvisoPublicoHtml\(/);
   assert.ok(views.includes('const textoColado=documento.body.textContent||\'\''));
   assert.ok(views.includes('documento=new DOMParser().parseFromString(textoColado,\'text/html\')'));
-  assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A'])"));
+  assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A'])"));
   assert.ok(views.includes("if(filho.tagName==='DIV')"));
   assert.ok(views.includes('documento.createElement(\'p\')'));
   assert.match(css, /\.public-configured-notice p\\{margin:0 0 12px\\}/);
-  assert.match(css, /\.rich-text-editor p\\{margin:0 0 12px\\}/);
+  assert.match(css, /\.rich-text-editor p\\{margin:0 0 12px\\}/);\n  assert.match(css, /\.rich-text-editor li\\{margin-bottom:8px\\}/);\n  assert.match(css, /\.public-configured-notice li\\{margin-bottom:8px\\}/);
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico)"));
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico)"));
   assert.match(css, /\.rich-text-editor:focus/);
