@@ -223,7 +223,7 @@ function renderRodapePublico(){
   </footer>`;
 }
 
-function sanitizarAvisoPublicoHtml(conteudo){
+function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
   const documento=new DOMParser().parseFromString(String(conteudo||''),'text/html');
   const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A']);
   const limpar=no=>{
@@ -244,6 +244,13 @@ function sanitizarAvisoPublicoHtml(conteudo){
     });
   };
   limpar(documento.body);
+  let restantes=Math.max(0,Number(limite)||0);
+  const limitar=no=>{[...no.childNodes].forEach(filho=>{
+    if(restantes<=0){filho.remove();return;}
+    if(filho.nodeType===Node.TEXT_NODE){if(filho.textContent.length>restantes)filho.textContent=filho.textContent.slice(0,restantes);restantes-=filho.textContent.length;}
+    else if(filho.nodeType===Node.ELEMENT_NODE)limitar(filho);
+  });};
+  limitar(documento.body);
   return documento.body.innerHTML;
 }
 window.sanitizarAvisoPublicoHtml=sanitizarAvisoPublicoHtml;
