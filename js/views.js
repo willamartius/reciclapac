@@ -231,7 +231,7 @@ function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
   if(!documento.body.children.length && /<\/?(?:b|strong|i|em|u|p|br|div|ul|ol|li|a)\b/i.test(textoColado)){
     documento=new DOMParser().parseFromString(textoColado,'text/html');
   }
-  const permitidas=new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A']);
+  const permitidas=new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A','FONT','SPAN']);
   const limpar=no=>{
     [...no.childNodes].forEach(filho=>{
       if(filho.nodeType===Node.COMMENT_NODE){filho.remove();return;}
@@ -245,9 +245,25 @@ function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
         return;
       }
       const href=filho.tagName==='A'?filho.getAttribute('href'):null;
+      const corFonte=filho.tagName==='FONT'?filho.getAttribute('color'):filho.style?.color;
+      const tamanhoFonte=filho.tagName==='FONT'?filho.getAttribute('size'):filho.style?.fontSize;
+      if(filho.tagName==='FONT'||filho.tagName==='SPAN'){
+        const coresPermitidas=new Set(['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706']);
+        const mapaTamanhos={'1':'10px','2':'12px','3':'14px','4':'16px','5':'18px','6':'24px','7':'32px'};
+        const tamanhoNormalizado=mapaTamanhos[String(tamanhoFonte||'')]||(/^\\d+(?:\\.\\d+)?px$/.test(String(tamanhoFonte||''))?String(tamanhoFonte):null);
+        const corNormalizada=String(corFonte||'').trim().toLowerCase();
+        const span=documento.createElement('span');
+        if(tamanhoNormalizado&&['10px','12px','14px','16px','18px','24px','32px'].includes(tamanhoNormalizado))span.style.fontSize=tamanhoNormalizado;
+        if(coresPermitidas.has(corNormalizada))span.style.color=corNormalizada;
+        while(filho.firstChild)span.appendChild(filho.firstChild);
+        if(span.attributes.length)filho.replaceWith(span);
+        else filho.replaceWith(...span.childNodes);
+        limpar(no);
+        return;
+      }
       [...filho.attributes].forEach(a=>filho.removeAttribute(a.name));
       if(filho.tagName==='A'){
-        if(href&&/^https?:\/\//i.test(href.trim())){
+        if(href&&/^https?:\\/\\//i.test(href.trim())){
           filho.setAttribute('href',href.trim());
           filho.setAttribute('target','_blank');
           filho.setAttribute('rel','noopener noreferrer');
