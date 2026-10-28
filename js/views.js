@@ -224,7 +224,13 @@ function renderRodapePublico(){
 }
 
 function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
-  const documento=new DOMParser().parseFromString(String(conteudo||''),'text/html');
+  const textoOriginal=String(conteudo||'');
+  let documento=new DOMParser().parseFromString(textoOriginal,'text/html');
+  // Se o usuário colou tags como texto puro, decodifica uma camada e interpreta apenas HTML permitido.
+  const textoColado=documento.body.textContent||'';
+  if(!documento.body.children.length && /<\/?(?:b|strong|i|em|u|p|br|div|ul|ol|li|a)\b/i.test(textoColado)){
+    documento=new DOMParser().parseFromString(textoColado,'text/html');
+  }
   const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A']);
   const limpar=no=>{
     [...no.childNodes].forEach(filho=>{

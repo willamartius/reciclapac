@@ -285,6 +285,8 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.match(main, /function formatarAvisoPublico\(/);
   assert.ok(main.includes("sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim(),1000)"));
   assert.match(views, /function sanitizarAvisoPublicoHtml\(/);
+  assert.ok(views.includes('const textoColado=documento.body.textContent||\'\''));
+  assert.ok(views.includes('documento=new DOMParser().parseFromString(textoColado,\'text/html\')'));
   assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A'])"));
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico)"));
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico)"));
