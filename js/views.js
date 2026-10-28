@@ -223,6 +223,31 @@ function renderRodapePublico(){
   </footer>`;
 }
 
+function sanitizarAvisoPublicoHtml(conteudo){
+  const documento=new DOMParser().parseFromString(String(conteudo||''),'text/html');
+  const permitidas=new Set(['B','STRONG','I','EM','U','P','BR','UL','OL','LI','A']);
+  const limpar=no=>{
+    [...no.childNodes].forEach(filho=>{
+      if(filho.nodeType===Node.COMMENT_NODE){filho.remove();return;}
+      if(filho.nodeType!==Node.ELEMENT_NODE)return;
+      if(!permitidas.has(filho.tagName)){filho.replaceWith(...filho.childNodes);return;}
+      const href=filho.tagName==='A'?filho.getAttribute('href'):null;
+      [...filho.attributes].forEach(a=>filho.removeAttribute(a.name));
+      if(filho.tagName==='A'){
+        if(href&&/^https?:\/\//i.test(href.trim())){
+          filho.setAttribute('href',href.trim());
+          filho.setAttribute('target','_blank');
+          filho.setAttribute('rel','noopener noreferrer');
+        }else{filho.replaceWith(...filho.childNodes);return;}
+      }
+      limpar(filho);
+    });
+  };
+  limpar(documento.body);
+  return documento.body.innerHTML;
+}
+window.sanitizarAvisoPublicoHtml=sanitizarAvisoPublicoHtml;
+
 function renderAvisoManutencaoPublica(){
   return `<div class="public-page-shell"><main class="auth-screen public-ranking-screen">
     <section class="card public-ranking-card maintenance-card">
@@ -231,7 +256,7 @@ function renderAvisoManutencaoPublica(){
       </div>
       <h1 class="maintenance-title">Estamos em manutenção</h1>
       <span class="badge badge-amber maintenance-badge">Voltaremos em breve</span>
-      ${STATE.avisoManutencaoPublico?`<p class="public-configured-notice">${escapeHtml(STATE.avisoManutencaoPublico)}</p>`:'' }
+      ${STATE.avisoManutencaoPublico?`<div class="public-configured-notice">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico)}</div>`:'' }
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
         <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
       </div>
@@ -272,7 +297,7 @@ function renderRankingPublico(){
           <button class="btn btn-outline" type="button" onclick="abrirLoginAdmin()">Painel administrativo</button>
         </div>
       </div>
-      ${STATE.avisoRankingPublico?`<div class="public-configured-notice" role="status">${escapeHtml(STATE.avisoRankingPublico)}</div>`:''}
+      ${STATE.avisoRankingPublico?`<div class="public-configured-notice" role="status">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico)}</div>`:''}
       ${STATE.erroRankingPublico? `<p class="auth-error" role="alert">${escapeHtml(STATE.erroRankingPublico)}</p>`:''}
       ${STATE.rankingsPublicos.length? `
         <div class="public-ranking-filters">
