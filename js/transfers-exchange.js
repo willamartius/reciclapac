@@ -666,20 +666,23 @@ function abrirDetalhesColaborador(colaboradorId, mes, ano){
     `, true, 'public-details');
     return;
   }
+  const detalhesCategorias=categorias.map(cat=>({
+    nome:cat.label.split(' (')[0],
+    unidade:cat.unidade,
+    quantidade:r.totais[cat.key]||0,
+    carryIn:r.carryInsPorCategoria[cat.key]||0,
+    meta:getMetasDoMes(campanhaId, mes,ano)[cat.key]||cat.metaDefault,
+    percentual:r.percentuais[cat.key]||0,
+  }));
+  const ordemPublicaFixa=!((campanha&&campanha.trocaCartela)||{}).ativo;
   abrirModal(`
     <div class="modal-head"><h3>${escapeHtml(r.colaborador.nome)} — ${nomeMes(mes)}/${ano}</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
-    <p class="small-note" style="margin-top:-6px;">A pontuação é a média do cumprimento das categorias, limitada a 100% por categoria.</p>
-    <div class="table-wrap">${renderTabelaDetalhesMateriais(categorias.map(cat=>({
-      nome:cat.label.split(' (')[0],
-      unidade:cat.unidade,
-      quantidade:r.totais[cat.key]||0,
-      carryIn:r.carryInsPorCategoria[cat.key]||0,
-      meta:getMetasDoMes(campanhaId, mes,ano)[cat.key]||cat.metaDefault,
-      percentual:r.percentuais[cat.key]||0,
-    })))}</div>
-    <p class="small-note" style="margin-top:12px;">Pontuação do ranking: <b>${r.pontuacao.toFixed(0)} pontos</b> (média das ${categorias.length} categorias, cada uma limitada a 100%). O percentual de cumprimento pode incluir excedentes acima da meta.</p>
+    <p class="small-note" style="margin-top:-6px;">Como é calculada a pontuação: a posição no ranking é definida pela média do percentual de cumprimento das ${categorias.length} categorias. Para o cálculo da média, cada categoria é limitada a 100%, evitando que resultados acima da meta compensem categorias abaixo dela.</p>
+    <div class="table-wrap public-ranking-table">${renderTabelaDetalhesMateriais(detalhesCategorias,ordemPublicaFixa)}</div>
+    <p class="small-note" style="margin-top:12px;">Sobre os valores: o percentual de cumprimento mostra o resultado real de cada categoria e pode ultrapassar 100% quando a meta é superada. Os indicadores ao lado das categorias representam saldos transferidos de meses anteriores ou para o mês seguinte.</p>
+    <p class="small-note" style="margin-top:12px;">Pontuação do ranking: <b>${r.pontuacao.toFixed(0)} pontos</b> (média das ${categorias.length} categorias, cada uma limitada a 100%).</p>
     <p class="small-note material-balance-legend"><span class="material-balance-legend-item"><span class="material-balance-swatch previous" aria-hidden="true"></span>Saldo mês anterior</span><span class="material-balance-legend-item"><span class="material-balance-swatch next" aria-hidden="true"></span>Saldo mês seguinte</span></p>
-  `, true);
+  `, true, 'public-details');
 }
 window.abrirDetalhesColaborador = abrirDetalhesColaborador;
 
