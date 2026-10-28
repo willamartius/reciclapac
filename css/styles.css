@@ -223,6 +223,8 @@ tr:last-child td{border-bottom:none;}
 .ranking-item-cell-content{display:flex;width:100%;min-width:0;align-items:center;justify-content:center;box-sizing:border-box;}
 #viewContent .ranking-table th,
 #viewContent .ranking-table td{text-align:center;}
+#viewContent .ranking-table th:nth-child(2),
+#viewContent .ranking-table td:nth-child(2){text-align:left;}
 #viewContent .ranking-table td .progress{min-width:0;}
 .report-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));}
 .report-card{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:8px;}
