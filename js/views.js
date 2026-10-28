@@ -971,6 +971,12 @@ function renderApp(){
       button.classList.toggle('active', index < 4 ? keys[index] === STATE.view : extraActive);
     });
   }
+  // O shell é reutilizado entre renderizações; sincronize o sino com o estado atualizado.
+  const notificationActions = app.querySelector('.topbar-icon-actions');
+  if(notificationActions){
+    const notificationMarkup = STATE.isAdmin ? renderBotaoNotificacoesTroca() : '';
+    if(notificationActions.innerHTML !== notificationMarkup) notificationActions.innerHTML = notificationMarkup;
+  }
   const content = document.getElementById('viewContent');
   const renderers = {
     dashboard: renderDashboard, colaboradores: renderColaboradores, entregas: renderEntregas,
