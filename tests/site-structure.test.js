@@ -308,7 +308,8 @@ test('avisos públicos permitem escolher tamanho e cor do texto com sanitizaçã
   assert.equal((main.match(/aria-label="Cor do texto"/g)||[]).length,2);
   assert.equal((main.match(/<option value="1">8 px<\/option>/g)||[]).length,2);
   assert.ok(views.includes("const mapaTamanhos={'1':'8px'"));
-  assert.match(main,/comando==='fontSize'/);\n  assert.match(main,/function preservarSelecaoAvisoPublico/);
+  assert.match(main,/comando==='fontSize'/);
+  assert.match(main,/function preservarSelecaoAvisoPublico/);
   assert.match(main,/comando==='foreColor'/);
   assert.match(views,/const permitidas=new Set\(\['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A','FONT','SPAN'\]\)/);
   assert.match(views,/const coresPermitidas=new Set\(\['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706'\]\)/);
