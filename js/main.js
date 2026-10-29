@@ -399,8 +399,10 @@ function colarTextoSimplesAvisoPublico(event,id){
   const texto=event.clipboardData.getData('text/plain');
   const selecao=window.getSelection();
   let intervalo=null;
-  if(selecaoAvisoPublico?.id===id)intervalo=selecaoAvisoPublico.intervalo;
-  else if(selecao?.rangeCount&&campo.contains(selecao.getRangeAt(0).commonAncestorContainer))intervalo=selecao.getRangeAt(0);
+  // Para colagem, a seleção atual é a fonte de verdade (incluindo Ctrl+A);
+  // a seleção salva só é usada quando um controle da barra tirou o foco do editor.
+  if(selecao?.rangeCount&&campo.contains(selecao.getRangeAt(0).commonAncestorContainer))intervalo=selecao.getRangeAt(0);
+  else if(selecaoAvisoPublico?.id===id)intervalo=selecaoAvisoPublico.intervalo;
   if(!intervalo||!campo.contains(intervalo.commonAncestorContainer)){
     intervalo=document.createRange();
     intervalo.selectNodeContents(campo);
