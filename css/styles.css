@@ -1036,3 +1036,8 @@ select{text-overflow:ellipsis;}
 .rich-text-color-swatch{width:20px;height:20px;min-width:20px;padding:0;border:2px solid var(--surface);border-radius:5px;background:var(--swatch);box-shadow:0 0 0 1px var(--border);cursor:pointer;}
 .rich-text-color-swatch:hover,.rich-text-color-swatch:focus-visible{outline:2px solid var(--verde-500);outline-offset:2px;}
 @media(max-width:600px){.rich-text-toolbar{gap:5px}.rich-text-size-control,.rich-text-color-control{padding:2px 0}.rich-text-color-swatch{width:18px;height:18px;min-width:18px}}
+
+.rich-text-editor-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.rich-text-character-count{font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;}
+.rich-text-character-count.is-over-limit{color:var(--danger,#b42318);font-weight:700;}
+.rich-text-size-value{min-width:42px;text-align:center;font-variant-numeric:tabular-nums;}
