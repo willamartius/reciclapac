@@ -291,6 +291,8 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.ok(views.includes('documento=new DOMParser().parseFromString(textoColado,\'text/html\')'));
   assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A','FONT','SPAN'])"));
   assert.ok(views.includes("if(filho.tagName==='DIV')"));
+  assert.ok(views.includes("const contemBloco=[...filho.children].some(elemento=>['P','DIV','UL','OL'].includes(elemento.tagName))"));
+  assert.ok(views.includes("filho.replaceWith(...filho.childNodes)"));
   assert.ok(views.includes('documento.createElement(\'p\')'));
   assert.ok(css.includes('.public-configured-notice p{margin:0 0 12px;}'));
   assert.ok(css.includes('.rich-text-editor p{margin:0 0 12px;}'));
