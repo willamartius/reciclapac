@@ -444,13 +444,25 @@ function aplicarEstiloAvisoPublico(id, propriedade, valor){
   if(!intervalo||intervalo.collapsed)return;
   if(propriedade==='fontSize'&&!['8px','10px','12px','14px','16px','18px','24px','32px'].includes(valor))return;
   if(propriedade==='color'&&!['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706'].includes(valor))return;
-  const span=document.createElement('span');
-  span.style[propriedade]=valor;
-  span.appendChild(intervalo.extractContents());
-  intervalo.insertNode(span);
+  // Aplique o estilo apenas aos nós de texto selecionados; envolver parágrafos
+  // inteiros em um span inline quebra a estrutura quando Ctrl+A seleciona vários blocos.
+  const conteudo=intervalo.extractContents();
+  const arvore=document.createTreeWalker(conteudo,NodeFilter.SHOW_TEXT);
+  const textos=[];
+  while(arvore.nextNode())if(arvore.currentNode.textContent)textos.push(arvore.currentNode);
+  textos.forEach(texto=>{
+    const span=document.createElement('span');
+    span.style[propriedade]=valor;
+    texto.replaceWith(span);
+    span.appendChild(texto);
+  });
+  const inseridos=[...conteudo.childNodes];
+  if(!inseridos.length)return;
+  intervalo.insertNode(conteudo);
   const selecao=window.getSelection();
   const novoIntervalo=document.createRange();
-  novoIntervalo.selectNodeContents(span);
+  novoIntervalo.setStartBefore(inseridos[0]);
+  novoIntervalo.setEndAfter(inseridos[inseridos.length-1]);
   selecao.removeAllRanges();
   selecao.addRange(novoIntervalo);
   selecaoAvisoPublico={id,intervalo:novoIntervalo.cloneRange()};
