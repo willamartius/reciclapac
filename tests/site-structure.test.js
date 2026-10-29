@@ -320,6 +320,8 @@ test('avisos públicos permitem ajustar tamanho em px, usar amostras de cor e sa
   assert.equal((main.match(/spellcheck="false"/g)||[]).length,2);
   assert.equal((main.match(/onpaste="colarTextoSimplesAvisoPublico\(event,this\.id\)"/g)||[]).length,2);
   assert.match(main,/function colarTextoSimplesAvisoPublico\(event,id\)/);
+  assert.ok(main.includes("document.createTreeWalker(conteudo,NodeFilter.SHOW_TEXT)"));
+  assert.ok(main.includes("novoIntervalo.setStartBefore(inseridos[0])"));
   assert.ok(main.includes("event.clipboardData.getData('text/plain')"));
   assert.ok(main.includes('onpointerdown="event.preventDefault();preservarSelecaoAvisoPublico('));
   assert.ok(views.includes("rgb(32, 40, 32)"));
