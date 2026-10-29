@@ -251,7 +251,9 @@ function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
         const coresPermitidas=new Set(['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706']);
         const mapaTamanhos={'1':'8px','2':'10px','3':'12px','4':'14px','5':'16px','6':'18px','7':'24px','8':'32px'};
         const tamanhoNormalizado=mapaTamanhos[String(tamanhoFonte||'')]||(/^\d+(?:\.\d+)?px$/.test(String(tamanhoFonte||''))?String(tamanhoFonte):null);
-        const corNormalizada=String(corFonte||'').trim().toLowerCase();
+        const valorCorNormalizado=String(corFonte||'').trim().toLowerCase();
+        const mapaCoresRgb={'rgb(32, 40, 32)':'#202820','rgb(23, 107, 58)':'#176b3a','rgb(29, 78, 216)':'#1d4ed8','rgb(180, 35, 24)':'#b42318','rgb(147, 51, 234)':'#9333ea','rgb(217, 119, 6)':'#d97706'};
+        const corNormalizada=mapaCoresRgb[valorCorNormalizado]||valorCorNormalizado;
         if(filho.tagName==='FONT'){
           const span=documento.createElement('span');
           if(tamanhoNormalizado&&['8px','10px','12px','14px','16px','18px','24px','32px'].includes(tamanhoNormalizado))span.style.fontSize=tamanhoNormalizado;
