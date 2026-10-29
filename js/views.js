@@ -238,6 +238,13 @@ function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
       if(filho.nodeType!==Node.ELEMENT_NODE)return;
       if(!permitidas.has(filho.tagName)){filho.replaceWith(...filho.childNodes);return;}
       if(filho.tagName==='DIV'){
+        // Não envolva blocos existentes (como <p> ou listas) em outro parágrafo:
+        // isso cria HTML inválido e pode ocultar ou deslocar parágrafos seguintes.
+        const contemBloco=[...filho.children].some(elemento=>['P','DIV','UL','OL'].includes(elemento.tagName));
+        if(contemBloco){
+          filho.replaceWith(...filho.childNodes);
+          return;
+        }
         const paragrafo=documento.createElement('p');
         while(filho.firstChild) paragrafo.appendChild(filho.firstChild);
         filho.replaceWith(paragrafo);
