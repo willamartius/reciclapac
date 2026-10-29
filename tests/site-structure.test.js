@@ -289,7 +289,7 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.match(views, /function sanitizarAvisoPublicoHtml\(/);
   assert.ok(views.includes('const textoColado=documento.body.textContent||\'\''));
   assert.ok(views.includes('documento=new DOMParser().parseFromString(textoColado,\'text/html\')'));
-  assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A'])"));
+  assert.ok(views.includes("const permitidas=new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A','FONT','SPAN'])"));
   assert.ok(views.includes("if(filho.tagName==='DIV')"));
   assert.ok(views.includes('documento.createElement(\'p\')'));
   assert.ok(css.includes('.public-configured-notice p{margin:0 0 12px;}'));
@@ -306,6 +306,8 @@ test('avisos públicos permitem escolher tamanho e cor do texto com sanitizaçã
   const css = read('css/styles.css');
   assert.equal((main.match(/aria-label="Tamanho da fonte"/g)||[]).length,2);
   assert.equal((main.match(/aria-label="Cor do texto"/g)||[]).length,2);
+  assert.equal((main.match(/<option value="1">8 px<\/option>/g)||[]).length,2);
+  assert.ok(views.includes("const mapaTamanhos={'1':'8px'"));
   assert.match(main,/comando==='fontSize'/);\n  assert.match(main,/function preservarSelecaoAvisoPublico/);
   assert.match(main,/comando==='foreColor'/);
   assert.match(views,/const permitidas=new Set\(\['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A','FONT','SPAN'\]\)/);
