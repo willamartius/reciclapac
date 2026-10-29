@@ -503,7 +503,7 @@ async function salvarAvisoPublico(tipo){
   if(!exigirAdmin()) return;
   const manutencao=tipo==='manutencao';
   const campo=document.getElementById(manutencao?'avisoManutencaoPublicaInput':'avisoRankingPublicoInput');
-  const mensagem=sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim(),1000);
+  const mensagem=sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim(),5000);
   const erroElemento=document.getElementById('avisosPublicosErro');
   const chaveTexto=manutencao?'avisoManutencaoPublico':'avisoRankingPublico';
   const chaveMostrar=manutencao?'mostrarAvisoManutencaoPublico':'mostrarAvisoRankingPublico';
@@ -1856,9 +1856,9 @@ function carregarRankingsPublicos(){
             throw new Error('A configuração pública de manutenção tem formato inválido.');
           }
           STATE.manutencaoPublica=dados.ativada;
-          STATE.avisoManutencaoPublico=typeof dados.avisoManutencao==='string'?dados.avisoManutencao.slice(0,1000):'';
+          STATE.avisoManutencaoPublico=typeof dados.avisoManutencao==='string'?dados.avisoManutencao.slice(0,5000):'';
           STATE.mostrarAvisoManutencaoPublico=dados.mostrarAvisoManutencao===true;
-          STATE.avisoRankingPublico=typeof dados.avisoRanking==='string'?dados.avisoRanking.slice(0,1000):'';
+          STATE.avisoRankingPublico=typeof dados.avisoRanking==='string'?dados.avisoRanking.slice(0,5000):'';
           STATE.mostrarAvisoRankingPublico=dados.mostrarAvisoRanking===true;
         }else{
           STATE.manutencaoPublica=false;
