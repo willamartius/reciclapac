@@ -223,7 +223,7 @@ function renderRodapePublico(){
   </footer>`;
 }
 
-function sanitizarAvisoPublicoHtml(conteudo, limite=1000){
+function sanitizarAvisoPublicoHtml(conteudo, limite=5000){
   const textoOriginal=String(conteudo||'');
   let documento=new DOMParser().parseFromString(textoOriginal,'text/html');
   // Se o usuário colou tags como texto puro, decodifica uma camada e interpreta apenas HTML permitido.
