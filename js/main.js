@@ -392,6 +392,43 @@ function preservarSelecaoAvisoPublico(id){
   const intervalo=selecao.getRangeAt(0);
   if(campo.contains(intervalo.commonAncestorContainer))selecaoAvisoPublico={id,intervalo:intervalo.cloneRange()};
 }
+function colarTextoSimplesAvisoPublico(event,id){
+  const campo=document.getElementById(id);
+  if(!campo||!event.clipboardData)return;
+  event.preventDefault();
+  const texto=event.clipboardData.getData('text/plain');
+  const selecao=window.getSelection();
+  let intervalo=null;
+  // Para colagem, a seleção atual é a fonte de verdade (incluindo Ctrl+A);
+  // a seleção salva só é usada quando um controle da barra tirou o foco do editor.
+  if(selecao?.rangeCount&&campo.contains(selecao.getRangeAt(0).commonAncestorContainer))intervalo=selecao.getRangeAt(0);
+  else if(selecaoAvisoPublico?.id===id)intervalo=selecaoAvisoPublico.intervalo;
+  if(!intervalo||!campo.contains(intervalo.commonAncestorContainer)){
+    intervalo=document.createRange();
+    intervalo.selectNodeContents(campo);
+    intervalo.collapse(false);
+  }
+  intervalo.deleteContents();
+  const fragmento=document.createDocumentFragment();
+  const linhas=texto.replace(/\r\n?/g,'\n').split('\n');
+  linhas.forEach((linha,indice)=>{
+    if(indice){
+      fragmento.appendChild(document.createElement('br'));
+      if(linha==='')fragmento.appendChild(document.createElement('br'));
+    }
+    if(linha)fragmento.appendChild(document.createTextNode(linha));
+  });
+  const ultimo=fragmento.lastChild;
+  intervalo.insertNode(fragmento);
+  if(ultimo){
+    const novaSelecao=document.createRange();
+    novaSelecao.setStartAfter(ultimo);
+    novaSelecao.collapse(true);
+    selecao?.removeAllRanges();
+    selecao?.addRange(novaSelecao);
+    selecaoAvisoPublico={id,intervalo:novaSelecao.cloneRange()};
+  }
+}
 function restaurarSelecaoAvisoPublico(id){
   const campo=document.getElementById(id);
   if(!campo)return null;
@@ -409,13 +446,25 @@ function aplicarEstiloAvisoPublico(id, propriedade, valor){
   if(!intervalo||intervalo.collapsed)return;
   if(propriedade==='fontSize'&&!['8px','10px','12px','14px','16px','18px','24px','32px'].includes(valor))return;
   if(propriedade==='color'&&!['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706'].includes(valor))return;
-  const span=document.createElement('span');
-  span.style[propriedade]=valor;
-  span.appendChild(intervalo.extractContents());
-  intervalo.insertNode(span);
+  // Aplique o estilo apenas aos nós de texto selecionados; envolver parágrafos
+  // inteiros em um span inline quebra a estrutura quando Ctrl+A seleciona vários blocos.
+  const conteudo=intervalo.extractContents();
+  const arvore=document.createTreeWalker(conteudo,NodeFilter.SHOW_TEXT);
+  const textos=[];
+  while(arvore.nextNode())if(arvore.currentNode.textContent)textos.push(arvore.currentNode);
+  textos.forEach(texto=>{
+    const span=document.createElement('span');
+    span.style[propriedade]=valor;
+    texto.replaceWith(span);
+    span.appendChild(texto);
+  });
+  const inseridos=[...conteudo.childNodes];
+  if(!inseridos.length)return;
+  intervalo.insertNode(conteudo);
   const selecao=window.getSelection();
   const novoIntervalo=document.createRange();
-  novoIntervalo.selectNodeContents(span);
+  novoIntervalo.setStartBefore(inseridos[0]);
+  novoIntervalo.setEndAfter(inseridos[inseridos.length-1]);
   selecao.removeAllRanges();
   selecao.addRange(novoIntervalo);
   selecaoAvisoPublico={id,intervalo:novoIntervalo.cloneRange()};
@@ -449,6 +498,7 @@ function formatarAvisoPublico(id, comando, valor){
 }
 window.alterarTamanhoAvisoPublico=alterarTamanhoAvisoPublico;
 window.formatarAvisoPublico=formatarAvisoPublico;
+window.colarTextoSimplesAvisoPublico=colarTextoSimplesAvisoPublico;
 async function salvarAvisoPublico(tipo){
   if(!exigirAdmin()) return;
   const manutencao=tipo==='manutencao';
@@ -568,7 +618,7 @@ function renderConfig(){
               <button class="rich-text-color-swatch" type="button" style="--swatch:#d97706" aria-label="Cor laranja" title="Laranja" onpointerdown="event.preventDefault();preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor','#d97706')"></button>
             </span>
           </div>
-          <div id="avisoManutencaoPublicaInput" class="rich-text-editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Mensagem extra na página de manutenção" data-placeholder="Opcional: aparece abaixo do aviso padrão">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</div>
+          <div id="avisoManutencaoPublicaInput" class="rich-text-editor" contenteditable="true" spellcheck="false" onpaste="colarTextoSimplesAvisoPublico(event,this.id)" role="textbox" aria-multiline="true" aria-label="Mensagem extra na página de manutenção" data-placeholder="Opcional: aparece abaixo do aviso padrão">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</div>
         </div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('manutencao')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('manutencao')">Salvar</button></div>
       </section>
@@ -597,7 +647,7 @@ function renderConfig(){
               <button class="rich-text-color-swatch" type="button" style="--swatch:#d97706" aria-label="Cor laranja" title="Laranja" onpointerdown="event.preventDefault();preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="formatarAvisoPublico('avisoRankingPublicoInput','foreColor','#d97706')"></button>
             </span>
           </div>
-          <div id="avisoRankingPublicoInput" class="rich-text-editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Mensagem extra no ranking público" data-placeholder="Opcional: aparece acima dos filtros do ranking">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</div>
+          <div id="avisoRankingPublicoInput" class="rich-text-editor" contenteditable="true" spellcheck="false" onpaste="colarTextoSimplesAvisoPublico(event,this.id)" role="textbox" aria-multiline="true" aria-label="Mensagem extra no ranking público" data-placeholder="Opcional: aparece acima dos filtros do ranking">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</div>
         </div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('ranking')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('ranking')">Salvar</button></div>
       </section>
