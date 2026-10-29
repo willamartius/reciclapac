@@ -300,19 +300,21 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.match(css, /\.rich-text-editor:focus/);
 });
 
-test('avisos públicos permitem escolher tamanho e cor do texto com sanitização restrita', () => {
+test('avisos públicos permitem ajustar tamanho em px, usar amostras de cor e sanitizar o HTML', () => {
   const main = read('js/main.js');
   const views = read('js/views.js');
   const css = read('css/styles.css');
-  assert.equal((main.match(/aria-label="Tamanho da fonte"/g)||[]).length,2);
-  assert.equal((main.match(/aria-label="Cor do texto"/g)||[]).length,2);
-  assert.equal((main.match(/<option value="1">8 px<\/option>/g)||[]).length,2);
-  assert.ok(views.includes("const mapaTamanhos={'1':'8px'"));
-  assert.match(main,/comando==='fontSize'/);
-  assert.match(main,/function preservarSelecaoAvisoPublico/);
-  assert.match(main,/comando==='foreColor'/);
-  assert.match(views,/const permitidas=new Set\(\['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','A','FONT','SPAN'\]\)/);
-  assert.match(views,/const coresPermitidas=new Set\(\['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706'\]\)/);
-  assert.match(views,/mapaTamanhos/);
-  assert.ok(css.includes('.rich-text-select{'));
+  const rules = read('firestore.rules');
+  assert.equal((main.match(/class="rich-text-size-control"/g)||[]).length,2);
+  assert.equal((main.match(/class="rich-text-color-swatch"/g)||[]).length,12);
+  assert.equal((main.match(/aria-label="Aumentar tamanho da fonte"/g)||[]).length,2);
+  assert.equal((main.match(/aria-label="Diminuir tamanho da fonte"/g)||[]).length,2);
+  assert.match(main,/function alterarTamanhoAvisoPublico/);
+  assert.match(main,/\[8,10,12,14,16,18,24,32\]/);
+  assert.match(views,/const mapaTamanhos=\{'1':'8px','2':'10px'/);
+  assert.ok(views.includes("['8px','10px','12px','14px','16px','18px','24px','32px']"));
+  assert.ok(css.includes('.rich-text-color-swatch{'));
+  assert.ok(css.includes('.rich-text-stepper{'));
+  assert.ok(rules.includes('request.resource.data.avisoManutencao.size() <= 5000'));
+  assert.ok(rules.includes('request.resource.data.avisoRanking.size() <= 5000'));
 });
