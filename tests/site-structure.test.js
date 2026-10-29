@@ -315,6 +315,9 @@ test('avisos públicos permitem ajustar tamanho em px, usar amostras de cor e sa
   assert.ok(views.includes("['8px','10px','12px','14px','16px','18px','24px','32px']"));
   assert.ok(css.includes('.rich-text-color-swatch{'));
   assert.ok(css.includes('.rich-text-stepper{'));
+  assert.equal((main.match(/spellcheck="false"/g)||[]).length,2);
+  assert.ok(main.includes('onpointerdown="event.preventDefault();preservarSelecaoAvisoPublico('));
+  assert.ok(views.includes("rgb(32, 40, 32)"));
   assert.ok(rules.includes('request.resource.data.avisoManutencao.size() <= 5000'));
   assert.ok(rules.includes('request.resource.data.avisoRanking.size() <= 5000'));
 });
