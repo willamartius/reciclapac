@@ -658,7 +658,7 @@ function renderConfig(){
             </span>
           </div>
           <div id="avisoManutencaoPublicaInput" class="rich-text-editor" contenteditable="true" spellcheck="false" onpaste="colarTextoSimplesAvisoPublico(event,this.id)" oninput="atualizarContadorAvisoPublico(this.id);atualizarTamanhoFonteAvisoPublico(this.id)" onkeyup="atualizarTamanhoFonteAvisoPublico(this.id)" onmouseup="atualizarTamanhoFonteAvisoPublico(this.id)" onclick="atualizarTamanhoFonteAvisoPublico(this.id)" onfocus="atualizarContadorAvisoPublico(this.id);atualizarTamanhoFonteAvisoPublico(this.id)" role="textbox" aria-multiline="true" aria-label="Mensagem extra na página de manutenção" data-placeholder="Opcional: aparece abaixo do aviso padrão">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</div>
-          <div class="rich-text-editor-meta"><span id="avisoManutencaoPublicaInputContador" class="rich-text-character-count" aria-live="polite">0 / 5.000 caracteres</span><span class="small-note">O limite considera o texto visível.</span></div>
+          <div class="rich-text-editor-meta"><span id="avisoManutencaoPublicaInputContador" class="rich-text-character-count" aria-live="polite">0 / 5.000 caracteres</span></div>
         </div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('manutencao')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('manutencao')">Salvar</button></div>
       </section>
@@ -688,7 +688,7 @@ function renderConfig(){
             </span>
           </div>
           <div id="avisoRankingPublicoInput" class="rich-text-editor" contenteditable="true" spellcheck="false" onpaste="colarTextoSimplesAvisoPublico(event,this.id)" oninput="atualizarContadorAvisoPublico(this.id);atualizarTamanhoFonteAvisoPublico(this.id)" onkeyup="atualizarTamanhoFonteAvisoPublico(this.id)" onmouseup="atualizarTamanhoFonteAvisoPublico(this.id)" onclick="atualizarTamanhoFonteAvisoPublico(this.id)" onfocus="atualizarContadorAvisoPublico(this.id);atualizarTamanhoFonteAvisoPublico(this.id)" role="textbox" aria-multiline="true" aria-label="Mensagem extra no ranking público" data-placeholder="Opcional: aparece acima dos filtros do ranking">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</div>
-          <div class="rich-text-editor-meta"><span id="avisoRankingPublicoInputContador" class="rich-text-character-count" aria-live="polite">0 / 5.000 caracteres</span><span class="small-note">O limite considera o texto visível.</span></div>
+          <div class="rich-text-editor-meta"><span id="avisoRankingPublicoInputContador" class="rich-text-character-count" aria-live="polite">0 / 5.000 caracteres</span></div>
         </div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('ranking')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('ranking')">Salvar</button></div>
       </section>
