@@ -382,6 +382,7 @@ function limparAvisoPublico(tipo){
   const id=tipo==='manutencao'?'avisoManutencaoPublicaInput':'avisoRankingPublicoInput';
   const campo=document.getElementById(id);
   if(campo) campo.innerHTML='';
+  if(campo){atualizarContadorAvisoPublico(id);atualizarTamanhoFonteAvisoPublico(id);}
   campo?.focus();
 }
 let selecaoAvisoPublico=null;
@@ -469,6 +470,42 @@ function aplicarEstiloAvisoPublico(id, propriedade, valor){
   selecao.addRange(novoIntervalo);
   selecaoAvisoPublico={id,intervalo:novoIntervalo.cloneRange()};
 }
+function atualizarContadorAvisoPublico(id){
+  const campo=document.getElementById(id),contador=document.getElementById(id+'Contador');
+  if(!campo||!contador)return;
+  const quantidade=(campo.innerText||campo.textContent||'').replace(/\u00a0/g,' ').length;
+  contador.textContent=quantidade.toLocaleString('pt-BR')+' / 5.000 caracteres';
+  contador.classList.toggle('is-over-limit',quantidade>5000);
+  contador.setAttribute('aria-label',quantidade+' de 5000 caracteres');
+}
+function atualizarTamanhoFonteAvisoPublico(id){
+  const campo=document.getElementById(id),saida=document.getElementById(id+'FonteValor');
+  if(!campo||!saida)return;
+  const selecao=window.getSelection();let tamanhos=[];
+  if(selecao?.rangeCount&&campo.contains(selecao.getRangeAt(0).commonAncestorContainer)){
+    const range=selecao.getRangeAt(0),textos=[];
+    if(!range.collapsed){
+      const walker=document.createTreeWalker(campo,NodeFilter.SHOW_TEXT);
+      while(walker.nextNode()){const no=walker.currentNode;if(!no.textContent.trim())continue;try{if(range.intersectsNode(no))textos.push(no);}catch{}}
+    }
+    if(textos.length){
+      tamanhos=[...new Set(textos.map(no=>{
+        const el=no.parentElement?.closest('span[style*="font-size"],font[size]');
+        if(el?.tagName==='FONT'){const map={'1':8,'2':10,'3':12,'4':14,'5':16,'6':18,'7':24,'8':32};return map[el.getAttribute('size')]||16;}
+        const px=Number.parseFloat(el?.style.fontSize||'');return Number.isFinite(px)&&px>0?px:16;
+      }))];
+    }else{
+      let no=range.startContainer;if(no.nodeType===Node.TEXT_NODE)no=no.parentElement;
+      const el=no?.nodeType===Node.ELEMENT_NODE?no.closest?.('span[style*="font-size"],font[size]'):null;
+      const map={'1':8,'2':10,'3':12,'4':14,'5':16,'6':18,'7':24,'8':32};
+      const px=el?.tagName==='FONT'?map[el.getAttribute('size')]:Number.parseFloat(el?.style.fontSize||'');
+      tamanhos=[Number.isFinite(px)&&px>0?px:16];
+    }
+  }
+  if(!tamanhos.length)tamanhos=[16];
+  if(tamanhos.length>1){saida.textContent='Vários';saida.dataset.tamanho='16';saida.title='A seleção contém mais de um tamanho de fonte';}
+  else{const px=Math.round(tamanhos[0]*100)/100;saida.textContent=px+' px';saida.dataset.tamanho=String(px);saida.title='Tamanho da fonte da posição ou seleção atual';}
+}
 function alterarTamanhoAvisoPublico(id, direcao){
   const valores=[8,10,12,14,16,18,24,32];
   const saida=document.getElementById(id+'FonteValor');
@@ -499,6 +536,8 @@ function formatarAvisoPublico(id, comando, valor){
 window.alterarTamanhoAvisoPublico=alterarTamanhoAvisoPublico;
 window.formatarAvisoPublico=formatarAvisoPublico;
 window.colarTextoSimplesAvisoPublico=colarTextoSimplesAvisoPublico;
+window.atualizarContadorAvisoPublico=atualizarContadorAvisoPublico;
+window.atualizarTamanhoFonteAvisoPublico=atualizarTamanhoFonteAvisoPublico;
 async function salvarAvisoPublico(tipo){
   if(!exigirAdmin()) return;
   const manutencao=tipo==='manutencao';
@@ -618,7 +657,8 @@ function renderConfig(){
               <button class="rich-text-color-swatch" type="button" style="--swatch:#d97706" aria-label="Cor laranja" title="Laranja" onpointerdown="event.preventDefault();preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor','#d97706')"></button>
             </span>
           </div>
-          <div id="avisoManutencaoPublicaInput" class="rich-text-editor" contenteditable="true" spellcheck="false" onpaste="colarTextoSimplesAvisoPublico(event,this.id)" role="textbox" aria-multiline="true" aria-label="Mensagem extra na página de manutenção" data-placeholder="Opcional: aparece abaixo do aviso padrão">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</div>
+          <div id="avisoManutencaoPublicaInput" class="rich-text-editor" contenteditable="true" spellcheck="false" onpaste="colarTextoSimplesAvisoPublico(event,this.id)" oninput="atualizarContadorAvisoPublico(this.id);atualizarTamanhoFonteAvisoPublico(this.id)" onkeyup="atualizarTamanhoFonteAvisoPublico(this.id)" onmouseup="atualizarTamanhoFonteAvisoPublico(this.id)" onclick="atualizarTamanhoFonteAvisoPublico(this.id)" onfocus="atualizarContadorAvisoPublico(this.id);atualizarTamanhoFonteAvisoPublico(this.id)" role="textbox" aria-multiline="true" aria-label="Mensagem extra na página de manutenção" data-placeholder="Opcional: aparece abaixo do aviso padrão">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</div>
+          <div class="rich-text-editor-meta"><span id="avisoManutencaoPublicaInputContador" class="rich-text-character-count" aria-live="polite">0 / 5.000 caracteres</span><span class="small-note">O limite considera o texto visível.</span></div>
         </div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('manutencao')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('manutencao')">Salvar</button></div>
       </section>
@@ -647,7 +687,8 @@ function renderConfig(){
               <button class="rich-text-color-swatch" type="button" style="--swatch:#d97706" aria-label="Cor laranja" title="Laranja" onpointerdown="event.preventDefault();preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="formatarAvisoPublico('avisoRankingPublicoInput','foreColor','#d97706')"></button>
             </span>
           </div>
-          <div id="avisoRankingPublicoInput" class="rich-text-editor" contenteditable="true" spellcheck="false" onpaste="colarTextoSimplesAvisoPublico(event,this.id)" role="textbox" aria-multiline="true" aria-label="Mensagem extra no ranking público" data-placeholder="Opcional: aparece acima dos filtros do ranking">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</div>
+          <div id="avisoRankingPublicoInput" class="rich-text-editor" contenteditable="true" spellcheck="false" onpaste="colarTextoSimplesAvisoPublico(event,this.id)" oninput="atualizarContadorAvisoPublico(this.id);atualizarTamanhoFonteAvisoPublico(this.id)" onkeyup="atualizarTamanhoFonteAvisoPublico(this.id)" onmouseup="atualizarTamanhoFonteAvisoPublico(this.id)" onclick="atualizarTamanhoFonteAvisoPublico(this.id)" onfocus="atualizarContadorAvisoPublico(this.id);atualizarTamanhoFonteAvisoPublico(this.id)" role="textbox" aria-multiline="true" aria-label="Mensagem extra no ranking público" data-placeholder="Opcional: aparece acima dos filtros do ranking">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</div>
+          <div class="rich-text-editor-meta"><span id="avisoRankingPublicoInputContador" class="rich-text-character-count" aria-live="polite">0 / 5.000 caracteres</span><span class="small-note">O limite considera o texto visível.</span></div>
         </div>
         <div class="public-notice-actions"><button class="btn btn-outline btn-sm" type="button" onclick="limparAvisoPublico('ranking')">Limpar</button><button class="btn btn-primary btn-sm" type="button" onclick="salvarAvisoPublico('ranking')">Salvar</button></div>
       </section>

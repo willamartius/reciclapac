@@ -326,6 +326,12 @@ test('avisos públicos permitem ajustar tamanho em px, usar amostras de cor e sa
   assert.ok(main.includes("document.createTreeWalker(conteudo,NodeFilter.SHOW_TEXT)"));
   assert.ok(main.includes("novoIntervalo.setStartBefore(inseridos[0])"));
   assert.ok(main.includes("event.clipboardData.getData('text/plain')"));
+  assert.match(main,/function atualizarContadorAvisoPublico\(id\)/);
+  assert.match(main,/function atualizarTamanhoFonteAvisoPublico\(id\)/);
+  assert.equal((main.match(/class="rich-text-character-count"/g)||[]).length,2);
+  assert.equal((main.match(/oninput="atualizarContadorAvisoPublico\(this\.id\);atualizarTamanhoFonteAvisoPublico\(this\.id\)"/g)||[]).length,2);
+  assert.ok(main.includes("contador.textContent=quantidade.toLocaleString('pt-BR')+' / 5.000 caracteres'"));
+  assert.ok(main.includes("saida.textContent='Vários'"));
   assert.ok(main.includes('onpointerdown="event.preventDefault();preservarSelecaoAvisoPublico('));
   assert.ok(views.includes("rgb(32, 40, 32)"));
   assert.ok(rules.includes('request.resource.data.avisoManutencao.size() <= 5000'));
