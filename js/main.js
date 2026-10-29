@@ -392,9 +392,48 @@ function preservarSelecaoAvisoPublico(id){
   const intervalo=selecao.getRangeAt(0);
   if(campo.contains(intervalo.commonAncestorContainer))selecaoAvisoPublico={id,intervalo:intervalo.cloneRange()};
 }
+function restaurarSelecaoAvisoPublico(id){
+  const campo=document.getElementById(id);
+  if(!campo)return null;
+  campo.focus();
+  const selecao=window.getSelection();
+  if(selecaoAvisoPublico?.id===id&&selecao){
+    selecao.removeAllRanges();
+    selecao.addRange(selecaoAvisoPublico.intervalo);
+  }
+  const intervalo=selecao?.rangeCount?selecao.getRangeAt(0):null;
+  return intervalo&&campo.contains(intervalo.commonAncestorContainer)?intervalo:null;
+}
+function aplicarEstiloAvisoPublico(id, propriedade, valor){
+  const intervalo=restaurarSelecaoAvisoPublico(id);
+  if(!intervalo||intervalo.collapsed)return;
+  if(propriedade==='fontSize'&&!['8px','10px','12px','14px','16px','18px','24px','32px'].includes(valor))return;
+  if(propriedade==='color'&&!['#202820','#176b3a','#1d4ed8','#b42318','#9333ea','#d97706'].includes(valor))return;
+  const span=document.createElement('span');
+  span.style[propriedade]=valor;
+  span.appendChild(intervalo.extractContents());
+  intervalo.insertNode(span);
+  const selecao=window.getSelection();
+  const novoIntervalo=document.createRange();
+  novoIntervalo.selectNodeContents(span);
+  selecao.removeAllRanges();
+  selecao.addRange(novoIntervalo);
+  selecaoAvisoPublico={id,intervalo:novoIntervalo.cloneRange()};
+}
+function alterarTamanhoAvisoPublico(id, direcao){
+  const valores=[8,10,12,14,16,18,24,32];
+  const saida=document.getElementById(id+'FonteValor');
+  const atual=Number(saida?.dataset.tamanho||16);
+  const indice=valores.indexOf(atual);
+  const tamanho=valores[Math.max(0,Math.min(valores.length-1,(indice<0?4:indice)+direcao))];
+  if(saida){saida.dataset.tamanho=String(tamanho);saida.textContent=tamanho+' px';}
+  aplicarEstiloAvisoPublico(id,'fontSize',tamanho+'px');
+}
 function formatarAvisoPublico(id, comando, valor){
   const campo=document.getElementById(id);
   if(!campo)return;
+  if(comando==='fontSize'){aplicarEstiloAvisoPublico(id,'fontSize',String(valor));return;}
+  if(comando==='foreColor'){aplicarEstiloAvisoPublico(id,'color',String(valor));return;}
   campo.focus();
   if(selecaoAvisoPublico?.id===id){
     const selecao=window.getSelection();
@@ -405,17 +444,10 @@ function formatarAvisoPublico(id, comando, valor){
     const url=prompt('Informe o endereço do link (https://...)');
     if(!url||!/^https?:\/\//i.test(url.trim()))return;
     document.execCommand('createLink',false,url.trim());
-  }else if(comando==='fontSize'){
-    const tamanho=String(valor||'').trim();
-    if(!/^[1-7]$/.test(tamanho))return;
-    document.execCommand('fontSize',false,tamanho);
-  }else if(comando==='foreColor'){
-    const cor=String(valor||'').trim();
-    if(!/^#[0-9a-f]{6}$/i.test(cor))return;
-    document.execCommand('foreColor',false,cor);
   }else document.execCommand(comando,false,null);
   selecaoAvisoPublico=null;
 }
+window.alterarTamanhoAvisoPublico=alterarTamanhoAvisoPublico;
 window.formatarAvisoPublico=formatarAvisoPublico;
 async function salvarAvisoPublico(tipo){
   if(!exigirAdmin()) return;
@@ -521,18 +553,20 @@ function renderConfig(){
             <button class="btn btn-outline btn-sm" type="button" aria-label="Lista com marcadores" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','insertUnorderedList')">• Lista</button>
             <button class="btn btn-outline btn-sm" type="button" aria-label="Lista numerada" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','insertOrderedList')">1. Lista</button>
             <button class="btn btn-outline btn-sm" type="button" aria-label="Inserir link" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','createLink')">Link</button>
-            <label class="rich-text-select-label">Tamanho
-              <select class="rich-text-select" aria-label="Tamanho da fonte" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onchange="formatarAvisoPublico('avisoManutencaoPublicaInput','fontSize',this.value);this.value=''">
-                <option value="" selected disabled>Fonte</option>
-                <option value="1">8 px</option><option value="2">12 px</option><option value="3">14 px</option><option value="4">16 px</option><option value="5">18 px</option><option value="6">24 px</option><option value="7">32 px</option>
-              </select>
-            </label>
-            <label class="rich-text-select-label">Cor
-              <select class="rich-text-select" aria-label="Cor do texto" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onchange="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor',this.value);this.value=''">
-                <option value="" selected disabled>Cor do texto</option>
-                <option value="#202820">Preto</option><option value="#176b3a">Verde</option><option value="#1d4ed8">Azul</option><option value="#b42318">Vermelho</option><option value="#9333ea">Roxo</option><option value="#d97706">Laranja</option>
-              </select>
-            </label>
+            <span class="rich-text-size-control"><span class="rich-text-control-label">Fonte:</span>
+              <button class="rich-text-stepper" type="button" aria-label="Diminuir tamanho da fonte" title="Diminuir fonte" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="alterarTamanhoAvisoPublico('avisoManutencaoPublicaInput',-1)">−</button>
+              <span class="rich-text-size-value" id="avisoManutencaoPublicaInputFonteValor" data-tamanho="16">16 px</span>
+              <button class="rich-text-stepper" type="button" aria-label="Aumentar tamanho da fonte" title="Aumentar fonte" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="alterarTamanhoAvisoPublico('avisoManutencaoPublicaInput',1)">+</button>
+            </span>
+            <span class="rich-text-color-control" role="group" aria-label="Cor da fonte">
+              <span class="rich-text-control-label">Cor:</span>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#202820" aria-label="Cor preta" title="Preto" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor','#202820')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#176b3a" aria-label="Cor verde" title="Verde" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor','#176b3a')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#1d4ed8" aria-label="Cor azul" title="Azul" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor','#1d4ed8')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#b42318" aria-label="Cor vermelha" title="Vermelho" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor','#b42318')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#9333ea" aria-label="Cor roxa" title="Roxo" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor','#9333ea')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#d97706" aria-label="Cor laranja" title="Laranja" onmousedown="preservarSelecaoAvisoPublico('avisoManutencaoPublicaInput')" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','foreColor','#d97706')"></button>
+            </span>
           </div>
           <div id="avisoManutencaoPublicaInput" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Mensagem extra na página de manutenção" data-placeholder="Opcional: aparece abaixo do aviso padrão">${sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico||STATE.config?.avisoManutencaoPublico||'')}</div>
         </div>
@@ -548,18 +582,20 @@ function renderConfig(){
             <button class="btn btn-outline btn-sm" type="button" aria-label="Lista com marcadores" onclick="formatarAvisoPublico('avisoRankingPublicoInput','insertUnorderedList')">• Lista</button>
             <button class="btn btn-outline btn-sm" type="button" aria-label="Lista numerada" onclick="formatarAvisoPublico('avisoRankingPublicoInput','insertOrderedList')">1. Lista</button>
             <button class="btn btn-outline btn-sm" type="button" aria-label="Inserir link" onclick="formatarAvisoPublico('avisoRankingPublicoInput','createLink')">Link</button>
-            <label class="rich-text-select-label">Tamanho
-              <select class="rich-text-select" aria-label="Tamanho da fonte" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onchange="formatarAvisoPublico('avisoRankingPublicoInput','fontSize',this.value);this.value=''">
-                <option value="" selected disabled>Fonte</option>
-                <option value="1">8 px</option><option value="2">12 px</option><option value="3">14 px</option><option value="4">16 px</option><option value="5">18 px</option><option value="6">24 px</option><option value="7">32 px</option>
-              </select>
-            </label>
-            <label class="rich-text-select-label">Cor
-              <select class="rich-text-select" aria-label="Cor do texto" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onchange="formatarAvisoPublico('avisoRankingPublicoInput','foreColor',this.value);this.value=''">
-                <option value="" selected disabled>Cor do texto</option>
-                <option value="#202820">Preto</option><option value="#176b3a">Verde</option><option value="#1d4ed8">Azul</option><option value="#b42318">Vermelho</option><option value="#9333ea">Roxo</option><option value="#d97706">Laranja</option>
-              </select>
-            </label>
+            <span class="rich-text-size-control"><span class="rich-text-control-label">Fonte:</span>
+              <button class="rich-text-stepper" type="button" aria-label="Diminuir tamanho da fonte" title="Diminuir fonte" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="alterarTamanhoAvisoPublico('avisoRankingPublicoInput',-1)">−</button>
+              <span class="rich-text-size-value" id="avisoRankingPublicoInputFonteValor" data-tamanho="16">16 px</span>
+              <button class="rich-text-stepper" type="button" aria-label="Aumentar tamanho da fonte" title="Aumentar fonte" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="alterarTamanhoAvisoPublico('avisoRankingPublicoInput',1)">+</button>
+            </span>
+            <span class="rich-text-color-control" role="group" aria-label="Cor da fonte">
+              <span class="rich-text-control-label">Cor:</span>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#202820" aria-label="Cor preta" title="Preto" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="formatarAvisoPublico('avisoRankingPublicoInput','foreColor','#202820')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#176b3a" aria-label="Cor verde" title="Verde" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="formatarAvisoPublico('avisoRankingPublicoInput','foreColor','#176b3a')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#1d4ed8" aria-label="Cor azul" title="Azul" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="formatarAvisoPublico('avisoRankingPublicoInput','foreColor','#1d4ed8')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#b42318" aria-label="Cor vermelha" title="Vermelho" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="formatarAvisoPublico('avisoRankingPublicoInput','foreColor','#b42318')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#9333ea" aria-label="Cor roxa" title="Roxo" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="formatarAvisoPublico('avisoRankingPublicoInput','foreColor','#9333ea')"></button>
+              <button class="rich-text-color-swatch" type="button" style="--swatch:#d97706" aria-label="Cor laranja" title="Laranja" onmousedown="preservarSelecaoAvisoPublico('avisoRankingPublicoInput')" onclick="formatarAvisoPublico('avisoRankingPublicoInput','foreColor','#d97706')"></button>
+            </span>
           </div>
           <div id="avisoRankingPublicoInput" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Mensagem extra no ranking público" data-placeholder="Opcional: aparece acima dos filtros do ranking">${sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico||STATE.config?.avisoRankingPublico||'')}</div>
         </div>
