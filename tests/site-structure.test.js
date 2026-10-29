@@ -285,7 +285,10 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.match(main, /aria-label="Formatação da mensagem de manutenção"/);
   assert.match(main, /aria-label="Formatação da mensagem do ranking público"/);
   assert.match(main, /function formatarAvisoPublico\(/);
-  assert.ok(main.includes("sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim(),1000)"));
+  assert.ok(main.includes("sanitizarAvisoPublicoHtml((campo?.innerHTML||'').trim(),5000)"));
+  assert.ok(main.includes("dados.avisoManutencao.slice(0,5000)"));
+  assert.ok(main.includes("dados.avisoRanking.slice(0,5000)"));
+  assert.ok(views.includes("function sanitizarAvisoPublicoHtml(conteudo, limite=5000)"));
   assert.match(views, /function sanitizarAvisoPublicoHtml\(/);
   assert.ok(views.includes('const textoColado=documento.body.textContent||\'\''));
   assert.ok(views.includes('documento=new DOMParser().parseFromString(textoColado,\'text/html\')'));
