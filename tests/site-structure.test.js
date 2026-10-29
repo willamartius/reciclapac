@@ -298,7 +298,8 @@ test('avisos públicos oferecem editor formatado e sanitizam HTML antes de exibi
   assert.ok(views.includes("filho.replaceWith(...filho.childNodes)"));
   assert.ok(views.includes('documento.createElement(\'p\')'));
   assert.ok(css.includes('.public-configured-notice p{margin:0 0 12px;}'));
-  assert.ok(css.includes('.rich-text-editor p{margin:0 0 12px;}'));
+  assert.ok(css.includes('.rich-text-editor p,.rich-text-editor div{margin:0;}'));
+  assert.doesNotMatch(css,/\.rich-text-editor (?:p|div)(?::last-child)?\{margin(?:-bottom)?:0 0 12px|\.rich-text-editor div\{margin-bottom:12px/);
   assert.ok(css.includes('.rich-text-editor li,.public-configured-notice li{margin-bottom:8px;}'));
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoManutencaoPublico)"));
   assert.ok(views.includes("sanitizarAvisoPublicoHtml(STATE.avisoRankingPublico)"));
