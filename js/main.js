@@ -473,7 +473,8 @@ function aplicarEstiloAvisoPublico(id, propriedade, valor){
 function atualizarContadorAvisoPublico(id){
   const campo=document.getElementById(id),contador=document.getElementById(id+'Contador');
   if(!campo||!contador)return;
-  const quantidade=(campo.innerText||campo.textContent||'').replace(/\u00a0/g,' ').length;
+  const texto=(campo.innerText||campo.textContent||'').replace(/\u00a0/g,' ').replace(/\r\n?/g,'\n').replace(/\n{2,}/g,'\n');
+  const quantidade=texto.length;
   contador.textContent=quantidade.toLocaleString('pt-BR')+' / 5.000 caracteres';
   contador.classList.toggle('is-over-limit',quantidade>5000);
   contador.setAttribute('aria-label',quantidade+' de 5000 caracteres');
