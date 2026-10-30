@@ -61,3 +61,24 @@ Adicionar uma área individual para que cada colaborador consulte seus próprios
 - Ranking público continua baseado no percentual atual da meta, inclusive acima de 100%.
 - O ranking não passa a usar soma de porcentagens individuais nem quantidade total de materiais como critério novo.
 - A seção **Área do colaborador** e seus dois botões ficam abaixo do ranking.
+
+
+## Organização da página individual — navegação por guias
+
+A página de detalhes deve priorizar uso em celular e evitar uma página excessivamente longa. Usar guias compactas, acessíveis por toque, com conteúdo separado:
+
+- **Resumo:** percentual atual da meta (sem limitar valores acima de 100%), campanha/período e visão geral.
+- **Entregas:** registros do próprio colaborador, com material, quantidade, situação de validação e data da coleta; quando disponível, distinguir data da coleta e registro no sistema.
+- **Transferências:** histórico de entradas e saídas, identificando claramente o sentido, material, quantidade, campanha e data/hora.
+- **Saldos:** saldo disponível por material e campanha, calculado pela mesma lógica já usada no sistema.
+- **Trocas:** solicitações do colaborador e estado atual (pendente, aceita/aprovada ou rejeitada), com detalhes suficientes para reconhecer cada pedido.
+
+As guias não devem carregar todos os históricos simultaneamente. Buscar os dados da guia selecionada, limitar consultas por colaborador/campanha e usar paginação ou carregamento incremental no histórico para controlar leituras do Firestore. A autorização deve continuar nas regras/backend, independentemente da guia ativa.
+
+Em telas estreitas, as guias podem rolar horizontalmente com indicação visual de seleção; manter nomes curtos, área de toque confortável e conteúdo sem tabelas largas. A guia ativa deve ser preservada ao atualizar o conteúdo, sem perder a posição de navegação.
+
+## Verificação automatizada inicial da PR
+
+A execução do workflow **Testes automatizados** para o commit inicial da PR #220 terminou com sucesso em 29/10/2026. Foram aprovadas as etapas de instalação, smoke test do navegador, regressão de layout e a suíte `npm test`, incluindo testes unitários e regras do Firestore Emulator.
+
+Essa execução valida que a base atual continua passando pelos testes automatizados, mas não comprova o funcionamento da nova área individual: nesta etapa a PR contém documentação, ainda sem implementação funcional. Os testes específicos de autenticação de colaboradores, isolamento por UID, guias e controle de habilitação deverão ser adicionados junto com o código.
