@@ -342,3 +342,14 @@ test('avisos públicos permitem ajustar tamanho em px, usar amostras de cor e sa
   assert.ok(rules.includes('request.resource.data.avisoManutencao.size() <= 5000'));
   assert.ok(rules.includes('request.resource.data.avisoRanking.size() <= 5000'));
 });
+
+
+test('fechamentos mensais são incluídos nos backups manuais e automáticos', () => {
+  const main = read('js/main.js');
+  const backupAutomatico = read('scripts/backup/backup.js');
+  assert.match(main, /fechamentos: STATE\.fechamentosMensais/);
+  assert.match(main, /\['fechamentos',dados\.fechamentos\|\|\[\],anterior\.fechamentos\|\|\[\]\]/);
+  assert.match(main, /STATE\.fechamentosMensais=dados\.fechamentos\|\|\[\]/);
+  assert.match(backupAutomatico, /readStoredValue\(db, 'fechamentos', \[\]\)/);
+  assert.match(backupAutomatico, /fechamentos,\n\s+campanhas,/);
+});
