@@ -604,6 +604,7 @@ function renderRanking(){
         </select>
       </div>
       ${STATE.isAdmin? `<div class="toolbar-right">
+        <button class="btn btn-outline" onclick="abrirFechamentoMensal()">Fechamento mensal</button>
         <button class="btn btn-outline" onclick="abrirCompartilhamentoRanking(${mes},${ano})">Compartilhar no WhatsApp</button>
         <button class="btn btn-outline" onclick="gerarCardRanking(${mes},${ano})">Gerar card do ranking</button>
       </div>` : ''}
