@@ -203,6 +203,10 @@ service cloud.firestore {
           'id', 'campanhaId', 'mes', 'ano', 'colaboradorId', 'decisao',
           'criadoEm', 'atualizadoEm', 'decididoPor'
         ])
+        && data.keys().hasOnly([
+          'id', 'campanhaId', 'mes', 'ano', 'colaboradorId', 'decisao',
+          'criadoEm', 'atualizadoEm', 'decididoPor', 'historico'
+        ])
         && data.id == recordId
         && data.campanhaId is string && data.campanhaId.size() > 0 && data.campanhaId.size() <= 200
         && data.colaboradorId is string && data.colaboradorId.size() > 0 && data.colaboradorId.size() <= 200
@@ -211,7 +215,8 @@ service cloud.firestore {
         && data.decisao in ['meia-folga', 'zerar']
         && data.criadoEm is string && data.criadoEm.size() > 0 && data.criadoEm.size() <= 40
         && data.atualizadoEm is string && data.atualizadoEm.size() > 0 && data.atualizadoEm.size() <= 40
-        && data.decididoPor == request.auth.uid;
+        && data.decididoPor == request.auth.uid
+        && (!('historico' in data) || (data.historico is list && data.historico.size() <= 100));
     }
 
     function isValidCommonDelivery(recordId) {
