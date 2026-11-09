@@ -16,18 +16,22 @@ test('localiza decisão somente para a mesma campanha, colaborador e competênci
   assert.equal(encontrarFechamento(registros,'c1',3,2026,'p2'),null);
 });
 test('meia folga transporta o saldo remanescente e zerar descarta apenas o saldo',()=>{
-  assert.equal(calcularSaldoTransportavel(37,'meia-folga',false,0),37);
-  assert.equal(calcularSaldoTransportavel(0,'meia-folga',false,0),0);
-  assert.equal(calcularSaldoTransportavel(37,'zerar',false,0),0);
-  assert.equal(calcularSaldoTransportavel(-2,'meia-folga',false,0),0);
+  assert.equal(calcularSaldoTransportavel(37,80,'meia-folga',false,0),37);
+  assert.equal(calcularSaldoTransportavel(0,80,'meia-folga',false,0),0);
+  assert.equal(calcularSaldoTransportavel(37,80,'zerar',false,0),0);
+  assert.equal(calcularSaldoTransportavel(-2,80,'meia-folga',false,0),0);
+});
+test('transfere apenas o remanescente por categoria, sem duplicar a quantidade que cumpriu a meta',()=>{
+  assert.equal(calcularSaldoTransportavel(120,100,'meia-folga',false,20),20);
+  assert.equal(calcularSaldoTransportavel(70,100,'meia-folga',false,0),70);
 });
 test('preserva o transporte automático do excedente quando todas as metas são atingidas',()=>{
-  assert.equal(calcularSaldoTransportavel(120,'zerar',true,20),20);
-  assert.equal(calcularSaldoTransportavel(120,'meia-folga',true,20),20);
+  assert.equal(calcularSaldoTransportavel(120,100,'zerar',true,20),20);
+  assert.equal(calcularSaldoTransportavel(120,100,'meia-folga',true,20),20);
 });
 test('sem decisão administrativa, mantém o cálculo automático anterior',()=>{
-  assert.equal(calcularSaldoTransportavel(120,null,false,40),40);
-  assert.equal(calcularSaldoTransportavel(70,null,false,0),0);
+  assert.equal(calcularSaldoTransportavel(120,100,null,false,40),40);
+  assert.equal(calcularSaldoTransportavel(70,100,null,false,0),0);
 });
 test('somente as duas decisões administrativas conhecidas são aceitas',()=>{
   assert.equal(decisaoValida('meia-folga'),true);
