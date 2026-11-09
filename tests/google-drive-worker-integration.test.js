@@ -217,7 +217,12 @@ test('fluxos de backup continuam preservados (validação e formato de backup JS
       entregas: [],
       transferencias: [],
       trocas: [],
-      fechamentos: [],
+      fechamentos: [{
+        id: 'fechamento-c1-2026-10-colab-1', campanhaId: 'c1', mes: 10, ano: 2026,
+        colaboradorId: 'colab-1', decisao: 'meia-folga',
+        criadoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString(),
+        decididoPor: 'admin-1', historico: [],
+      }],
       campanhas: [{
         id: 'c1',
         nome: 'Campanha 2026',
@@ -235,6 +240,8 @@ test('fluxos de backup continuam preservados (validação e formato de backup JS
 
   const resultado = ctx.validarBackupJSON(backupValido);
   assert.equal(resultado.ok, true);
+  const fechamentoInvalido={...backupValido,dados:{...backupValido.dados,fechamentos:[{...backupValido.dados.fechamentos[0],decisao:'transferir'}]}};
+  assert.equal(ctx.validarBackupJSON(fechamentoInvalido).ok,false);
 
   // Backup corrompido deve ser rejeitado
   const backupInvalido = { formato: 'outro', versao: 1 };
