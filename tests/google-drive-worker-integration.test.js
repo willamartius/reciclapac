@@ -217,6 +217,7 @@ test('fluxos de backup continuam preservados (validação e formato de backup JS
       entregas: [],
       transferencias: [],
       trocas: [],
+      fechamentos: [],
       campanhas: [{
         id: 'c1',
         nome: 'Campanha 2026',
