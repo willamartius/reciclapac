@@ -12,7 +12,7 @@ test('public ranking reloads all source collections before publishing', async ()
     entregas: [{id: 'entrega-remota', campanhaId: 'campanha', data: '2026-10-01'}],
     transferencias: [],
     trocas: [],
-    fechamentos: [],
+    fechamentos: [{campanhaId:'campanha',mes:9,ano:2026,colaboradorId:'remoto',decisao:'meia-folga'}],
     campanhas: [{
       id: 'campanha', nome: 'Campanha remota', mesInicio: 10, anoInicio: 2026,
       mesFim: null, anoFim: null, status: 'ativa', trocaCartela: {ativo: false},
@@ -69,6 +69,11 @@ test('public ranking reloads all source collections before publishing', async ()
         totais: {papel: 1}, carryInsPorCategoria: {}, metasPorCategoria: {papel: 1},
       }));
     }
+    const ReciclarFechamentoLogic = {
+      encontrarFechamento(registros,campanhaId,mes,ano,colaboradorId) {
+        return registros.find(item=>item.campanhaId===campanhaId&&item.mes===mes&&item.ano===ano&&item.colaboradorId===colaboradorId)||null;
+      },
+    };
     const ReciclarRankingLogic = {
       deveIncluirNoRankingPublico: () => true,
       somarItensTrocados: () => 0,
@@ -90,4 +95,5 @@ test('public ranking reloads all source collections before publishing', async ()
   assert.equal(published.length, 1);
   assert.equal(published[0].documento.ranking[0].nome, 'Ana Remota');
   assert.equal(published[0].documento.campanhaNome, 'Campanha remota');
+  assert.equal(published[0].documento.ranking[0].meiaFolgaAnterior, true);
 });
