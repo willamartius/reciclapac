@@ -49,3 +49,8 @@ test('somente a produção do mês atual acima da meta gera excedente após carr
   assert.equal(calcularSaldoTransportavel(140,100,null,true,40,110,true),10);
   assert.equal(calcularSaldoTransportavel(130,100,null,true,30,100,true),0);
 });
+
+test('carry restrito continua acumulado quando a meta ainda não foi alcançada',()=>{
+  assert.equal(calcularSaldoTransportavel(90,100,null,false,0,60,true),90);
+  assert.equal(calcularSaldoTransportavel(90,100,'meia-folga',false,0,60,true),90);
+});
