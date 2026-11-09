@@ -263,6 +263,13 @@ async function sincronizarRankingsPublicos(){
           .map(({resultado,itensTrocados})=>({
             posicao:resultado.posicao||null,
             nome:resultado.colaborador.nome,
+            meiaFolgaAnterior:(()=>{
+              const anterior=new Date(ano,mes-2,1);
+              const fechamentoAnterior=ReciclarFechamentoLogic.encontrarFechamento(
+                STATE.fechamentosMensais,campanha.id,anterior.getMonth()+1,anterior.getFullYear(),resultado.colaborador.id
+              );
+              return !!fechamentoAnterior&&fechamentoAnterior.decisao==='meia-folga';
+            })(),
             pontuacao:Math.round(resultado.pontuacao),
             percentualGeral:resultado.mediaReal,
             totalMateriais:resultado.totalMateriais,
