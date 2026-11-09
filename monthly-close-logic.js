@@ -28,8 +28,9 @@
       if(creditos>=metaSegura) return Math.max(0,creditos-metaSegura);
       if(metaAtingida) return 0;
       if(decisao==='zerar') return 0;
-      if(decisao==='meia-folga') return total;
-      return saldoNaoNegativo(saldoAutomatico);
+      // Se a meta continuar pendente, o restante restrito continua disponível
+      // para compensá-la nos meses seguintes, sem virar excedente.
+      return total;
     }
     if(metaAtingida || !DECISOES.has(decisao)) return saldoNaoNegativo(saldoAutomatico);
     if(decisao==='zerar') return 0;
