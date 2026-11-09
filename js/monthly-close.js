@@ -12,32 +12,35 @@ function abrirFechamentoMensal(){
   if(!Number.isInteger(mes)||mes<1||mes>12||!Number.isInteger(ano)||periodo<inicio||periodo>fim||periodo>=atual.ano*12+atual.mes){
     mostrarErroOperacao('Escolha um mês encerrado e dentro do período da campanha.');return;
   }
+  const categorias=categoriasDaCampanha(campanha);
   const resultados=calcularResultadosMes(campanhaId,mes,ano)
-    .filter(resultado=>!resultado.metaAtingida&&resultado.colaborador.status!=='desligado');
+    .filter(resultado=>!resultado.metaAtingida&&resultado.colaborador.status!=='desligado')
+    .map(resultado=>({...resultado,categoriasPendentes:ReciclarFechamentoLogic.listarCategoriasPendentes(categorias,resultado.totais,resultado.metasPorCategoria)}))
+    .filter(resultado=>resultado.categoriasPendentes.length>0);
   if(!resultados.length){
     abrirModal(`<div class="modal-head"><h3>Fechamento mensal</h3><button class="modal-close" type="button" onclick="fecharModal()" aria-label="Fechar">${icon('x')}</button></div>
       <p>Todos os colaboradores ativos atingiram as metas neste período, ou não há participantes cadastrados para ele.</p>
       <p class="small-note">O excedente de quem atingiu todas as metas continua sendo transportado automaticamente.</p>
-      <div class="modal-actions"><button class="btn btn-outline btn-block" type="button" onclick="fecharModal()">Fechar</button></div>`);
+      <div class="modal-actions"><button class="btn btn-outline btn-block" type="button" onclick="abrirReversaoFechamentoMensal()">Reverter fechamento anterior</button><button class="btn btn-outline btn-block" type="button" onclick="fecharModal()">Fechar</button></div>`);
     return;
   }
-  const categorias=categoriasDaCampanha(campanha);
   fechamentoMensalSelecionados=resultados.map(r=>r.colaborador.id);
   const linhas=resultados.map(resultado=>{
     const id=resultado.colaborador.id;
     const existente=ReciclarFechamentoLogic.encontrarFechamento(STATE.fechamentosMensais,campanhaId,mes,ano,id);
-    const status=existente?(existente.decisao==='meia-folga'?'Meia folga registrada':'Saldo zerado'):'Ainda não fechado';
+    const status=existente?(existente.decisao==='revertida'?'Decisão revertida':existente.decisao==='meia-folga'?'Meia folga registrada':'Saldo zerado'):'Ainda não fechado';
     const historico=Array.isArray(existente&&existente.historico)?existente.historico.length:0;
-    const resumo=categorias.map(cat=>`${cat.label.split(' (')[0]}: ${(Number(resultado.totais[cat.key])||0).toLocaleString('pt-BR')}`).join(' · ');
+    const resumo=resultado.categoriasPendentes.map(cat=>`${cat.label.split(' (')[0]}: ${cat.quantidade.toLocaleString('pt-BR')} / ${cat.meta.toLocaleString('pt-BR')}`).join(' · ');
     return `<label style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-bottom:1px solid var(--borda);cursor:pointer;">
       <input class="fechamento-mensal-selecao" type="checkbox" value="${escapeHtml(id)}" checked onchange="atualizarSelecaoFechamentoMensal()" style="margin-top:4px;">
       <span style="flex:1;min-width:0;"><strong style="display:block;">${escapeHtml(resultado.colaborador.nome)}</strong>
-      <small class="small-note">${Math.round(resultado.mediaReal)}% da meta · ${escapeHtml(status)}${historico?` · ${historico} decisão(ões) no histórico`:''}</small>
+      <small class="small-note">${escapeHtml(status)}${historico?` · ${historico} decisão(ões) no histórico`:''}</small>
       <small class="small-note" style="display:block;">${escapeHtml(resumo)}</small></span>
     </label>`;
   }).join('');
   abrirModal(`<div class="modal-head"><h3>Fechamento mensal · ${escapeHtml(MESES_PT[mes-1])} de ${ano}</h3><button class="modal-close" type="button" onclick="fecharModal()" aria-label="Fechar">${icon('x')}</button></div>
     <p class="small-note">Selecione os colaboradores que não atingiram todas as metas. Quem atingiu continua com o excedente transferido automaticamente.</p>
+    <button class="btn btn-outline btn-block" type="button" onclick="abrirReversaoFechamentoMensal()">Reverter fechamento anterior</button>
     <label style="display:flex;gap:9px;align-items:center;margin:12px 0;"><input id="fechamentoSelecionarTodos" type="checkbox" checked onchange="selecionarTodosFechamentoMensal(this.checked)">Selecionar todos</label>
     <div style="max-height:48vh;overflow:auto;border:1px solid var(--borda);border-radius:10px;">${linhas}</div>
     <p id="fechamentoSelecaoResumo" class="small-note" role="status" aria-live="polite" style="margin:10px 0;">${resultados.length} selecionados</p>
@@ -46,6 +49,86 @@ function abrirFechamentoMensal(){
       <button id="fechamentoAcaoZerar" class="btn btn-danger btn-block" type="button" onclick="confirmarFechamentoMensal('zerar')">Zerar saldo para o próximo mês</button>
     </div>`);
   atualizarSelecaoFechamentoMensal();
+}
+function abrirReversaoFechamentoMensal(){
+  if(!exigirAdmin()) return;
+  const campanhaId=STATE.campanhaSelecionadaId,mes=Number(STATE.rankMes),ano=Number(STATE.rankAno);
+  const campanha=campanhaPorId(campanhaId);
+  if(!campanha){mostrarErroOperacao('Selecione uma campanha antes de reverter o fechamento.');return;}
+  const registros=(STATE.fechamentosMensais||[]).filter(item=>
+    item.campanhaId===campanhaId&&Number(item.mes)===mes&&Number(item.ano)===ano
+    && ReciclarFechamentoLogic.decisaoValida(item.decisao)
+  );
+  if(!registros.length){
+    abrirModal(`<div class="modal-head"><h3>Reverter fechamento</h3><button class="modal-close" type="button" onclick="abrirFechamentoMensal()">${icon('x')}</button></div>
+      <p>Não há decisões ativas para reverter neste mês.</p>
+      <div class="modal-actions"><button class="btn btn-outline btn-block" type="button" onclick="abrirFechamentoMensal()">Voltar</button></div>`);
+    return;
+  }
+  const nomes=new Map(STATE.colaboradores.map(c=>[c.id,c.nome]));
+  const linhas=registros.map(item=>{
+    const nome=nomes.get(item.colaboradorId)||'Colaborador não encontrado';
+    const decisao=item.decisao==='meia-folga'?'Meia folga':'Saldo zerado';
+    const historico=Array.isArray(item.historico)?item.historico.length:0;
+    return `<div style="display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--borda);">
+      <span style="flex:1;min-width:0;"><strong style="display:block;">${escapeHtml(nome)}</strong><small class="small-note">${decisao}${historico?` · ${historico} registro(s) no histórico`:''}</small></span>
+      <button class="btn btn-outline btn-sm" type="button" data-fechamento-id="${escapeHtml(item.id)}" onclick="confirmarReversaoFechamentoMensal(this.dataset.fechamentoId)">Reverter</button>
+    </div>`;
+  }).join('');
+  abrirModal(`<div class="modal-head"><h3>Reverter fechamento · ${escapeHtml(MESES_PT[mes-1])} de ${ano}</h3><button class="modal-close" type="button" onclick="abrirFechamentoMensal()">${icon('x')}</button></div>
+    <p class="small-note">A reversão cancela o efeito da decisão e recalcula os saldos dos meses seguintes. O registro e o histórico serão preservados.</p>
+    <div style="max-height:55vh;overflow:auto;border:1px solid var(--borda);border-radius:10px;">${linhas}</div>
+    <div class="modal-actions"><button class="btn btn-outline btn-block" type="button" onclick="abrirFechamentoMensal()">Voltar</button></div>`);
+}
+function confirmarReversaoFechamentoMensal(id){
+  if(!exigirAdmin()) return;
+  const item=(STATE.fechamentosMensais||[]).find(registro=>registro.id===id
+    &&registro.campanhaId===STATE.campanhaSelecionadaId
+    &&Number(registro.mes)===Number(STATE.rankMes)
+    &&Number(registro.ano)===Number(STATE.rankAno)
+    &&ReciclarFechamentoLogic.decisaoValida(registro.decisao));
+  if(!item){mostrarErroOperacao('Esta decisão já foi revertida ou não está mais disponível. Atualize a tela.');return;}
+  const colaborador=STATE.colaboradores.find(c=>c.id===item.colaboradorId);
+  const nome=colaborador?colaborador.nome:'este colaborador';
+  const acao=item.decisao==='meia-folga'?'cancelar a transferência do saldo e a concessão de meia folga':'restaurar o comportamento anterior ao zeramento do saldo';
+  abrirModal(`<div class="modal-head"><h3>Confirmar reversão</h3><button class="modal-close" type="button" onclick="abrirReversaoFechamentoMensal()">${icon('x')}</button></div>
+    <p>Confirma reverter a decisão de <strong>${escapeHtml(nome)}</strong>?</p>
+    <p class="small-note">Isso vai ${acao}. Os saldos e rankings dos meses seguintes serão recalculados. Entregas e histórico não serão apagados.</p>
+    <div class="modal-actions"><button class="btn btn-outline btn-block" type="button" onclick="abrirReversaoFechamentoMensal()">Voltar</button>
+    <button class="btn btn-danger btn-block" type="button" onclick="aplicarReversaoFechamentoMensal('${escapeHtml(id)}')">Confirmar reversão</button></div>`);
+}
+async function aplicarReversaoFechamentoMensal(id){
+  if(!exigirAdmin()) return;
+  const anteriores=STATE.fechamentosMensais||[];
+  const proximos=anteriores.map(item=>({...item,historico:Array.isArray(item.historico)?item.historico.slice():item.historico}));
+  const item=proximos.find(registro=>registro.id===id
+    &&registro.campanhaId===STATE.campanhaSelecionadaId
+    &&Number(registro.mes)===Number(STATE.rankMes)
+    &&Number(registro.ano)===Number(STATE.rankAno)
+    &&ReciclarFechamentoLogic.decisaoValida(registro.decisao));
+  if(!item){mostrarErroOperacao('Esta decisão já foi revertida ou não está mais disponível. Atualize a tela.');return;}
+  const decisaoAnterior=item.decisao,agora=new Date().toISOString(),ator=STATE.authUser?STATE.authUser.uid:'';
+  const historico=Array.isArray(item.historico)?item.historico:[];
+  if(!historico.length){
+    historico.push({decisao:decisaoAnterior,decididoEm:item.atualizadoEm||item.criadoEm,decididoPor:item.decididoPor||''});
+  }
+  historico.push({acao:'reversao',decisaoAnterior,revertidoEm:agora,revertidoPor:ator});
+  item.historico=historico.slice(-100);
+  item.decisao='revertida';
+  item.atualizadoEm=agora;
+  item.decididoPor=ator;
+  STATE.fechamentosMensais=proximos;
+  if(!await storageSet('fechamentos',proximos)){
+    STATE.fechamentosMensais=anteriores;
+    mostrarErroOperacao(formatarMensagemErroFirestore(STORAGE_ERRORS.get('fechamentos'),'Não foi possível reverter o fechamento. Nenhuma alteração foi confirmada.'));
+    return;
+  }
+  const colaborador=STATE.colaboradores.find(c=>c.id===item.colaboradorId);
+  fecharModal();renderApp();
+  abrirModal(`<div class="modal-head"><h3>Fechamento revertido</h3><button class="modal-close" type="button" onclick="fecharModal()">${icon('x')}</button></div>
+    <p>A decisão de ${escapeHtml(colaborador?colaborador.nome:'colaborador')} foi revertida.</p>
+    <p class="small-note">O saldo voltou a ser calculado a partir das entregas e movimentações originais. O histórico foi preservado e os meses seguintes foram recalculados.</p>
+    <div class="modal-actions"><button class="btn btn-primary btn-block" type="button" onclick="fecharModal()">Concluir</button></div>`);
 }
 function idsSelecionadosFechamentoMensal(){
   return [...document.querySelectorAll('#modalOverlay .fechamento-mensal-selecao:checked')].map(input=>input.value);
@@ -124,6 +207,9 @@ async function aplicarFechamentoMensal(decisao){
     <div class="modal-actions"><button class="btn btn-primary btn-block" type="button" onclick="fecharModal()">Concluir</button></div>`);
 }
 window.abrirFechamentoMensal=abrirFechamentoMensal;
+window.abrirReversaoFechamentoMensal=abrirReversaoFechamentoMensal;
+window.confirmarReversaoFechamentoMensal=confirmarReversaoFechamentoMensal;
+window.aplicarReversaoFechamentoMensal=aplicarReversaoFechamentoMensal;
 window.selecionarTodosFechamentoMensal=selecionarTodosFechamentoMensal;
 window.atualizarSelecaoFechamentoMensal=atualizarSelecaoFechamentoMensal;
 window.confirmarFechamentoMensal=confirmarFechamentoMensal;

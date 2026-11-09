@@ -966,9 +966,11 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
         const saldo=saldosDoColaborador[cat.key];
         return saldo && saldo.totalDisponivel>=saldo.meta;
       });
-      const fechamento = ReciclarFechamentoLogic.encontrarFechamento(
+      const fechamentoEncontrado = ReciclarFechamentoLogic.encontrarFechamento(
         STATE.fechamentosMensais,campanhaId,mes,ano,c.id
       );
+      const fechamento = ReciclarFechamentoLogic.fechamentoAtivo(fechamentoEncontrado)
+        ? fechamentoEncontrado : null;
       categorias.forEach(cat=>{
         const saldo=saldosDoColaborador[cat.key];
         const leftover=ReciclarFechamentoLogic.calcularSaldoTransportavel(

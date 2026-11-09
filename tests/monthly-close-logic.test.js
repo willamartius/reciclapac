@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,decisaoValida}=require('../monthly-close-logic.js');
+const {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,decisaoValida,listarCategoriasPendentes,fechamentoAtivo}=require('../monthly-close-logic.js');
 
 test('gera identificador estável e isolado por campanha, mês, ano e colaborador',()=>{
   const id=chaveFechamento('campanha A',3,2026,'colaborador/1');
@@ -53,4 +53,36 @@ test('somente a produção do mês atual acima da meta gera excedente após carr
 test('carry restrito continua acumulado quando a meta ainda não foi alcançada',()=>{
   assert.equal(calcularSaldoTransportavel(90,100,null,false,0,60,true),90);
   assert.equal(calcularSaldoTransportavel(90,100,'meia-folga',false,0,60,true),90);
+});
+
+test('fechamento lista somente categorias abaixo da meta e preserva excedentes válidos',()=>{
+  const categorias=[
+    {key:'latinha',label:'Latinha'},
+    {key:'pet',label:'Garrafa PET'},
+    {key:'papel',label:'Caixa de papelão'},
+  ];
+  const pendentes=listarCategoriasPendentes(
+    categorias,
+    {latinha:288,pet:184,papel:80},
+    {latinha:150,pet:200,papel:100}
+  );
+  assert.deepEqual(pendentes.map(cat=>[cat.key,cat.quantidade,cat.meta]),[
+    ['pet',184,200],
+    ['papel',80,100],
+  ]);
+});
+test('não considera pendente uma categoria cuja quantidade alcançou exatamente a meta',()=>{
+  const pendentes=listarCategoriasPendentes(
+    [{key:'ovos',label:'Cartela de ovos'}],
+    {ovos:7},
+    {ovos:7}
+  );
+  assert.deepEqual(pendentes,[]);
+});
+
+test('decisão revertida permanece no histórico, mas deixa de produzir efeitos',()=>{
+  assert.equal(fechamentoAtivo({decisao:'meia-folga'}),true);
+  assert.equal(fechamentoAtivo({decisao:'zerar'}),true);
+  assert.equal(fechamentoAtivo({decisao:'revertida'}),false);
+  assert.equal(fechamentoAtivo(null),false);
 });
