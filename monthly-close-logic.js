@@ -17,9 +17,12 @@
     const numero=Number(valor);
     return Number.isFinite(numero)?Math.max(0,numero):0;
   }
-  function calcularSaldoTransportavel(totalDisponivel,decisao,metaAtingida,saldoAutomatico){
+  function calcularSaldoTransportavel(totalDisponivel,meta,decisao,metaAtingida,saldoAutomatico){
     if(metaAtingida || !DECISOES.has(decisao)) return saldoNaoNegativo(saldoAutomatico);
-    return decisao==='meia-folga'?saldoNaoNegativo(totalDisponivel):0;
+    if(decisao==='zerar') return 0;
+    const total=saldoNaoNegativo(totalDisponivel);
+    const metaSegura=saldoNaoNegativo(meta);
+    return Math.max(0,total-Math.min(total,metaSegura));
   }
   function decisaoValida(decisao){return DECISOES.has(decisao);}
   return {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,decisaoValida};
