@@ -976,7 +976,7 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
           metaAtingidaNoMes,saldo.leftover,saldo.creditos,carryInDeMeiaFolga
         );
         const saldoRestritoMeiaFolga=leftover>0&&!metaAtingidaNoMes
-          && !!fechamento&&fechamento.decisao==='meia-folga';
+          && (carryInDeMeiaFolga || (!!fechamento&&fechamento.decisao==='meia-folga'));
         saldos[c.id][cat.key][chave]={
           creditos:saldo.creditos,
           carryIn:saldo.carryIn,
