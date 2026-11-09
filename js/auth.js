@@ -266,7 +266,6 @@ async function sincronizarRankingsPublicos(){
             pontuacao:Math.round(resultado.pontuacao),
             percentualGeral:resultado.mediaReal,
             totalMateriais:resultado.totalMateriais,
-            folgaParcial:!!resultado.folgaParcial,
             ...(cfgTroca?{
               resumoTroca:(()=>{
                 const nomeItem=String(cfgTroca.nomeItem||'item').trim();
