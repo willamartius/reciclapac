@@ -39,3 +39,13 @@ test('somente as duas decisões administrativas conhecidas são aceitas',()=>{
   assert.equal(decisaoValida('transferir'),false);
   assert.equal(decisaoValida(''),false);
 });
+
+test('saldo de meia folga anterior completa a meta, mas não gera excedente pela soma de dois meses',()=>{
+  assert.equal(calcularSaldoTransportavel(120,100,null,true,20,90,true),0);
+  assert.equal(calcularSaldoTransportavel(90,100,'meia-folga',false,0,60,true),90);
+  assert.equal(calcularSaldoTransportavel(90,100,'zerar',false,0,60,true),0);
+});
+test('somente a produção do mês atual acima da meta gera excedente após carry restrito',()=>{
+  assert.equal(calcularSaldoTransportavel(140,100,null,true,40,110,true),10);
+  assert.equal(calcularSaldoTransportavel(130,100,null,true,30,100,true),0);
+});
