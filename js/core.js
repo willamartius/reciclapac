@@ -980,7 +980,7 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
         saldos[c.id][cat.key][chave]={
           creditos:saldo.creditos,
           carryIn:saldo.carryIn,
-          carryInDeMeiaFolga,
+          carryInDeMeiaFolga:saldo.carryInDeMeiaFolga,
           totalDisponivel:saldo.totalDisponivel,
           leftover,
           saldoRestritoMeiaFolga,
