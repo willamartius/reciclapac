@@ -347,6 +347,7 @@ test('avisos públicos permitem ajustar tamanho em px, usar amostras de cor e sa
 test('fechamentos mensais são incluídos nos backups manuais e automáticos', () => {
   const main = read('js/main.js');
   const backupAutomatico = read('scripts/backup/backup.js');
+  assert.doesNotThrow(() => new vm.Script(backupAutomatico, { filename: 'scripts/backup/backup.js' }));
   assert.match(main, /fechamentos: STATE\.fechamentosMensais/);
   assert.match(main, /\['fechamentos',dados\.fechamentos\|\|\[\],anterior\.fechamentos\|\|\[\]\]/);
   assert.match(main, /STATE\.fechamentosMensais=dados\.fechamentos\|\|\[\]/);
