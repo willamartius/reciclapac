@@ -1019,7 +1019,7 @@ function resultadosDoMesUsandoSaldos(saldos, campanhaId, mes, ano, setorFiltro){
       percentuais[cat.key] = cumprimento.percentual;
       const saldoComCarryRestrito=!!(s&&s.carryInDeMeiaFolga);
       percentuaisReais[cat.key] = meta>0
-        ? Math.min(saldoComCarryRestrito&&frescos[cat.key]<meta?100:Infinity,totalDisponivelBruto/meta*100)
+        ? Math.min(saldoComCarryRestrito?100:Infinity,totalDisponivelBruto/meta*100)
         : 0;
       totaisAcumulados[cat.key] = Object.values(saldos[c.id]?.[cat.key] || {}).reduce((a,x)=>a+x.creditos, 0);
     });
