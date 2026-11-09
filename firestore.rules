@@ -193,6 +193,27 @@ service cloud.firestore {
         && isFichaDateWithinCampaign(data.campanhaId, data.data);
     }
 
+    function isValidMonthlyClose(recordId) {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+          'id', 'campanhaId', 'mes', 'ano', 'colaboradorId', 'decisao',
+          'criadoEm', 'atualizadoEm', 'decididoPor'
+        ])
+        && data.keys().hasOnly([
+          'id', 'campanhaId', 'mes', 'ano', 'colaboradorId', 'decisao',
+          'criadoEm', 'atualizadoEm', 'decididoPor'
+        ])
+        && data.id == recordId
+        && data.campanhaId is string && data.campanhaId.size() > 0 && data.campanhaId.size() <= 200
+        && data.colaboradorId is string && data.colaboradorId.size() > 0 && data.colaboradorId.size() <= 200
+        && data.mes is int && data.mes >= 1 && data.mes <= 12
+        && data.ano is int && data.ano >= 2000 && data.ano <= 9999
+        && data.decisao in ['meia-folga', 'zerar']
+        && data.criadoEm is string && data.criadoEm.size() > 0 && data.criadoEm.size() <= 40
+        && data.atualizadoEm is string && data.atualizadoEm.size() > 0 && data.atualizadoEm.size() <= 40
+        && data.decididoPor == request.auth.uid;
+    }
+
     function isValidCommonDelivery(recordId) {
       let data = request.resource.data;
       return canUseApp()
@@ -401,6 +422,7 @@ service cloud.firestore {
       match /records/{recordId} {
         allow read: if key == 'lixeira' ? isAdmin() : canUseApp();
         allow create: if (isAdmin()
+            && (key != 'fechamentos' || isValidMonthlyClose(recordId))
             && (key != 'entregas'
               || ((!('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data))
                 && isValidCommonDelivery(recordId))))
@@ -412,6 +434,12 @@ service cloud.firestore {
                   && isValidCommonDelivery(recordId))
                 || isValidLinkedFichaDelivery(recordId))));
         allow update: if (isAdmin()
+            && (key != 'fechamentos' || (isValidMonthlyClose(recordId)
+              && request.resource.data.campanhaId == resource.data.campanhaId
+              && request.resource.data.mes == resource.data.mes
+              && request.resource.data.ano == resource.data.ano
+              && request.resource.data.colaboradorId == resource.data.colaboradorId
+              && request.resource.data.criadoEm == resource.data.criadoEm))
             && (key != 'entregas'
               || ((!('fichaId' in resource.data) && !('entregaGrupoId' in resource.data)
                   && !('fichaId' in request.resource.data) && !('entregaGrupoId' in request.resource.data)
