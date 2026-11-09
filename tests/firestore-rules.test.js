@@ -831,6 +831,7 @@ test('fechamentos mensais: somente admin cria e altera decisões válidas e o op
     criadoEm: '2026-11-09T12:00:00.000Z',
     atualizadoEm: '2026-11-09T12:00:00.000Z',
     decididoPor: 'admin-1',
+    historico: [{ decisao: 'meia-folga', decididoEm: '2026-11-09T12:00:00.000Z', decididoPor: 'admin-1' }],
   };
   await assertSucceeds(setDoc(ref, payload));
   await assertSucceeds(getDoc(doc(firestore(operador), 'reciclar-apac', 'fechamentos', 'records', id)));
@@ -844,6 +845,10 @@ test('fechamentos mensais: somente admin cria e altera decisões válidas e o op
     decisao: 'zerar',
     atualizadoEm: '2026-11-09T13:00:00.000Z',
     decididoPor: 'admin-1',
+    historico: [
+      { decisao: 'meia-folga', decididoEm: '2026-11-09T12:00:00.000Z', decididoPor: 'admin-1' },
+      { decisao: 'zerar', decididoEm: '2026-11-09T13:00:00.000Z', decididoPor: 'admin-1' },
+    ],
   }));
   await assertFails(updateDoc(doc(firestore(operador), 'reciclar-apac', 'fechamentos', 'records', id), {
     decisao: 'meia-folga',
