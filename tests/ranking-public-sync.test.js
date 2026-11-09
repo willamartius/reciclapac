@@ -73,6 +73,9 @@ test('public ranking reloads all source collections before publishing', async ()
       encontrarFechamento(registros,campanhaId,mes,ano,colaboradorId) {
         return registros.find(item=>item.campanhaId===campanhaId&&item.mes===mes&&item.ano===ano&&item.colaboradorId===colaboradorId)||null;
       },
+      fechamentoAtivo(fechamento) {
+        return !!fechamento && ['meia-folga','zerar'].includes(fechamento.decisao);
+      },
     };
     const ReciclarRankingLogic = {
       deveIncluirNoRankingPublico: () => true,
