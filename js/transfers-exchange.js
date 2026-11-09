@@ -604,6 +604,7 @@ function renderRanking(){
         </select>
       </div>
       ${STATE.isAdmin? `<div class="toolbar-right">
+        ${STATE.isAdmin?'<button class="btn btn-outline" onclick="abrirFechamentoMensal()">Fechamento mensal</button>':''}
         <button class="btn btn-outline" onclick="abrirCompartilhamentoRanking(${mes},${ano})">Compartilhar no WhatsApp</button>
         <button class="btn btn-outline" onclick="gerarCardRanking(${mes},${ano})">Gerar card do ranking</button>
       </div>` : ''}
@@ -659,7 +660,7 @@ function renderTabelaRanking(resultados, completa, mes, ano){
         return `
         <tr>
           <td class="ranking-position-cell">${r.posicao? `<span class="ranking-position-content"><b>${r.posicao}º</b>${r.posicao<=3?`<span class="ranking-medal" aria-hidden="true">${({1:'🥇',2:'🥈',3:'🥉'}[r.posicao]||'')}</span>`:''}</span>` : '<span class="small-note">—</span>'}</td>
-          <td style="font-weight:700;">${escapeHtml(r.colaborador.nome)}</td>
+          <td style="font-weight:700;">${escapeHtml(r.colaborador.nome)}${r.folgaParcial?` <span class="badge badge-grey">Meia folga</span>`:''}</td>
           <td>${escapeHtml(r.colaborador.setor||'—')}</td>
           ${completa?`<td>${r.totalMateriais.toLocaleString('pt-BR')}</td>`:''}
           ${modoResgates?'':`<td style="min-width:120px;"><div style="display:flex;align-items:center;gap:8px;"><div class="progress" style="flex:1;"><div style="width:${Math.min(100,r.pontuacao)}%"></div></div><span>${r.pontuacao.toFixed(0)}</span></div></td><td>${r.mediaReal.toFixed(0)}%</td><td>${r.metaAtingida? '<span class="badge badge-green">Atingida</span>' : '<span class="badge badge-grey">Em andamento</span>'}</td>`}

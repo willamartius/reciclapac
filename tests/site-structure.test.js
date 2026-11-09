@@ -13,9 +13,10 @@ const appScripts = scriptTags.filter(src => src.startsWith('js/'));
 test('index.html carrega CSS e scripts do app em arquivos separados, em ordem', () => {
   assert.match(html, /<link rel="stylesheet" href="css\/styles\.css/);
   assert.deepEqual(appScripts, [
-    'js/core.js', 'js/views.js', 'js/delivery-timestamps.js', 'js/auth.js', 'js/fichas.js', 'js/registro-express.js', 'js/transfers-exchange.js', 'js/share.js', 'js/monitoramento.js', 'js/main.js'
+    'js/core.js', 'js/views.js', 'js/delivery-timestamps.js', 'js/auth.js', 'js/fichas.js', 'js/registro-express.js', 'js/transfers-exchange.js', 'js/monthly-close.js', 'js/share.js', 'js/monitoramento.js', 'js/main.js'
   ]);
   assert.ok(scriptTags.indexOf('ranking-logic.js') < scriptTags.indexOf('js/core.js'));
+  assert.ok(scriptTags.indexOf('monthly-close-logic.js') < scriptTags.indexOf('js/core.js'));
   assert.ok(scriptTags.indexOf('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js') < scriptTags.indexOf('js/core.js'));
   assert.doesNotMatch(html, /<style>/i);
   assert.doesNotMatch(html, /<script>/i);
@@ -340,4 +341,16 @@ test('avisos públicos permitem ajustar tamanho em px, usar amostras de cor e sa
   assert.ok(views.includes("rgb(32, 40, 32)"));
   assert.ok(rules.includes('request.resource.data.avisoManutencao.size() <= 5000'));
   assert.ok(rules.includes('request.resource.data.avisoRanking.size() <= 5000'));
+});
+
+
+test('fechamentos mensais são incluídos nos backups manuais e automáticos', () => {
+  const main = read('js/main.js');
+  const backupAutomatico = read('scripts/backup/backup.js');
+  assert.doesNotThrow(() => new vm.Script(backupAutomatico, { filename: 'scripts/backup/backup.js' }));
+  assert.match(main, /fechamentos: STATE\.fechamentosMensais/);
+  assert.match(main, /\['fechamentos',dados\.fechamentos\|\|\[\],anterior\.fechamentos\|\|\[\]\]/);
+  assert.match(main, /STATE\.fechamentosMensais=dados\.fechamentos\|\|\[\]/);
+  assert.match(backupAutomatico, /readStoredValue\(db, 'fechamentos', \[\]\)/);
+  assert.match(backupAutomatico, /fechamentos,\n\s+campanhas,/);
 });

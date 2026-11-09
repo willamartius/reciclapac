@@ -43,17 +43,18 @@ async function readStoredValue(db, key, fallback) {
 }
 
 async function buildBackup(db) {
-  const [colaboradores, entregas, transferencias, trocas, campanhas, metas, config] = await Promise.all([
+  const [colaboradores, entregas, transferencias, trocas, fechamentos, campanhas, metas, config] = await Promise.all([
     readStoredValue(db, 'colaboradores', []),
     readStoredValue(db, 'entregas', []),
     readStoredValue(db, 'transferencias', []),
     readStoredValue(db, 'trocas', []),
+    readStoredValue(db, 'fechamentos', []),
     readStoredValue(db, 'campanhas', []),
     readStoredValue(db, 'metas', []),
     readStoredValue(db, 'config', null),
   ]);
 
-  for (const [name, value] of Object.entries({ colaboradores, entregas, transferencias, trocas, campanhas, metas })) {
+  for (const [name, value] of Object.entries({ colaboradores, entregas, transferencias, trocas, fechamentos, campanhas, metas })) {
     if (!Array.isArray(value)) throw new Error(`Firestore collection "${name}" did not resolve to an array.`);
   }
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
@@ -75,6 +76,7 @@ async function buildBackup(db) {
       entregas,
       transferencias,
       trocas,
+      fechamentos,
       campanhas,
       metas,
       config: configBackup,
@@ -154,6 +156,7 @@ async function main() {
       || !Array.isArray(backup.dados.entregas)
       || !Array.isArray(backup.dados.transferencias)
       || !Array.isArray(backup.dados.trocas)
+      || !Array.isArray(backup.dados.fechamentos)
       || !Array.isArray(backup.dados.metas)) {
     throw new Error('Generated backup failed structural validation; refusing to upload.');
   }
@@ -178,7 +181,7 @@ async function main() {
   if (!uploaded.data.id) throw new Error('Google Drive did not confirm the backup upload.');
 
   console.log(`Backup uploaded: ${uploaded.data.name} (${uploaded.data.id})`);
-  console.log(`Counts: colaboradores=${backup.dados.colaboradores.length}, entregas=${backup.dados.entregas.length}, transferencias=${backup.dados.transferencias.length}, trocas=${backup.dados.trocas.length}, campanhas=${backup.dados.campanhas.length}, metas=${backup.dados.metas.length}`);
+  console.log(`Counts: colaboradores=${backup.dados.colaboradores.length}, entregas=${backup.dados.entregas.length}, transferencias=${backup.dados.transferencias.length}, trocas=${backup.dados.trocas.length}, fechamentos=${backup.dados.fechamentos.length}, campanhas=${backup.dados.campanhas.length}, metas=${backup.dados.metas.length}`);
   await pruneOldBackups(drive, folderId);
 }
 

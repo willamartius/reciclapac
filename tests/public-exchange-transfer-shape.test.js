@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const ReciclarFechamentoLogic = require('../monthly-close-logic.js');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'transfers-exchange.js'), 'utf8');
 const helperMatch = source.match(/function montarTransferenciasSolicitacaoPublica\([\s\S]*?\n}\n/);
@@ -69,7 +70,9 @@ test('o cálculo real de saldos reflete a troca nos dois colaboradores e nas dua
       entregas: [],
       transferencias: [],
       trocas: [],
+      fechamentosMensais: [],
     },
+    ReciclarFechamentoLogic,
     ReciclarRankingLogic: {
       somarEntregasValidadas: () => 0,
       calcularSaldoMensal: (creditos, carryIn) => ({

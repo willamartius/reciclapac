@@ -12,6 +12,7 @@ test('public ranking reloads all source collections before publishing', async ()
     entregas: [{id: 'entrega-remota', campanhaId: 'campanha', data: '2026-10-01'}],
     transferencias: [],
     trocas: [],
+    fechamentos: [{campanhaId:'campanha',mes:9,ano:2026,colaboradorId:'remoto',decisao:'meia-folga'}],
     campanhas: [{
       id: 'campanha', nome: 'Campanha remota', mesInicio: 10, anoInicio: 2026,
       mesFim: null, anoFim: null, status: 'ativa', trocaCartela: {ativo: false},
@@ -43,7 +44,7 @@ test('public ranking reloads all source collections before publishing', async ()
     const PUBLIC_RANKING_SOURCE_KEYS = new Set();
     const STATE = {
       colaboradores: [{id: 'antigo', nome: 'Cache antigo', status: 'ativo'}],
-      entregas: [], transferencias: [], trocas: [], campanhas: [], metasSnapshots: [],
+      entregas: [], transferencias: [], trocas: [], fechamentosMensais: [], campanhas: [], metasSnapshots: [],
       isAdmin: true, isOperator: false, authUser: null,
     };
     const FIREBASE_DB = {
@@ -68,6 +69,11 @@ test('public ranking reloads all source collections before publishing', async ()
         totais: {papel: 1}, carryInsPorCategoria: {}, metasPorCategoria: {papel: 1},
       }));
     }
+    const ReciclarFechamentoLogic = {
+      encontrarFechamento(registros,campanhaId,mes,ano,colaboradorId) {
+        return registros.find(item=>item.campanhaId===campanhaId&&item.mes===mes&&item.ano===ano&&item.colaboradorId===colaboradorId)||null;
+      },
+    };
     const ReciclarRankingLogic = {
       deveIncluirNoRankingPublico: () => true,
       somarItensTrocados: () => 0,
@@ -84,9 +90,10 @@ test('public ranking reloads all source collections before publishing', async ()
 
   await sandbox.executarSync();
 
-  assert.deepEqual(reads, ['colaboradores', 'entregas', 'transferencias', 'trocas', 'campanhas', 'metas']);
+  assert.deepEqual(reads, ['colaboradores', 'entregas', 'transferencias', 'trocas', 'fechamentos', 'campanhas', 'metas']);
   assert.equal(sandbox.estado.colaboradores[0].nome, 'Ana Remota');
   assert.equal(published.length, 1);
   assert.equal(published[0].documento.ranking[0].nome, 'Ana Remota');
   assert.equal(published[0].documento.campanhaNome, 'Campanha remota');
+  assert.equal(published[0].documento.ranking[0].meiaFolgaAnterior, true);
 });

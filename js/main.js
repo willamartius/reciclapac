@@ -1093,6 +1093,7 @@ function gerarBackupJSON(){
       entregas: STATE.entregas,
       transferencias: STATE.transferencias,
       trocas: STATE.trocas,
+      fechamentos: STATE.fechamentosMensais,
       campanhas: STATE.campanhas,
       metas: STATE.metasSnapshots,
       config: (()=>{ const {senhaAdmin, ...configBackup} = STATE.config || {}; return configBackup; })(),
@@ -1633,6 +1634,7 @@ function validarBackupJSON(obj){
     }
   }
   if(dados.metas !== undefined && !Array.isArray(dados.metas)) return { ok:false, motivo:'As metas mensais do backup estão inválidas.' };
+  if(dados.fechamentos !== undefined && !Array.isArray(dados.fechamentos)) return { ok:false, motivo:'Os fechamentos mensais do backup estão inválidos.' };
   if(!objetoValido(dados.config) || !objetoValido(dados.config.painelPeriodo)
     || typeof dados.config.painelPeriodo.tipo !== 'string'
     || (dados.config.painelPeriodo.ano !== null && !Number.isInteger(dados.config.painelPeriodo.ano))){
@@ -1651,6 +1653,23 @@ function validarBackupJSON(obj){
         || !Number.isInteger(campanha.anoFim) || campanha.anoFim*12+campanha.mesFim<campanha.anoInicio*12+campanha.mesInicio))){
       return { ok:false, motivo:`Campanha ${indice+1} inválida.` };
     }
+  }
+  const idsFechamentos=new Set();
+  for(const [indice, fechamento] of (dados.fechamentos||[]).entries()){
+    if(!objetoValido(fechamento) || typeof fechamento.id!=='string' || !fechamento.id.trim()
+      || idsFechamentos.has(fechamento.id)
+      || !campanhas.has(fechamento.campanhaId)
+      || typeof fechamento.colaboradorId!=='string' || !fechamento.colaboradorId.trim()
+      || !Number.isInteger(fechamento.mes) || fechamento.mes<1 || fechamento.mes>12
+      || !Number.isInteger(fechamento.ano) || fechamento.ano<2000 || fechamento.ano>9999
+      || !['meia-folga','zerar'].includes(fechamento.decisao)
+      || typeof fechamento.criadoEm!=='string' || !Number.isFinite(Date.parse(fechamento.criadoEm))
+      || typeof fechamento.atualizadoEm!=='string' || !Number.isFinite(Date.parse(fechamento.atualizadoEm))
+      || typeof fechamento.decididoPor!=='string'
+      || (fechamento.historico!==undefined && (!Array.isArray(fechamento.historico)||fechamento.historico.length>100))){
+      return { ok:false, motivo:`Fechamento mensal ${indice+1} inválido.` };
+    }
+    idsFechamentos.add(fechamento.id);
   }
   for(const [indice, meta] of (dados.metas||[]).entries()){
     if(!objetoValido(meta) || typeof meta.id!=='string' || !meta.id
@@ -1695,12 +1714,13 @@ async function importarBackupLocal(file){
     const backup = JSON.parse(texto);
     const validacao = validarBackupJSON(backup);
     if(!validacao.ok){ throw new Error(validacao.motivo); }
-    const dados = {...backup.dados, metas:Array.isArray(backup.dados.metas)?backup.dados.metas:[]};
+    const dados = {...backup.dados, metas:Array.isArray(backup.dados.metas)?backup.dados.metas:[], fechamentos:Array.isArray(backup.dados.fechamentos)?backup.dados.fechamentos:[]};
     const resumo = [
       `${dados.colaboradores.length} colaboradores`,
       `${dados.entregas.length} entregas`,
       `${dados.transferencias.length} transferências`,
       `${dados.trocas.length} resgates`,
+      `${dados.fechamentos.length} fechamentos mensais`,
       `${dados.campanhas.length} campanhas`,
       `${Object.keys(dados.config).length} configurações`
     ].join(' · ');
@@ -1746,6 +1766,7 @@ async function confirmarImportacaoBackupLocal(){
     ['entregas',dados.entregas,anterior.entregas],
     ['transferencias',dados.transferencias,anterior.transferencias],
     ['trocas',dados.trocas,anterior.trocas],
+    ['fechamentos',dados.fechamentos||[],anterior.fechamentos||[]],
     ['campanhas',dados.campanhas,anterior.campanhas],
     ['metas',dados.metas||[],anterior.metas],
     ['config',dados.config,anterior.config],
@@ -1779,6 +1800,7 @@ async function confirmarImportacaoBackupLocal(){
   STATE.entregas=dados.entregas;
   STATE.transferencias=dados.transferencias;
   STATE.trocas=dados.trocas;
+  STATE.fechamentosMensais=dados.fechamentos||[];
   STATE.campanhas=dados.campanhas;
   STATE.metasSnapshots=dados.metas||[];
   STATE.config=dados.config;
