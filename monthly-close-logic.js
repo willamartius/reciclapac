@@ -44,5 +44,6 @@
     })).filter(cat=>cat.meta>0 && cat.quantidade<cat.meta);
   }
   function decisaoValida(decisao){return DECISOES.has(decisao);}
-  return {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,listarCategoriasPendentes,decisaoValida};
+  function fechamentoAtivo(fechamento){return !!fechamento&&decisaoValida(fechamento.decisao);}
+  return {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,listarCategoriasPendentes,decisaoValida,fechamentoAtivo};
 });
