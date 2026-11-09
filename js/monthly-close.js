@@ -27,11 +27,12 @@ function abrirFechamentoMensal(){
     const id=resultado.colaborador.id;
     const existente=ReciclarFechamentoLogic.encontrarFechamento(STATE.fechamentosMensais,campanhaId,mes,ano,id);
     const status=existente?(existente.decisao==='meia-folga'?'Meia folga registrada':'Saldo zerado'):'Ainda não fechado';
+    const historico=Array.isArray(existente&&existente.historico)?existente.historico.length:0;
     const resumo=categorias.map(cat=>`${cat.label.split(' (')[0]}: ${(Number(resultado.totais[cat.key])||0).toLocaleString('pt-BR')}`).join(' · ');
     return `<label style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-bottom:1px solid var(--borda);cursor:pointer;">
       <input class="fechamento-mensal-selecao" type="checkbox" value="${escapeHtml(id)}" checked onchange="atualizarSelecaoFechamentoMensal()" style="margin-top:4px;">
       <span style="flex:1;min-width:0;"><strong style="display:block;">${escapeHtml(resultado.colaborador.nome)}</strong>
-      <small class="small-note">${Math.round(resultado.mediaReal)}% da meta · ${escapeHtml(status)}</small>
+      <small class="small-note">${Math.round(resultado.mediaReal)}% da meta · ${escapeHtml(status)}${historico?` · ${historico} decisão(ões) no histórico`:''}</small>
       <small class="small-note" style="display:block;">${escapeHtml(resumo)}</small></span>
     </label>`;
   }).join('');
@@ -85,11 +86,28 @@ async function aplicarFechamentoMensal(decisao){
   const agora=new Date().toISOString();
   aplicar.forEach(colaboradorId=>{
     const existente=ReciclarFechamentoLogic.encontrarFechamento(proximos,campanhaId,mes,ano,colaboradorId);
-    if(existente){existente.decisao=decisao;existente.atualizadoEm=agora;existente.decididoPor=STATE.authUser?STATE.authUser.uid:'';}
-    else proximos.push({
+    const ator=STATE.authUser?STATE.authUser.uid:'';
+    if(existente){
+      const historico=Array.isArray(existente.historico)?existente.historico.slice():[];
+      if(!historico.length && existente.decisao){
+        historico.push({
+          decisao:existente.decisao,
+          decididoEm:existente.atualizadoEm||existente.criadoEm,
+          decididoPor:existente.decididoPor||'',
+        });
+      }
+      if(existente.decisao!==decisao || !historico.length){
+        historico.push({decisao,decididoEm:agora,decididoPor:ator});
+      }
+      existente.historico=historico.slice(-100);
+      existente.decisao=decisao;
+      existente.atualizadoEm=agora;
+      existente.decididoPor=ator;
+    }else proximos.push({
       id:ReciclarFechamentoLogic.chaveFechamento(campanhaId,mes,ano,colaboradorId),
       campanhaId,mes,ano,colaboradorId,decisao,criadoEm:agora,atualizadoEm:agora,
-      decididoPor:STATE.authUser?STATE.authUser.uid:'',
+      decididoPor:ator,
+      historico:[{decisao,decididoEm:agora,decididoPor:ator}],
     });
   });
   STATE.fechamentosMensais=proximos;
