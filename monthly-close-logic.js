@@ -22,7 +22,7 @@
     if(decisao==='zerar') return 0;
     const total=saldoNaoNegativo(totalDisponivel);
     const metaSegura=saldoNaoNegativo(meta);
-    return Math.max(0,total-Math.min(total,metaSegura));
+    return total<metaSegura?total:Math.max(0,total-metaSegura);
   }
   function decisaoValida(decisao){return DECISOES.has(decisao);}
   return {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,decisaoValida};
