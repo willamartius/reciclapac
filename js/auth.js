@@ -186,11 +186,12 @@ async function sincronizarRankingsPublicos(){
   if(rankingPublicoSyncPromise) return rankingPublicoSyncPromise;
   rankingPublicoSyncPendente=false;
   rankingPublicoSyncPromise=(async()=>{
-    const [colaboradores,entregas,transferencias,trocas,campanhasCarregadas,metasSnapshots]=await Promise.all([
+    const [colaboradores,entregas,transferencias,trocas,fechamentosMensais,campanhasCarregadas,metasSnapshots]=await Promise.all([
       storageGet('colaboradores',[]),
       storageGet('entregas',[]),
       storageGet('transferencias',[]),
       storageGet('trocas',[]),
+      storageGet('fechamentos',[]),
       storageGet('campanhas',[]),
       storageGet('metas',[]),
     ]);
@@ -199,6 +200,7 @@ async function sincronizarRankingsPublicos(){
     STATE.entregas=entregas;
     STATE.transferencias=transferencias;
     STATE.trocas=trocas;
+    STATE.fechamentosMensais=Array.isArray(fechamentosMensais)?fechamentosMensais:[];
     STATE.campanhas=Array.isArray(campanhasCarregadas)?campanhasCarregadas:[];
     STATE.metasSnapshots=metasSnapshots;
     const colecao=FIREBASE_DB.collection('reciclar-apac-public-ranking');
@@ -264,6 +266,7 @@ async function sincronizarRankingsPublicos(){
             pontuacao:Math.round(resultado.pontuacao),
             percentualGeral:resultado.mediaReal,
             totalMateriais:resultado.totalMateriais,
+            folgaParcial:!!resultado.folgaParcial,
             ...(cfgTroca?{
               resumoTroca:(()=>{
                 const nomeItem=String(cfgTroca.nomeItem||'item').trim();
