@@ -51,6 +51,7 @@ let STATE = {
   entregas: [],
   transferencias: [],
   trocas: [],
+  fechamentosMensais: [],
   campanhas: [],
   lixeira: [],
   campanhaSelecionadaId: null,
@@ -122,13 +123,13 @@ let FIREBASE_AUTH = null;
 let STORAGE_MODE = 'none';
 let solicitacoesTrocaUnsubscribe = null;
 let solicitacoesTrocaListenerUid = '';
-const FIRESTORE_RECORD_COLLECTIONS = new Set(['colaboradores','entregas','transferencias','trocas','campanhas','metas','lixeira']);
-const FIRESTORE_MIGRATION_COLLECTIONS = new Set(['colaboradores','entregas','transferencias','trocas','campanhas','metas']);
+const FIRESTORE_RECORD_COLLECTIONS = new Set(['colaboradores','entregas','transferencias','trocas','campanhas','metas','lixeira','fechamentos']);
+const FIRESTORE_MIGRATION_COLLECTIONS = new Set(['colaboradores','entregas','transferencias','trocas','campanhas','metas','fechamentos']);
 const COLECOES_RESTAURAVEIS = new Set(['colaboradores','entregas','transferencias','trocas','campanhas']);
 const PRAZO_LIXEIRA_MS = 30*24*60*60*1000;
 const FIRESTORE_BASELINES = new Map();
 const STORAGE_ERRORS = new Map();
-const PUBLIC_RANKING_SOURCE_KEYS = new Set(['colaboradores','entregas','transferencias','trocas','campanhas','metas']);
+const PUBLIC_RANKING_SOURCE_KEYS = new Set(['colaboradores','entregas','transferencias','trocas','campanhas','metas','fechamentos']);
 let rankingPublicoSyncAtivo = false;
 let rankingPublicoSyncTimer = null;
 let rankingPublicoSyncMesTimer = null;
@@ -718,11 +719,12 @@ async function migrarParaCampanhas(configAntigo){
 
 /* ---------- CARREGAMENTO INICIAL ---------- */
 async function carregarDados(){
-  const [colaboradores,entregas,transferencias,trocas,lixeira,metas,config,campanhas]=await Promise.all([
+  const [colaboradores,entregas,transferencias,trocas,fechamentosMensais,lixeira,metas,config,campanhas]=await Promise.all([
     storageGet('colaboradores', []),
     storageGet('entregas', []),
     storageGet('transferencias', []),
     storageGet('trocas', []),
+    storageGet('fechamentos', []),
     STATE.isAdmin ? storageGet('lixeira', []) : Promise.resolve([]),
     storageGet('metas', []),
     storageGet('config', null),
@@ -732,6 +734,7 @@ async function carregarDados(){
   STATE.entregas = entregas;
   STATE.transferencias = transferencias;
   STATE.trocas = trocas;
+  STATE.fechamentosMensais = Array.isArray(fechamentosMensais)?fechamentosMensais:[];
   STATE.lixeira = lixeira;
   await limparLixeiraExpirada();
   STATE.metasSnapshots = metas;
@@ -932,6 +935,7 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
     const anterior = mesAnteriorDe(campanhaId, mes,ano);
     const chaveAnterior = anterior? chaveMA(anterior.mes,anterior.ano) : null;
     STATE.colaboradores.forEach(c=>{
+      const saldosDoColaborador = {};
       categorias.forEach(cat=>{
         const creditosEntregas = ReciclarRankingLogic.somarEntregasValidadas(
           STATE.entregas,campanhaId,mes,ano,c.id,cat.key,normalizarQuantidadeUnidades
@@ -947,15 +951,36 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
           saldoMensal=ReciclarRankingLogic.calcularSaldoMensal(creditos,carryIn,meta);
         }catch(erro){
           if(creditos+carryIn<0 && Number.isFinite(creditos) && Number.isFinite(carryIn) && carryIn>=0 && meta>=0){
-            // Resgate maior que o saldo registrado: mantém o app utilizável com saldo zerado.
             console.warn(`Saldo negativo ajustado para zero: ${c.nome} / ${cat.label||cat.key} em ${String(mes).padStart(2,'0')}/${ano}. Entregas: ${creditosEntregas}; recebidas: ${recebidos}; enviadas: ${enviados}; consumo em trocas: ${consumidosEmTrocas}; saldo anterior: ${carryIn}.`);
             saldoMensal={totalDisponivel:0,leftover:0};
           }else{
             throw new Error(`Saldo inválido para ${c.nome} / ${cat.label||cat.key} em ${String(mes).padStart(2,'0')}/${ano}. Entregas: ${creditosEntregas}; transferências recebidas: ${recebidos}; transferências enviadas: ${enviados}; consumo em trocas: ${consumidosEmTrocas}; saldo anterior: ${carryIn}; meta: ${meta}. ${erro.message}`);
           }
         }
-        const {totalDisponivel,leftover}=saldoMensal;
-        saldos[c.id][cat.key][chave] = { creditos, carryIn, totalDisponivel, leftover, meta };
+        saldosDoColaborador[cat.key]={creditos,carryIn,meta,...saldoMensal};
+      });
+      const metaAtingidaNoMes = categorias.every(cat=>{
+        const saldo=saldosDoColaborador[cat.key];
+        return saldo && saldo.totalDisponivel>=saldo.meta;
+      });
+      const fechamento = ReciclarFechamentoLogic.encontrarFechamento(
+        STATE.fechamentosMensais,campanhaId,mes,ano,c.id
+      );
+      categorias.forEach(cat=>{
+        const saldo=saldosDoColaborador[cat.key];
+        const leftover=ReciclarFechamentoLogic.calcularSaldoTransportavel(
+          saldo.totalDisponivel,fechamento?fechamento.decisao:null,
+          metaAtingidaNoMes,saldo.leftover
+        );
+        saldos[c.id][cat.key][chave]={
+          creditos:saldo.creditos,
+          carryIn:saldo.carryIn,
+          totalDisponivel:saldo.totalDisponivel,
+          leftover,
+          meta:saldo.meta,
+          metaAtingidaNoMes,
+          decisaoFechamento:fechamento?fechamento.decisao:null,
+        };
       });
     });
   });
@@ -995,7 +1020,9 @@ function resultadosDoMesUsandoSaldos(saldos, campanhaId, mes, ano, setorFiltro){
     const totalMateriais = Math.round(categorias.reduce((a,cat)=>a+totais[cat.key],0));
     const datasDoColaborador = entregasDoMes.filter(e=>e.colaboradorId===c.id).map(e=>e.data).sort();
     const primeiraEntrega = datasDoColaborador.length? datasDoColaborador[0] : null;
-    return { colaborador:c, totais, carryInsPorCategoria, metasPorCategoria, totaisAcumulados, percentuais, pontuacao, mediaReal, metaAtingida, totalMateriais, primeiraEntrega };
+    const fechamentoMensal=ReciclarFechamentoLogic.encontrarFechamento(STATE.fechamentosMensais,campanhaId,mes,ano,c.id);
+    const folgaParcial=!metaAtingida && !!fechamentoMensal && fechamentoMensal.decisao==='meia-folga';
+    return { colaborador:c, totais, carryInsPorCategoria, metasPorCategoria, totaisAcumulados, percentuais, pontuacao, mediaReal, metaAtingida, totalMateriais, primeiraEntrega, folgaParcial, fechamentoMensal:fechamentoMensal||null };
   });
   resultados.sort((a,b)=>
     b.pontuacao-a.pontuacao
@@ -1017,6 +1044,7 @@ function mesesComDados(campanhaId){
   STATE.entregas.forEach(e=>{ if(e.campanhaId===campanhaId && e.data) chaves.add(e.data.slice(0,7)); });
   const campanha = campanhaPorId(campanhaId);
   if(campanha) Object.keys(campanha.metasHistorico||{}).forEach(k=>chaves.add(k));
+  (STATE.fechamentosMensais||[]).filter(item=>item.campanhaId===campanhaId).forEach(item=>chaves.add(chaveMA(item.mes,item.ano)));
   return [...chaves].sort().reverse();
 }
 
