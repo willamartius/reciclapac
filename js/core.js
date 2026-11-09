@@ -944,7 +944,10 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
         const enviados = transferencias.filter(t=>t.colaboradorOrigemId===c.id && t.categoriaOrigem===cat.key).reduce((total,t)=>total+t.quantidade,0);
         const consumidosEmTrocas = trocas.filter(t=>t.colaboradorId===c.id && t.kitConsumido && t.kitConsumido[cat.key]).reduce((total,t)=>total+t.kitConsumido[cat.key],0);
         const creditos = creditosEntregas+recebidos-enviados-consumidosEmTrocas;
-        const carryIn = chaveAnterior && saldos[c.id][cat.key][chaveAnterior] ? saldos[c.id][cat.key][chaveAnterior].leftover : 0;
+        const saldoAnterior=chaveAnterior && saldos[c.id][cat.key][chaveAnterior]
+          ? saldos[c.id][cat.key][chaveAnterior] : null;
+        const carryIn=saldoAnterior?saldoAnterior.leftover:0;
+        const carryInDeMeiaFolga=!!(saldoAnterior&&saldoAnterior.saldoRestritoMeiaFolga&&carryIn>0);
         const meta = metas[cat.key] || cat.metaDefault;
         let saldoMensal;
         try{
@@ -970,13 +973,17 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
         const saldo=saldosDoColaborador[cat.key];
         const leftover=ReciclarFechamentoLogic.calcularSaldoTransportavel(
           saldo.totalDisponivel,saldo.meta,fechamento?fechamento.decisao:null,
-          metaAtingidaNoMes,saldo.leftover
+          metaAtingidaNoMes,saldo.leftover,saldo.creditos,carryInDeMeiaFolga
         );
+        const saldoRestritoMeiaFolga=leftover>0&&!metaAtingidaNoMes
+          && !!fechamento&&fechamento.decisao==='meia-folga';
         saldos[c.id][cat.key][chave]={
           creditos:saldo.creditos,
           carryIn:saldo.carryIn,
+          carryInDeMeiaFolga,
           totalDisponivel:saldo.totalDisponivel,
           leftover,
+          saldoRestritoMeiaFolga,
           meta:saldo.meta,
           metaAtingidaNoMes,
           decisaoFechamento:fechamento?fechamento.decisao:null,
@@ -1010,7 +1017,10 @@ function resultadosDoMesUsandoSaldos(saldos, campanhaId, mes, ano, setorFiltro){
       frescos[cat.key] = Math.max(0, s? s.creditos : 0);
       carryInsPorCategoria[cat.key] = Math.max(0, s? s.carryIn : 0);
       percentuais[cat.key] = cumprimento.percentual;
-      percentuaisReais[cat.key] = meta>0 ? totalDisponivelBruto/meta*100 : 0;
+      const saldoComCarryRestrito=!!(s&&s.carryInDeMeiaFolga);
+      percentuaisReais[cat.key] = meta>0
+        ? Math.min(saldoComCarryRestrito&&frescos[cat.key]<meta?100:Infinity,totalDisponivelBruto/meta*100)
+        : 0;
       totaisAcumulados[cat.key] = Object.values(saldos[c.id]?.[cat.key] || {}).reduce((a,x)=>a+x.creditos, 0);
     });
     const percentuaisCapped = categorias.map(cat=>Math.min(100,percentuais[cat.key]));
