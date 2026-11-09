@@ -211,7 +211,7 @@ service cloud.firestore {
         && data.decisao in ['meia-folga', 'zerar']
         && data.criadoEm is string && data.criadoEm.size() > 0 && data.criadoEm.size() <= 40
         && data.atualizadoEm is string && data.atualizadoEm.size() > 0 && data.atualizadoEm.size() <= 40
-        && data.decididoPor == request.auth.uid
+        && data.decididoPor is string && data.decididoPor.size() <= 200
         && (!('historico' in data) || (data.historico is list && data.historico.size() <= 100));
     }
 
