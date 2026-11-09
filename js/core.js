@@ -969,7 +969,7 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
       categorias.forEach(cat=>{
         const saldo=saldosDoColaborador[cat.key];
         const leftover=ReciclarFechamentoLogic.calcularSaldoTransportavel(
-          saldo.totalDisponivel,fechamento?fechamento.decisao:null,
+          saldo.totalDisponivel,saldo.meta,fechamento?fechamento.decisao:null,
           metaAtingidaNoMes,saldo.leftover
         );
         saldos[c.id][cat.key][chave]={
