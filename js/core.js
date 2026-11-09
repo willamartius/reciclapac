@@ -969,7 +969,7 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
       const fechamentoEncontrado = ReciclarFechamentoLogic.encontrarFechamento(
         STATE.fechamentosMensais,campanhaId,mes,ano,c.id
       );
-      const fechamento = fechamentoEncontrado && ReciclarFechamentoLogic.decisaoValida(fechamentoEncontrado.decisao)
+      const fechamento = ReciclarFechamentoLogic.fechamentoAtivo(fechamentoEncontrado)
         ? fechamentoEncontrado : null;
       categorias.forEach(cat=>{
         const saldo=saldosDoColaborador[cat.key];
