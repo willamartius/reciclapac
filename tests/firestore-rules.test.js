@@ -814,3 +814,38 @@ test('concorrência: transações simultâneas não consomem a mesma ficha mais 
   assert.equal(fichaFinal.utilizadaPor, 'operador-1');
   assert.deepEqual(fichaFinal.quantidades, [1, 2, 3, 4, 5, 6]);
 });
+
+
+test('fechamentos mensais: somente admin cria e altera decisões válidas e o operador pode ler', async () => {
+  const admin = testEnv.authenticatedContext('admin-1');
+  const operador = testEnv.authenticatedContext('operador-1');
+  const id = 'fechamento_campanha-1_2026-10_colaborador-1';
+  const ref = doc(firestore(admin), 'reciclar-apac', 'fechamentos', 'records', id);
+  const payload = {
+    id,
+    campanhaId: 'campanha-1',
+    mes: 10,
+    ano: 2026,
+    colaboradorId: 'colaborador-1',
+    decisao: 'meia-folga',
+    criadoEm: '2026-11-09T12:00:00.000Z',
+    atualizadoEm: '2026-11-09T12:00:00.000Z',
+    decididoPor: 'admin-1',
+  };
+  await assertSucceeds(setDoc(ref, payload));
+  await assertSucceeds(getDoc(doc(firestore(operador), 'reciclar-apac', 'fechamentos', 'records', id)));
+  await assertFails(setDoc(doc(firestore(operador), 'reciclar-apac', 'fechamentos', 'records', 'fechamento-operador'), {
+    ...payload, id: 'fechamento-operador', decididoPor: 'operador-1',
+  }));
+  await assertFails(setDoc(doc(firestore(admin), 'reciclar-apac', 'fechamentos', 'records', 'fechamento-invalido'), {
+    ...payload, id: 'fechamento-invalido', decisao: 'transferir',
+  }));
+  await assertSucceeds(updateDoc(ref, {
+    decisao: 'zerar',
+    atualizadoEm: '2026-11-09T13:00:00.000Z',
+    decididoPor: 'admin-1',
+  }));
+  await assertFails(updateDoc(doc(firestore(operador), 'reciclar-apac', 'fechamentos', 'records', id), {
+    decisao: 'meia-folga',
+  }));
+});
