@@ -830,7 +830,7 @@ test('fechamentos mensais: somente admin cria e altera decisões válidas e o op
     decisao: 'meia-folga',
     criadoEm: '2026-11-09T12:00:00.000Z',
     atualizadoEm: '2026-11-09T12:00:00.000Z',
-    decididoPor: 'admin-1',
+    decididoPor: 'admin-anterior',
     historico: [{ decisao: 'meia-folga', decididoEm: '2026-11-09T12:00:00.000Z', decididoPor: 'admin-1' }],
   };
   await assertSucceeds(setDoc(ref, payload));
