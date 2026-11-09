@@ -9,8 +9,8 @@ function abrirFechamentoMensal(){
   const inicio=Number(campanha.anoInicio)*12+Number(campanha.mesInicio);
   const fim=campanha.anoFim?Number(campanha.anoFim)*12+Number(campanha.mesFim):Infinity;
   const atual=mesAnoAtual();
-  if(!Number.isInteger(mes)||mes<1||mes>12||!Number.isInteger(ano)||periodo<inicio||periodo>fim||periodo>atual.ano*12+atual.mes){
-    mostrarErroOperacao('Escolha um mês já iniciado e dentro do período da campanha.');return;
+  if(!Number.isInteger(mes)||mes<1||mes>12||!Number.isInteger(ano)||periodo<inicio||periodo>fim||periodo>=atual.ano*12+atual.mes){
+    mostrarErroOperacao('Escolha um mês encerrado e dentro do período da campanha.');return;
   }
   const resultados=calcularResultadosMes(campanhaId,mes,ano)
     .filter(resultado=>!resultado.metaAtingida&&resultado.colaborador.status!=='desligado');
