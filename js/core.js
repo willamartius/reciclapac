@@ -960,7 +960,7 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
             throw new Error(`Saldo inválido para ${c.nome} / ${cat.label||cat.key} em ${String(mes).padStart(2,'0')}/${ano}. Entregas: ${creditosEntregas}; transferências recebidas: ${recebidos}; transferências enviadas: ${enviados}; consumo em trocas: ${consumidosEmTrocas}; saldo anterior: ${carryIn}; meta: ${meta}. ${erro.message}`);
           }
         }
-        saldosDoColaborador[cat.key]={creditos,carryIn,meta,...saldoMensal};
+        saldosDoColaborador[cat.key]={creditos,carryIn,carryInDeMeiaFolga,meta,...saldoMensal};
       });
       const metaAtingidaNoMes = categorias.every(cat=>{
         const saldo=saldosDoColaborador[cat.key];
@@ -973,10 +973,10 @@ function calcularSaldosAcumulados(campanhaId, mesAlvo,anoAlvo){
         const saldo=saldosDoColaborador[cat.key];
         const leftover=ReciclarFechamentoLogic.calcularSaldoTransportavel(
           saldo.totalDisponivel,saldo.meta,fechamento?fechamento.decisao:null,
-          metaAtingidaNoMes,saldo.leftover,saldo.creditos,carryInDeMeiaFolga
+          metaAtingidaNoMes,saldo.leftover,saldo.creditos,saldo.carryInDeMeiaFolga
         );
         const saldoRestritoMeiaFolga=leftover>0&&!metaAtingidaNoMes
-          && (carryInDeMeiaFolga || (!!fechamento&&fechamento.decisao==='meia-folga'));
+          && (saldo.carryInDeMeiaFolga || (!!fechamento&&fechamento.decisao==='meia-folga'));
         saldos[c.id][cat.key][chave]={
           creditos:saldo.creditos,
           carryIn:saldo.carryIn,
