@@ -17,11 +17,22 @@
     const numero=Number(valor);
     return Number.isFinite(numero)?Math.max(0,numero):0;
   }
-  function calcularSaldoTransportavel(totalDisponivel,meta,decisao,metaAtingida,saldoAutomatico){
-    if(metaAtingida || !DECISOES.has(decisao)) return saldoNaoNegativo(saldoAutomatico);
-    if(decisao==='zerar') return 0;
+  function calcularSaldoTransportavel(totalDisponivel,meta,decisao,metaAtingida,saldoAutomatico,creditosMes,carryInDeMeiaFolga){
     const total=saldoNaoNegativo(totalDisponivel);
     const metaSegura=saldoNaoNegativo(meta);
+    const creditos=saldoNaoNegativo(creditosMes);
+    if(carryInDeMeiaFolga===true){
+      // O saldo de uma meia folga anterior pode completar a meta, mas não pode
+      // transformar a soma de dois meses em excedente. Só a produção do mês
+      // atual acima da meta gera excedente válido.
+      if(creditos>=metaSegura) return Math.max(0,creditos-metaSegura);
+      if(metaAtingida) return 0;
+      if(decisao==='zerar') return 0;
+      if(decisao==='meia-folga') return total;
+      return saldoNaoNegativo(saldoAutomatico);
+    }
+    if(metaAtingida || !DECISOES.has(decisao)) return saldoNaoNegativo(saldoAutomatico);
+    if(decisao==='zerar') return 0;
     return total<metaSegura?total:Math.max(0,total-metaSegura);
   }
   function decisaoValida(decisao){return DECISOES.has(decisao);}
