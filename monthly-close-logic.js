@@ -36,6 +36,13 @@
     if(decisao==='zerar') return 0;
     return total<metaSegura?total:Math.max(0,total-metaSegura);
   }
+  function listarCategoriasPendentes(categorias,totais,metas){
+    return (Array.isArray(categorias)?categorias:[]).map(cat=>({
+      ...cat,
+      quantidade:saldoNaoNegativo(totais&&totais[cat.key]),
+      meta:saldoNaoNegativo(metas&&metas[cat.key]),
+    })).filter(cat=>cat.meta>0 && cat.quantidade<cat.meta);
+  }
   function decisaoValida(decisao){return DECISOES.has(decisao);}
-  return {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,decisaoValida};
+  return {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,listarCategoriasPendentes,decisaoValida};
 });
