@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,decisaoValida,listarCategoriasPendentes}=require('../monthly-close-logic.js');
+const {chaveFechamento,encontrarFechamento,calcularSaldoTransportavel,decisaoValida,listarCategoriasPendentes,fechamentoAtivo}=require('../monthly-close-logic.js');
 
 test('gera identificador estável e isolado por campanha, mês, ano e colaborador',()=>{
   const id=chaveFechamento('campanha A',3,2026,'colaborador/1');
@@ -78,4 +78,11 @@ test('não considera pendente uma categoria cuja quantidade alcançou exatamente
     {ovos:7}
   );
   assert.deepEqual(pendentes,[]);
+});
+
+test('decisão revertida permanece no histórico, mas deixa de produzir efeitos',()=>{
+  assert.equal(fechamentoAtivo({decisao:'meia-folga'}),true);
+  assert.equal(fechamentoAtivo({decisao:'zerar'}),true);
+  assert.equal(fechamentoAtivo({decisao:'revertida'}),false);
+  assert.equal(fechamentoAtivo(null),false);
 });
