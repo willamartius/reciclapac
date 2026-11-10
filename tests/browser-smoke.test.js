@@ -40,6 +40,6 @@ test('smoke test do site no Chromium: página inicial e scripts do app carregam'
   await page.goto('http://127.0.0.1:8001/?emulator=1', { waitUntil: 'domcontentloaded' });
   assert.equal(await page.title(), 'Reciclapac');
   assert.equal(await page.locator('#app').count(), 1);
-  assert.equal(await page.locator('script[src="js/transfers-exchange.js?v=20261017-cache-refresh"]').count(), 1);
+  assert.equal(await page.locator('script[src="js/transfers-exchange.js?v=20261109-ranking-folga"]').count(), 1);
   assert.deepEqual(failedResponses, [], 'arquivos locais referenciados não devem responder com erro HTTP');
 });
