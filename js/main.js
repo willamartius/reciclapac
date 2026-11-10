@@ -127,6 +127,55 @@ function renderHistorico(){
     if(Number.isFinite(ordemA)&&Number.isFinite(ordemB)&&ordemA!==ordemB) return ordemB-ordemA;
     return String(b.data).localeCompare(String(a.data));
   });
+  // Exibe no histórico os saldos restritos da meia folga como movimentos informativos.
+  // Eles são derivados dos cálculos existentes e não são gravados em transferencias,
+  // evitando que o mesmo saldo seja creditado duas vezes.
+  const saldosHistorico=calcularSaldosAcumulados(campanhaId,mes,ano);
+  const chaveHistorico=chaveMA(mes,ano);
+  const fechamentoAtivo=(colaboradorId)=>{
+    const item=ReciclarFechamentoLogic.encontrarFechamento(
+      STATE.fechamentosMensais,campanhaId,mes,ano,colaboradorId
+    );
+    return ReciclarFechamentoLogic.fechamentoAtivo(item)?item:null;
+  };
+  STATE.colaboradores.forEach(colaborador=>{
+    const fechamento=fechamentoAtivo(colaborador.id);
+    const saldosColaborador=saldosHistorico[colaborador.id]||{};
+    const categorias= categoriasDaCampanha(campanhaPorId(campanhaId));
+    const saidas=[];
+    const entradas=[];
+    categorias.forEach(cat=>{
+      const saldo=saldosColaborador[cat.key]?.[chaveHistorico];
+      if(!saldo) return;
+      if(fechamento?.decisao==='meia-folga' && saldo.leftover>0){
+        saidas.push(`${cat.label.split(' (')[0]}: ${saldo.leftover.toLocaleString('pt-BR')}`);
+      }
+      if(saldo.carryInDeMeiaFolga && saldo.carryIn>0){
+        entradas.push(`${cat.label.split(' (')[0]}: ${saldo.carryIn.toLocaleString('pt-BR')}`);
+      }
+    });
+    const dataSaida=fechamento?.atualizadoEm||fechamento?.criadoEm||`${ano}-${String(mes).padStart(2,'0')}-01`;
+    if(saidas.length){
+      eventos.push({
+        data:dataSaida.slice(0,10),criadoEm:dataSaida,tipo:'Transferência de saldo',
+        cor:'badge-amber',
+        texto:`${colaborador.nome}: saldo reservado para meia folga e enviado ao mês seguinte`,
+        extra:saidas.join(' · ')
+      });
+    }
+    if(entradas.length){
+      const anterior=new Date(ano,mes-2,1);
+      const fechamentoOrigem=ReciclarFechamentoLogic.encontrarFechamento(
+        STATE.fechamentosMensais,campanhaId,anterior.getMonth()+1,anterior.getFullYear(),colaborador.id
+      );
+      const dataEntrada=fechamentoOrigem?.atualizadoEm||fechamentoOrigem?.criadoEm||`${ano}-${String(mes).padStart(2,'0')}-01`;
+      eventos.push({
+        data:dataEntrada.slice(0,10),criadoEm:dataEntrada,tipo:'Transferência de saldo',cor:'badge-amber',
+        texto:`${colaborador.nome}: saldo recebido de ${nomeMes(anterior.getMonth()+1)} por meia folga`,
+        extra:entradas.join(' · ')
+      });
+    }
+  });
   const cartao=(rotulo,valor)=>`<div class="card stat-card"><div class="stat-label">${rotulo}</div><div class="stat-value">${valor}</div></div>`;
   return `
     <div class="toolbar">
@@ -151,7 +200,7 @@ function renderHistorico(){
     <div class="section-title">Movimentações de ${nomeMes(mes)} de ${ano}</div>
     <div class="card" style="padding:0;"><div class="table-wrap">${eventos.length? `<table><thead><tr><th>Registro no sistema</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th></tr></thead><tbody>
       ${eventos.map(ev=>{
-        const dataPrincipal=['Entrega','Transferência'].includes(ev.tipo)?formatarDataHoraRegistro(ev.criadoEm):formatarData(ev.data);
+        const dataPrincipal=['Entrega','Transferência','Transferência de saldo'].includes(ev.tipo)?formatarDataHoraRegistro(ev.criadoEm):formatarData(ev.data);
         const dataSecundaria=ev.tipo==='Entrega'?'<div class="small-note">Coleta: '+escapeHtml(formatarData(ev.data))+'</div>':'';
         return `<tr><td style="white-space:nowrap;"><span>${dataPrincipal}</span>${dataSecundaria}</td><td><span class="badge ${ev.cor}">${ev.tipo}</span></td><td>${escapeHtml(ev.texto)}</td><td>${escapeHtml(ev.extra)}</td></tr>`;
       }).join('')}
@@ -2059,6 +2108,8 @@ function carregarRankingsPublicos(){
         return {
           posicao:item.posicao,
           nome:item.nome,
+          ...(item.meiaFolga===true?{meiaFolga:true}:{}),
+          ...(item.folga===true?{folga:true}:{}),
           pontuacao:item.pontuacao,
           ...(resumoDetalhes
             ?{percentualGeral:resumoDetalhes.percentualGeral,totalMateriais:resumoDetalhes.totalMateriais}
