@@ -154,20 +154,24 @@ function renderHistorico(){
         entradas.push(`${cat.label.split(' (')[0]}: ${saldo.carryIn.toLocaleString('pt-BR')}`);
       }
     });
-    const dataRegistro=fechamento?.atualizadoEm||fechamento?.criadoEm||`${ano}-${String(mes).padStart(2,'0')}-01`;
+    const dataSaida=fechamento?.atualizadoEm||fechamento?.criadoEm||`${ano}-${String(mes).padStart(2,'0')}-01`;
     if(saidas.length){
       eventos.push({
-        data:dataRegistro.slice(0,10),criadoEm:dataRegistro,tipo:'Transferência de saldo',
+        data:dataSaida.slice(0,10),criadoEm:dataSaida,tipo:'Transferência de saldo',
         cor:'badge-amber',
         texto:`${colaborador.nome}: saldo reservado para meia folga e enviado ao mês seguinte`,
         extra:saidas.join(' · ')
       });
     }
     if(entradas.length){
+      const anterior=new Date(ano,mes-2,1);
+      const fechamentoOrigem=ReciclarFechamentoLogic.encontrarFechamento(
+        STATE.fechamentosMensais,campanhaId,anterior.getMonth()+1,anterior.getFullYear(),colaborador.id
+      );
+      const dataEntrada=fechamentoOrigem?.atualizadoEm||fechamentoOrigem?.criadoEm||`${ano}-${String(mes).padStart(2,'0')}-01`;
       eventos.push({
-        data:`${ano}-${String(mes).padStart(2,'0')}-01`,
-        criadoEm:dataRegistro,tipo:'Transferência de saldo',cor:'badge-amber',
-        texto:`${colaborador.nome}: saldo recebido do mês anterior por meia folga`,
+        data:dataEntrada.slice(0,10),criadoEm:dataEntrada,tipo:'Transferência de saldo',cor:'badge-amber',
+        texto:`${colaborador.nome}: saldo recebido de ${nomeMes(anterior.getMonth()+1)} por meia folga`,
         extra:entradas.join(' · ')
       });
     }
