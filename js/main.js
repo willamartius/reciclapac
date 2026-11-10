@@ -127,6 +127,51 @@ function renderHistorico(){
     if(Number.isFinite(ordemA)&&Number.isFinite(ordemB)&&ordemA!==ordemB) return ordemB-ordemA;
     return String(b.data).localeCompare(String(a.data));
   });
+  // Exibe no histórico os saldos restritos da meia folga como movimentos informativos.
+  // Eles são derivados dos cálculos existentes e não são gravados em transferencias,
+  // evitando que o mesmo saldo seja creditado duas vezes.
+  const saldosHistorico=calcularSaldosAcumulados(campanhaId,mes,ano);
+  const chaveHistorico=chaveMA(mes,ano);
+  const fechamentoAtivo=(colaboradorId)=>{
+    const item=ReciclarFechamentoLogic.encontrarFechamento(
+      STATE.fechamentosMensais,campanhaId,mes,ano,colaboradorId
+    );
+    return ReciclarFechamentoLogic.fechamentoAtivo(item)?item:null;
+  };
+  STATE.colaboradores.forEach(colaborador=>{
+    const fechamento=fechamentoAtivo(colaborador.id);
+    const saldosColaborador=saldosHistorico[colaborador.id]||{};
+    const categorias= categoriasDaCampanha(campanhaPorId(campanhaId));
+    const saidas=[];
+    const entradas=[];
+    categorias.forEach(cat=>{
+      const saldo=saldosColaborador[cat.key]?.[chaveHistorico];
+      if(!saldo) return;
+      if(fechamento?.decisao==='meia-folga' && saldo.leftover>0){
+        saidas.push(`${cat.label.split(' (')[0]}: ${saldo.leftover.toLocaleString('pt-BR')}`);
+      }
+      if(saldo.carryInDeMeiaFolga && saldo.carryIn>0){
+        entradas.push(`${cat.label.split(' (')[0]}: ${saldo.carryIn.toLocaleString('pt-BR')}`);
+      }
+    });
+    const dataRegistro=fechamento?.atualizadoEm||fechamento?.criadoEm||`${ano}-${String(mes).padStart(2,'0')}-01`;
+    if(saidas.length){
+      eventos.push({
+        data:dataRegistro.slice(0,10),criadoEm:dataRegistro,tipo:'Transferência de saldo',
+        cor:'badge-amber',
+        texto:`${colaborador.nome}: saldo reservado para meia folga e enviado ao mês seguinte`,
+        extra:saidas.join(' · ')
+      });
+    }
+    if(entradas.length){
+      eventos.push({
+        data:`${ano}-${String(mes).padStart(2,'0')}-01`,
+        criadoEm:dataRegistro,tipo:'Transferência de saldo',cor:'badge-amber',
+        texto:`${colaborador.nome}: saldo recebido do mês anterior por meia folga`,
+        extra:entradas.join(' · ')
+      });
+    }
+  });
   const cartao=(rotulo,valor)=>`<div class="card stat-card"><div class="stat-label">${rotulo}</div><div class="stat-value">${valor}</div></div>`;
   return `
     <div class="toolbar">
