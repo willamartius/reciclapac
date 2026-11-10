@@ -2108,6 +2108,8 @@ function carregarRankingsPublicos(){
         return {
           posicao:item.posicao,
           nome:item.nome,
+          ...(item.meiaFolga===true?{meiaFolga:true}:{}),
+          ...(item.folga===true?{folga:true}:{}),
           pontuacao:item.pontuacao,
           ...(resumoDetalhes
             ?{percentualGeral:resumoDetalhes.percentualGeral,totalMateriais:resumoDetalhes.totalMateriais}
