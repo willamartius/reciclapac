@@ -1008,6 +1008,7 @@ function resultadosDoMesUsandoSaldos(saldos, campanhaId, mes, ano, setorFiltro){
   const entregasDoMes = entregasValidadasDoMes(campanhaId, mes,ano);
   const resultados = colaboradores.map(c=>{
     const totais = {}, percentuais = {}, percentuaisReais={}, frescos = {}, carryInsPorCategoria={}, totaisAcumulados = {}, metasPorCategoria = {}, categoriasAtingidas = {};
+    let carryInMeiaFolga=false;
     categorias.forEach(cat=>{
       const s = saldos[c.id]?.[cat.key]?.[chave];
       const totalDisponivelBruto = s? s.totalDisponivel : 0;
@@ -1020,6 +1021,7 @@ function resultadosDoMesUsandoSaldos(saldos, campanhaId, mes, ano, setorFiltro){
       carryInsPorCategoria[cat.key] = Math.max(0, s? s.carryIn : 0);
       percentuais[cat.key] = cumprimento.percentual;
       const saldoComCarryRestrito=!!(s&&s.carryInDeMeiaFolga);
+      if(saldoComCarryRestrito && (Number(s.carryIn)||0)>0) carryInMeiaFolga=true;
       percentuaisReais[cat.key] = meta>0
         ? Math.min(saldoComCarryRestrito?100:Infinity,totalDisponivelBruto/meta*100)
         : 0;
@@ -1032,9 +1034,11 @@ function resultadosDoMesUsandoSaldos(saldos, campanhaId, mes, ano, setorFiltro){
     const totalMateriais = Math.round(categorias.reduce((a,cat)=>a+totais[cat.key],0));
     const datasDoColaborador = entregasDoMes.filter(e=>e.colaboradorId===c.id).map(e=>e.data).sort();
     const primeiraEntrega = datasDoColaborador.length? datasDoColaborador[0] : null;
-    const fechamentoMensal=ReciclarFechamentoLogic.encontrarFechamento(STATE.fechamentosMensais,campanhaId,mes,ano,c.id);
-    const folgaParcial=!metaAtingida && !!fechamentoMensal && fechamentoMensal.decisao==='meia-folga';
-    return { colaborador:c, totais, carryInsPorCategoria, metasPorCategoria, totaisAcumulados, percentuais, pontuacao, mediaReal, metaAtingida, totalMateriais, primeiraEntrega, folgaParcial, fechamentoMensal:fechamentoMensal||null };
+    const fechamentoEncontrado=ReciclarFechamentoLogic.encontrarFechamento(STATE.fechamentosMensais,campanhaId,mes,ano,c.id);
+    const fechamentoMensal=ReciclarFechamentoLogic.fechamentoAtivo(fechamentoEncontrado)?fechamentoEncontrado:null;
+    const folgaParcial=carryInMeiaFolga || (!!fechamentoMensal && fechamentoMensal.decisao==='meia-folga');
+    const folgaIntegral=metaAtingida&&!folgaParcial;
+    return { colaborador:c, totais, carryInsPorCategoria, metasPorCategoria, totaisAcumulados, percentuais, pontuacao, mediaReal, metaAtingida, totalMateriais, primeiraEntrega, folgaParcial, folgaIntegral, fechamentoMensal:fechamentoMensal||null };
   });
   resultados.sort((a,b)=>
     b.pontuacao-a.pontuacao
