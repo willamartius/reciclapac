@@ -270,6 +270,8 @@ async function sincronizarRankingsPublicos(){
               );
               return ReciclarFechamentoLogic.fechamentoAtivo(fechamentoAnterior)&&fechamentoAnterior.decisao==='meia-folga';
             })(),
+            meiaFolga:resultado.folgaParcial===true,
+            folga:resultado.folgaIntegral===true,
             pontuacao:Math.round(resultado.pontuacao),
             percentualGeral:resultado.mediaReal,
             totalMateriais:resultado.totalMateriais,
