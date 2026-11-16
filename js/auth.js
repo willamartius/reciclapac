@@ -294,7 +294,7 @@ async function sincronizarRankingsPublicos(){
             })),
           }));
         if(cfgTroca){
-          ranking.sort((a,b)=>b.kit.trocadosMes-a.kit.trocadosMes||b.kit.disponiveis-a.kit.disponiveis||a.nome.localeCompare(b.nome,'pt-BR'));
+          ranking.sort((a,b)=>b.kit.trocadosMes-a.kit.trocadosMes||b.kit.disponiveis-a.kit.disponiveis||a.nome.localeCompare(b.nome));
           ranking.forEach((item,i)=>{
             item.posicao=i+1;
             item.pontuacao=item.kit.trocadosMes;
@@ -750,11 +750,15 @@ function renderEntregas(){
   const campanha = campanhaPorId(campanhaId);
   const cfgTroca = campanha && campanha.trocaCartela && campanha.trocaCartela.ativo ? campanha.trocaCartela : null;
   if(STATE.entregasSecao==='trocas' && !cfgTroca) STATE.entregasSecao='entregas';
+  const filtroEntregaColaborador = STATE.entregasSecao==='entregas'
+    ? '<div><select id="filtroEntregaColaborador" aria-label="Filtrar por colaborador" onchange="renderTabelaEntregas()"><option value="">Todos os colaboradores</option>' + STATE.colaboradores.slice().sort((a,b)=>a.nome.localeCompare(b.nome)).map(c=>"<option value='"+escapeHtml(c.id)+"'>"+escapeHtml(c.nome)+"</option>").join('') + '</select></div>'
+    : '';
   return `
     <div class="toolbar">
       <div class="toolbar-left filters">
         <div><select id="filtroEntregaMes" onchange="renderTabelaEntregas()">${MESES_PT.map((m,i)=>`<option value="${i+1}" ${i+1===mesAnoAtual().mes?'selected':''}>${m}</option>`).join('')}</select></div>
         <div><select id="filtroEntregaAno" onchange="renderTabelaEntregas()">${[mesAnoAtual().ano-1,mesAnoAtual().ano,mesAnoAtual().ano+1].map(a=>`<option ${a===mesAnoAtual().ano?'selected':''}>${a}</option>`).join('')}</select></div>
+        ${filtroEntregaColaborador}
         ${STATE.entregasSecao==='entregas'?`<div class="filtro-status"><select id="filtroEntregaStatus" onchange="renderTabelaEntregas()"><option value="">Todos os status</option><option value="pendente">Pendente</option><option value="validado">Validado</option></select></div>`:''}
       </div>
       ${podeEditarDados()? `
@@ -811,10 +815,11 @@ function renderTabelaEntregas(){
   const mes = +document.getElementById('filtroEntregaMes').value;
   const ano = +document.getElementById('filtroEntregaAno').value;
   const status = document.getElementById('filtroEntregaStatus')?.value||'';
+  const colaboradorId = document.getElementById('filtroEntregaColaborador')?.value||'';
   renderSaldoTransportado(mes,ano);
   if(wrap){
     const chave = chaveMA(mes,ano);
-    let lista = STATE.entregas.filter(e=> e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave && (!status || e.statusValidacao===status));
+    let lista = STATE.entregas.filter(e=> e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave && (!status || e.statusValidacao===status) && (!colaboradorId || e.colaboradorId===colaboradorId));
     lista = ordenarEntregasPorRegistro(lista);
     if(lista.length===0){ wrap.innerHTML = `<div class="table-empty">Nenhuma entrega registrada nesta campanha e período.</div>`; }
     else {

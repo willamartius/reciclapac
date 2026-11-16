@@ -96,6 +96,19 @@ test('Registro express expõe avanço por Enter, progresso e acessibilidade resp
 });
 
 
+test('Histórico e Entregas permitem filtrar registros por colaborador sem alterar os filtros de período', () => {
+  const main = read('js/main.js');
+  const auth = read('js/auth.js');
+  const core = read('js/core.js');
+  assert.match(core, /histColaboradorId: ''/);
+  assert.match(main, /Filtrar histórico por colaborador/);
+  assert.match(main, /mudarFiltroHistoricoColaborador\(this\.value\)/);
+  assert.match(main, /eventosFiltrados=colaboradorId\?eventos\.filter/);
+  assert.match(auth, /id="filtroEntregaColaborador"/);
+  assert.match(auth, /e\.colaboradorId===colaboradorId/);
+  assert.match(auth, /filtroEntregaStatus/);
+});
+
 test('histórico padroniza registro e coleta; navegação usa Registro express', () => {
   const main = read('js/main.js');
   const auth = read('js/auth.js');
