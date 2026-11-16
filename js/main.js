@@ -77,6 +77,7 @@ function renderHistorico(){
   }
   const meses = mesesComDados(campanhaId);
   const mes=STATE.histMes, ano=STATE.histAno;
+  const colaboradorId=STATE.histColaboradorId||'';
   const chaveSel = chaveMA(mes,ano);
   const resumoMes = chave=>{
     const [a,m] = chave.split('-').map(Number);
@@ -101,6 +102,7 @@ function renderHistorico(){
       return {
         data:e.data,
         criadoEm:e.criadoEm,
+        colaboradorIds:[e.colaboradorId],
         tipo:'Entrega',
         cor:'badge-green',
         texto:`${c?c.nome:'(removido)'} entregou ${e.quantidade} ${unid} de ${cat?cat.label.split(' (')[0]:'outros materiais'}`,
@@ -113,11 +115,11 @@ function renderHistorico(){
       const texto=t.entreCampanhas
         ?`${o?o.nome:'(removido)'} (${campanhaOrigem?campanhaOrigem.nome:'campanha removida'}) para ${d?d.nome:'(removido)'} (${campanhaDestino?campanhaDestino.nome:'campanha removida'}): ${t.quantidade} de ${nomeCat(catOrigem||catDestino)}`
         :`${o?o.nome:'(removido)'} para ${d?d.nome:'(removido)'}: ${t.quantidade} de ${nomeCat(catOrigem)}`;
-      return {data:t.data,criadoEm:t.criadoEm,tipo:'Transferência',cor:'badge-amber',texto,extra:t.motivo||''};
+      return {data:t.data,criadoEm:t.criadoEm,colaboradorIds:[t.colaboradorOrigemId||t.colaboradorOrigemNomeId,t.colaboradorDestinoId||t.colaboradorDestinoNomeId].filter(Boolean),tipo:'Transferência',cor:'badge-amber',texto,extra:t.motivo||''};
     }),
     ...trocasDoMes(campanhaId,mes,ano).map(t=>{
       const c = STATE.colaboradores.find(x=>x.id===t.colaboradorId);
-      return {data:t.data,tipo:'Resgate',cor:'badge-green',texto:`${c?c.nome:'(removido)'} resgatou ${t.cartelasEmitidas||0} item(ns)`,extra:t.quantidadeKits?`${t.quantidadeKits} kit(s)`:''};
+      return {data:t.data,colaboradorIds:[t.colaboradorId],tipo:'Resgate',cor:'badge-green',texto:`${c?c.nome:'(removido)'} resgatou ${t.cartelasEmitidas||0} item(ns)`,extra:t.quantidadeKits?`${t.quantidadeKits} kit(s)`:''};
     }),
   ].sort((a,b)=>{
     const timestampA=a.tipo==='Entrega'?normalizarTimestampRegistro(a.criadoEm):null;
@@ -157,7 +159,7 @@ function renderHistorico(){
     const dataSaida=fechamento?.atualizadoEm||fechamento?.criadoEm||`${ano}-${String(mes).padStart(2,'0')}-01`;
     if(saidas.length){
       eventos.push({
-        data:dataSaida.slice(0,10),criadoEm:dataSaida,tipo:'Transferência de saldo',
+        data:dataSaida.slice(0,10),criadoEm:dataSaida,colaboradorIds:[colaborador.id],tipo:'Transferência de saldo',
         cor:'badge-amber',
         texto:`${colaborador.nome}: saldo reservado para meia folga e enviado ao mês seguinte`,
         extra:saidas.join(' · ')
@@ -170,16 +172,18 @@ function renderHistorico(){
       );
       const dataEntrada=fechamentoOrigem?.atualizadoEm||fechamentoOrigem?.criadoEm||`${ano}-${String(mes).padStart(2,'0')}-01`;
       eventos.push({
-        data:dataEntrada.slice(0,10),criadoEm:dataEntrada,tipo:'Transferência de saldo',cor:'badge-amber',
+        data:dataEntrada.slice(0,10),criadoEm:dataEntrada,colaboradorIds:[colaborador.id],tipo:'Transferência de saldo',cor:'badge-amber',
         texto:`${colaborador.nome}: saldo recebido de ${nomeMes(anterior.getMonth()+1)} por meia folga`,
         extra:entradas.join(' · ')
       });
     }
   });
+  const eventosFiltrados=colaboradorId?eventos.filter(evento=>(evento.colaboradorIds||[]).includes(colaboradorId)):eventos;
+  const opcoesColaboradores=STATE.colaboradores.slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR')).map(colaborador=>`<option value="${escapeHtml(colaborador.id)}" ${colaborador.id===colaboradorId?'selected':''}>${escapeHtml(colaborador.nome)}</option>`).join('');
   const cartao=(rotulo,valor)=>`<div class="card stat-card"><div class="stat-label">${rotulo}</div><div class="stat-value">${valor}</div></div>`;
   return `
     <div class="toolbar">
-      <div class="toolbar-left filters">${seletorMesAno('hist', mes, ano)}</div>
+      <div class="toolbar-left filters">${seletorMesAno('hist', mes, ano)}<select aria-label="Filtrar histórico por colaborador" onchange="mudarFiltroHistoricoColaborador(this.value)"><option value="">Todos os colaboradores</option>${opcoesColaboradores}</select></div>
       ${STATE.isAdmin? `<div class="toolbar-right"><button class="btn btn-outline btn-sm" onclick="exportarCsvEntregas(${mes},${ano})">${icon('download',15)}Exportar entregas</button></div>` : ''}
     </div>
     ${meses.length===0? `<div class="card"><div class="empty-state">Nenhum histórico registrado ainda nesta campanha.</div></div>` : `
@@ -198,8 +202,8 @@ function renderHistorico(){
         <td class="table-cell-center">${l.transferencias}</td><td class="table-cell-center">${l.resgates}</td></tr>`).join('')}</tbody>
     </table></div></div>
     <div class="section-title">Movimentações de ${nomeMes(mes)} de ${ano}</div>
-    <div class="card" style="padding:0;"><div class="table-wrap">${eventos.length? `<table><thead><tr><th>Registro no sistema</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th></tr></thead><tbody>
-      ${eventos.map(ev=>{
+    <div class="card" style="padding:0;"><div class="table-wrap">${eventosFiltrados.length? `<table><thead><tr><th>Registro no sistema</th><th>Tipo</th><th>Detalhe</th><th>Obs.</th></tr></thead><tbody>
+      ${eventosFiltrados.map(ev=>{
         const dataPrincipal=['Entrega','Transferência','Transferência de saldo'].includes(ev.tipo)?formatarDataHoraRegistro(ev.criadoEm):formatarData(ev.data);
         const dataSecundaria=ev.tipo==='Entrega'?'<div class="small-note">Coleta: '+escapeHtml(formatarData(ev.data))+'</div>':'';
         return `<tr><td style="white-space:nowrap;"><span>${dataPrincipal}</span>${dataSecundaria}</td><td><span class="badge ${ev.cor}">${ev.tipo}</span></td><td>${escapeHtml(ev.texto)}</td><td>${escapeHtml(ev.extra)}</td></tr>`;
@@ -208,6 +212,11 @@ function renderHistorico(){
     `}
   `;
 }
+function mudarFiltroHistoricoColaborador(colaboradorId){
+  STATE.histColaboradorId=colaboradorId||'';
+  renderApp();
+}
+window.mudarFiltroHistoricoColaborador=mudarFiltroHistoricoColaborador;
 function renderTabelaEntregasHistorico(mes,ano){
   const campanhaId = STATE.campanhaSelecionadaId;
   const chave = chaveMA(mes,ano);
