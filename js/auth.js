@@ -294,7 +294,7 @@ async function sincronizarRankingsPublicos(){
             })),
           }));
         if(cfgTroca){
-          ranking.sort((a,b)=>b.kit.trocadosMes-a.kit.trocadosMes||b.kit.disponiveis-a.kit.disponiveis||a.nome.localeCompare(b.nome,'pt-BR'));
+          ranking.sort((a,b)=>b.kit.trocadosMes-a.kit.trocadosMes||b.kit.disponiveis-a.kit.disponiveis||a.nome.localeCompare(b.nome));
           ranking.forEach((item,i)=>{
             item.posicao=i+1;
             item.pontuacao=item.kit.trocadosMes;
