@@ -93,7 +93,7 @@ let STATE = {
   view: 'dashboard',
   dashMes: null, dashAno: null,
   rankMes: null, rankAno: null, rankSetor: '',
-  histMes: null, histAno: null,
+  histMes: null, histAno: null, histColaboradorId: '',
 };
 /* ---------- HELPERS DE ARMAZENAMENTO ---------- */
 /* A configuração Firebase é pública; o controle de acesso efetivo fica nas regras
