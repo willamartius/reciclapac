@@ -81,15 +81,15 @@ function renderHistorico(){
   const chaveSel = chaveMA(mes,ano);
   const resumoMes = chave=>{
     const [a,m] = chave.split('-').map(Number);
-    const entregas = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave);
+    const entregas = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave && (!colaboradorId || e.colaboradorId===colaboradorId));
     const validadas = entregas.filter(e=>e.statusValidacao==='validado');
     return {
       mes:m, ano:a, chave,
       entregas:entregas.length,
       validadas:validadas.length,
       participantes:new Set(validadas.map(e=>e.colaboradorId)).size,
-      transferencias:transferenciasDoMes(campanhaId,m,a).length,
-      resgates:trocasDoMes(campanhaId,m,a).length,
+      transferencias:transferenciasDoMes(campanhaId,m,a).filter(t=>!colaboradorId || [t.colaboradorOrigemId||t.colaboradorOrigemNomeId,t.colaboradorDestinoId||t.colaboradorDestinoNomeId].includes(colaboradorId)).length,
+      resgates:trocasDoMes(campanhaId,m,a).filter(t=>!colaboradorId || t.colaboradorId===colaboradorId).length,
     };
   };
   const linhasMeses = meses.map(resumoMes);
@@ -109,7 +109,7 @@ function renderHistorico(){
         extra:e.statusValidacao==='validado'?'Validada':'Pendente',
       };
     }),
-    ...transferenciasDoMes(campanhaId,mes,ano).map(t=>{
+    ...transferenciasDoMes(campanhaId,mes,ano).filter(t=>!colaboradorId || [t.colaboradorOrigemId||t.colaboradorOrigemNomeId,t.colaboradorDestinoId||t.colaboradorDestinoNomeId].includes(colaboradorId)).map(t=>{
       const {origem:o,destino:d,catOrigem,catDestino,campanhaOrigem,campanhaDestino}=partesTransferencia(t);
       const nomeCat=c=>c?c.label.split(' (')[0]:'material';
       const texto=t.entreCampanhas
@@ -117,7 +117,7 @@ function renderHistorico(){
         :`${o?o.nome:'(removido)'} para ${d?d.nome:'(removido)'}: ${t.quantidade} de ${nomeCat(catOrigem)}`;
       return {data:t.data,criadoEm:t.criadoEm,colaboradorIds:[t.colaboradorOrigemId||t.colaboradorOrigemNomeId,t.colaboradorDestinoId||t.colaboradorDestinoNomeId].filter(Boolean),tipo:'Transferência',cor:'badge-amber',texto,extra:t.motivo||''};
     }),
-    ...trocasDoMes(campanhaId,mes,ano).map(t=>{
+    ...trocasDoMes(campanhaId,mes,ano).filter(t=>!colaboradorId || t.colaboradorId===colaboradorId).map(t=>{
       const c = STATE.colaboradores.find(x=>x.id===t.colaboradorId);
       return {data:t.data,colaboradorIds:[t.colaboradorId],tipo:'Resgate',cor:'badge-green',texto:`${c?c.nome:'(removido)'} resgatou ${t.cartelasEmitidas||0} item(ns)`,extra:t.quantidadeKits?`${t.quantidadeKits} kit(s)`:''};
     }),
@@ -184,7 +184,7 @@ function renderHistorico(){
   return `
     <div class="toolbar">
       <div class="toolbar-left filters">${seletorMesAno('hist', mes, ano)}<select aria-label="Filtrar histórico por colaborador" onchange="mudarFiltroHistoricoColaborador(this.value)"><option value="">Todos os colaboradores</option>${opcoesColaboradores}</select></div>
-      ${STATE.isAdmin? `<div class="toolbar-right"><button class="btn btn-outline btn-sm" onclick="exportarCsvEntregas(${mes},${ano})">${icon('download',15)}Exportar entregas</button></div>` : ''}
+      ${STATE.isAdmin? `<div class="toolbar-right"><button class="btn btn-outline btn-sm" onclick="exportarCsvEntregas(${mes},${ano},'${escapeHtml(colaboradorId)}')">${icon('download',15)}Exportar entregas</button></div>` : ''}
     </div>
     ${meses.length===0? `<div class="card"><div class="empty-state">Nenhum histórico registrado ainda nesta campanha.</div></div>` : `
     <div class="grid grid-4">
@@ -243,11 +243,11 @@ function baixarArquivo(conteudo, nome, tipo){
   },0);
 }
 window.baixarArquivo=baixarArquivo;
-function exportarCsvEntregas(mes,ano){
+function exportarCsvEntregas(mes,ano,colaboradorId=''){
   if(!exigirAdmin()) return;
   const campanhaId = STATE.campanhaSelecionadaId;
   const chave = chaveMA(mes,ano);
-  const lista = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave);
+  const lista = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave && (!colaboradorId || e.colaboradorId===colaboradorId));
   let csv = 'Data,Colaborador,Setor,Material,Quantidade,Unidade,Status,ResponsavelContagem,Observacoes\n';
   lista.forEach(e=>{
     const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
@@ -672,7 +672,7 @@ function renderConfig(){
 
     </div>
     <div class="settings-panel" data-settings-panel="manutencao" ${abaConfiguracoesAtiva!=='manutencao'?'hidden':''}>
-    <div class="section-title">Segurança</div>
+    <div class="section-title">Acesso e segurança</div>
     <div class="card">
       <p class="small-note">A autenticação é gerenciada pelo Firebase Authentication e as permissões são controladas pelos papéis definidos no Firestore. Para alterar sua senha, solicite um link de redefinição por e-mail.</p>
       <button class="btn btn-outline" onclick="enviarRedefinicaoSenha()">Enviar link de redefinição de senha</button>
@@ -692,7 +692,7 @@ function renderConfig(){
 
     <div class="card" style="display:grid;gap:18px;">
       <section class="public-notice-editor">
-        <h3>Manutenção</h3>
+        <h3>Aviso de manutenção</h3>
         <div class="field"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label>
           <div class="rich-text-toolbar" role="toolbar" aria-label="Formatação da mensagem de manutenção">
             <button class="btn btn-outline btn-sm" type="button" aria-label="Negrito" title="Negrito" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','bold')"><b>B</b></button>

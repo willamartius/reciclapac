@@ -763,8 +763,8 @@ function renderEntregas(){
       </div>
       ${podeEditarDados()? `
       <div class="toolbar-right">
-        <button class="btn btn-outline" onclick="abrirFormTransferencia()">${icon('ranking')}Transferir material</button>
-        <button class="btn btn-primary" onclick="abrirFormEntrega()">${icon('plus')}Nova entrega</button>
+        ${STATE.entregasSecao!=='transferencias'?'<button class="btn btn-outline" onclick="abrirFormTransferencia()">'+icon('ranking')+'Transferir material</button>':''}
+        ${STATE.entregasSecao==='entregas'?'<button class="btn btn-primary" onclick="abrirFormEntrega()">'+icon('plus')+'Nova entrega</button>':''}
       </div>` : ''}
     </div>
     ${STATE.entregasSecao==='entregas' && podeEditarDados()?`

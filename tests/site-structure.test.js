@@ -109,6 +109,15 @@ test('Histórico e Entregas permitem filtrar registros por colaborador sem alter
   assert.match(auth, /filtroEntregaStatus/);
 });
 
+test('filtro do Histórico atualiza indicadores, linha do tempo e exportação', () => {
+  const main = read('js/main.js');
+  assert.match(main, /e\.colaboradorId===colaboradorId/);
+  assert.match(main, /transferenciasDoMes\(campanhaId,m,a\)\.filter/);
+  assert.match(main, /trocasDoMes\(campanhaId,m,a\)\.filter/);
+  assert.match(main, /exportarCsvEntregas\(\$\{mes\},\$\{ano\},'\$\{escapeHtml\(colaboradorId\)\}'\)/);
+  assert.match(main, /function exportarCsvEntregas\(mes,ano,colaboradorId=''\)/);
+});
+
 test('histórico padroniza registro e coleta; navegação usa Registro express', () => {
   const main = read('js/main.js');
   const auth = read('js/auth.js');
