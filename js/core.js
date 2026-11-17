@@ -642,9 +642,23 @@ function nomeMes(mes){ return MESES_PT[mes-1]; }
    próprio acúmulo de excedente, isolado das demais. */
 const CAMPANHA_LEGADO_INICIO = { mes: 5, ano: 2026 }; // usado só na migração da 1ª vez
 async function salvarTrocas(){ await storageSet('trocas', STATE.trocas); }
+function competenciaSaldoTroca(dataISO){
+  const partes=typeof dataISO==='string'&&/^\d{4}-(\d{2})-\d{2}$/.exec(dataISO);
+  const atual=mesAnoAtual();
+  let ano=partes?Number(dataISO.slice(0,4)):atual.ano;
+  let mes=partes?Number(dataISO.slice(5,7)):atual.mes;
+  // A competência corrente ainda está em andamento. Resgates feitos nela
+  // utilizam o saldo do último mês encerrado, sem alterar a data do registro.
+  if(ano*12+mes>=atual.ano*12+atual.mes){
+    mes--;
+    if(mes<1){mes=12;ano--;}
+  }
+  return {mes,ano,chave:chaveMA(mes,ano)};
+}
 function trocasDoMes(campanhaId, mes, ano){
   const chave = chaveMA(mes,ano);
-  return STATE.trocas.filter(t=>t.campanhaId===campanhaId && t.data && t.data.slice(0,7)===chave);
+  return STATE.trocas.filter(t=>t.campanhaId===campanhaId
+    && (t.competencia || (t.data&&t.data.slice(0,7)))===chave);
 }
 /* Quantos kits um colaborador já pode trocar agora, dado o saldo atual dele em cada
    material do kit. É o menor resultado entre (saldo do material ÷ quantidade exigida),

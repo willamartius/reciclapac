@@ -6,6 +6,7 @@ const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 const transfers = fs.readFileSync(path.join(root, 'js', 'transfers-exchange.js'), 'utf8');
+const core = fs.readFileSync(path.join(root, 'js', 'core.js'), 'utf8');
 
 function extractFunction(source, name) {
   const match = source.match(new RegExp('function ' + name + '\\([\\s\\S]*?\\n}\\n'));
@@ -13,19 +14,19 @@ function extractFunction(source, name) {
   return match[0];
 }
 
-test('saldo usado no formulário de resgate é o disponível no mês atual, não a soma de créditos históricos', () => {
+test('saldo usado no formulário de resgate é o disponível no último mês fechado, não a soma de créditos históricos', () => {
   const helper = extractFunction(transfers, 'totaisAcumuladosColaborador');
   const sandbox = {
     mesAnoAtual: () => ({mes: 10, ano: 2026}),
     calcularSaldosAcumulados: () => ({
       colaborador1: {
         papelao: {
-          '2026-09': {creditos: 8, totalDisponivel: 0, leftover: 0},
-          '2026-10': {creditos: 2, totalDisponivel: 6, leftover: 0},
+          '2026-08': {creditos: 8, totalDisponivel: 0, leftover: 0},
+          '2026-09': {creditos: 2, totalDisponivel: 6, leftover: 0},
         },
         latinhas: {
-          '2026-09': {creditos: 10, totalDisponivel: 0, leftover: 0},
-          '2026-10': {creditos: 0, totalDisponivel: 4, leftover: 0},
+          '2026-08': {creditos: 10, totalDisponivel: 0, leftover: 0},
+          '2026-09': {creditos: 0, totalDisponivel: 4, leftover: 0},
         },
       },
     }),
@@ -34,7 +35,7 @@ test('saldo usado no formulário de resgate é o disponível no mês atual, não
     chaveMA: (mes, ano) => String(ano) + '-' + String(mes).padStart(2, '0'),
   };
   vm.createContext(sandbox);
-  vm.runInContext(helper + '\nglobalThis.calcularTotais = totaisAcumuladosColaborador;', sandbox);
+  vm.runInContext(extractFunction(core, 'competenciaSaldoTroca') + '\n' + helper + '\nglobalThis.calcularTotais = totaisAcumuladosColaborador;', sandbox);
 
   assert.deepEqual(
     JSON.parse(JSON.stringify(sandbox.calcularTotais('campanha1', 'colaborador1'))),
@@ -80,6 +81,7 @@ test('nome configurado do item é pluralizado no cabeçalho do ranking', () => {
 
 test('saldo disponível no formulário continua sendo calculado pela função central de saldo acumulado', () => {
   const helper = extractFunction(transfers, 'totaisAcumuladosColaborador');
+  assert.match(helper, /competenciaSaldoTroca\(dataReferencia\)/);
   assert.match(helper, /calcularSaldosAcumulados\(campanhaId, mes, ano\)/);
   assert.match(helper, /\[chaveAtual\]\?\.totalDisponivel/);
 });
@@ -99,7 +101,7 @@ test('resgate consulta o saldo do mês informado na data do próprio resgate', (
     chaveMA: (mes, ano) => String(ano) + '-' + String(mes).padStart(2, '0'),
   };
   vm.createContext(sandbox);
-  vm.runInContext(helper, sandbox);
+  vm.runInContext(extractFunction(core, 'competenciaSaldoTroca') + '\n' + helper, sandbox);
   const totais = sandbox.totaisAcumuladosColaborador('campanha1', 'colaborador1', '2026-09-18');
   assert.deepEqual(periodoConsultado, {campanhaId: 'campanha1', mes: 9, ano: 2026});
   assert.deepEqual(JSON.parse(JSON.stringify(totais)), {papelao: 12});
