@@ -440,9 +440,7 @@ window.confirmarExcluirTransferencia=confirmarExcluirTransferencia; window.exclu
 
 /* ---------- TROCA DE MATERIAL POR ITEM (ex.: cartelas de bingo) ---------- */
 function totaisAcumuladosColaborador(campanhaId, colaboradorId, dataReferencia){
-  const referencia = dataReferencia && /^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)
-    ? {mes:Number(dataReferencia.slice(5,7)),ano:Number(dataReferencia.slice(0,4))}
-    : mesAnoAtual();
+  const referencia=competenciaSaldoTroca(dataReferencia);
   const {mes,ano} = referencia;
   const saldos = calcularSaldosAcumulados(campanhaId, mes, ano);
   const categorias = categoriasDaCampanha(campanhaPorId(campanhaId));
@@ -546,13 +544,14 @@ async function salvarTroca(){
   if(!data || !quantidadeKits || quantidadeKits<=0){ erroEl.textContent='Informe uma data e uma quantidade de kits maior que zero.'; erroEl.style.display='block'; return; }
   const validacaoData = dataDentroDaCampanha(campanhaId, data);
   if(!validacaoData.ok){ erroEl.textContent = validacaoData.motivo; erroEl.style.display='block'; return; }
+  const competencia = competenciaSaldoTroca(data).chave;
   const totais = totaisAcumuladosColaborador(campanhaId, colaboradorId, data);
   const kitsMax = kitsDisponiveis(campanha, totais);
   if(quantidadeKits > kitsMax){ erroEl.textContent = `Este colaborador só pode resgatar ${kitsMax} kit${kitsMax===1?'':'s'} no momento.`; erroEl.style.display='block'; return; }
   const kitConsumido = {};
   Object.keys(cfgTroca.kit).forEach(catKey=>{ kitConsumido[catKey] = cfgTroca.kit[catKey] * quantidadeKits; });
   const novoResgate = {
-    id:uid(), campanhaId, colaboradorId, data, quantidadeKits,
+    id:uid(), campanhaId, colaboradorId, data, competencia, quantidadeKits,
     cartelasEmitidas: quantidadeKits * cfgTroca.cartelasPorKit,
     nomeItem: cfgTroca.nomeItem, kitConsumido, criadoEm: Date.now()
   };
