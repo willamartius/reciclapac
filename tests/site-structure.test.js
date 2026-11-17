@@ -74,7 +74,8 @@ test('emissão de fichas fica dentro do Registro express e não na navegação s
   assert.match(views, /\[\.\.\.NAV_ITEMS_BASE, NAV_ITEM_TRASH, NAV_ITEM_CONFIG\]/);
   assert.doesNotMatch(views, /NAV_ITEMS_BASE\.slice\(0, 4\), NAV_ITEM_FOLHAS/);
   assert.doesNotMatch(views, /folhas: renderFolhaEntrega/);
-  assert.match(views, /label:'Emissão de fichas'/);
+  assert.match(views, /label:'Registro express'/);
+  assert.doesNotMatch(views, /label:'Emissão de fichas'|NAV_ITEM_FOLHAS/);
   assert.match(registro, /registro-express-emissao/);
   assert.match(registro, /\$\{renderFolhaEntrega\(\)\}/);
   assert.match(registro, /registroExpressTabRegistrar/);
@@ -155,7 +156,8 @@ test('histórico padroniza registro e coleta; navegação usa Registro express',
   assert.match(views, /label:'Registro express'/);
   assert.ok(read('js/registro-express.js').includes('<h1>Registro express</h1>'));
   assert.match(main, /Coleta:/);
-  assert.match(main, /const rotuloData = 'Coleta';/);
+  assert.match(main, /dataSecundaria=ev\.tipo==='Entrega'\?'<div class="small-note">Coleta: /);
+  assert.doesNotMatch(main, /function renderTabelaEntregasHistorico/);
   assert.match(auth, /const rotuloData = 'Coleta';/);
   assert.doesNotMatch(main + auth, /Data informada|Data coleta/);
   assert.match(views, /<th>MATERIAIS<\/th><th>Necessário<\/th><th>Disponível<\/th>/);
