@@ -439,16 +439,18 @@ window.abrirFormTransferencia=abrirFormTransferencia; window.salvarTransferencia
 window.confirmarExcluirTransferencia=confirmarExcluirTransferencia; window.excluirTransferencia=excluirTransferencia;
 
 /* ---------- TROCA DE MATERIAL POR ITEM (ex.: cartelas de bingo) ---------- */
-function totaisAcumuladosColaborador(campanhaId, colaboradorId){
-  const {mes,ano} = mesAnoAtual();
+function totaisAcumuladosColaborador(campanhaId, colaboradorId, dataReferencia){
+  const referencia = dataReferencia && /^\\d{4}-\\d{2}-\\d{2}$/.test(dataReferencia)
+    ? {mes:Number(dataReferencia.slice(5,7)),ano:Number(dataReferencia.slice(0,4))}
+    : mesAnoAtual();
+  const {mes,ano} = referencia;
   const saldos = calcularSaldosAcumulados(campanhaId, mes, ano);
   const categorias = categoriasDaCampanha(campanhaPorId(campanhaId));
   const totais = {};
   const chaveAtual=chaveMA(mes,ano);
   categorias.forEach(cat=>{
-    // Usa o saldo efetivamente disponível no mês atual, já com excedente transportado,
-    // transferências e materiais consumidos nos resgates. Somar "creditos" históricos
-    // recontava valores de meses anteriores e podia devolver cartelas já resgatadas.
+    // Usa o saldo efetivamente disponível no mês do resgate, já com excedente
+    // transportado, transferências e resgates anteriores contabilizados.
     totais[cat.key] = saldos[colaboradorId]?.[cat.key]?.[chaveAtual]?.totalDisponivel || 0;
   });
   return totais;
@@ -507,7 +509,8 @@ function atualizarKitsDisponiveisForm(){
   const campanha = campanhaPorId(campanhaId);
   const cfgTroca = campanha.trocaCartela;
   const colaboradorId = document.getElementById('tcColab').value;
-  const totais = totaisAcumuladosColaborador(campanhaId, colaboradorId);
+  const dataReferencia = document.getElementById('tcData')?.value;
+  const totais = totaisAcumuladosColaborador(campanhaId, colaboradorId, dataReferencia);
   const kits = kitsDisponiveis(campanha, totais);
   const itens= kits*cfgTroca.cartelasPorKit;
   document.getElementById('tcInfoKits').innerHTML = `<span>${icon('ranking')}</span><div>Disponível para resgate: <b>${kits} kit${kits===1?'':'s'}</b>, equivalente${kits===1?'':'s'} a <b>${itens} ${escapeHtml(cfgTroca.nomeItem)}${itens===1?'':'s'}</b>.</div>`;
@@ -535,18 +538,29 @@ async function salvarTroca(){
   if(!data || !quantidadeKits || quantidadeKits<=0){ erroEl.textContent='Informe uma data e uma quantidade de kits maior que zero.'; erroEl.style.display='block'; return; }
   const validacaoData = dataDentroDaCampanha(campanhaId, data);
   if(!validacaoData.ok){ erroEl.textContent = validacaoData.motivo; erroEl.style.display='block'; return; }
-  const totais = totaisAcumuladosColaborador(campanhaId, colaboradorId);
+  const totais = totaisAcumuladosColaborador(campanhaId, colaboradorId, data);
   const kitsMax = kitsDisponiveis(campanha, totais);
   if(quantidadeKits > kitsMax){ erroEl.textContent = `Este colaborador só pode resgatar ${kitsMax} kit${kitsMax===1?'':'s'} no momento.`; erroEl.style.display='block'; return; }
   const kitConsumido = {};
   Object.keys(cfgTroca.kit).forEach(catKey=>{ kitConsumido[catKey] = cfgTroca.kit[catKey] * quantidadeKits; });
-  STATE.trocas.push({
+  const novoResgate = {
     id:uid(), campanhaId, colaboradorId, data, quantidadeKits,
     cartelasEmitidas: quantidadeKits * cfgTroca.cartelasPorKit,
     nomeItem: cfgTroca.nomeItem, kitConsumido, criadoEm: Date.now()
-  });
-  await salvarTrocas();
-  fecharModal(); renderApp();
+  };
+  STATE.trocas.push(novoResgate);
+  const salvo = await salvarTrocas();
+  if(!salvo){
+    STATE.trocas = STATE.trocas.filter(t=>t.id!==novoResgate.id);
+    erroEl.textContent = formatarMensagemErroFirestore(
+      STORAGE_ERRORS.get('trocas'),
+      'Não foi possível salvar o resgate. Nenhuma cartela foi emitida. Tente novamente.'
+    );
+    erroEl.style.display='block';
+    return;
+  }
+  fecharModal();
+  renderApp();
 }
 window.abrirFormTrocaCartela=abrirFormTrocaCartela; window.salvarTroca=salvarTroca;
 function confirmarExcluirTroca(id){
