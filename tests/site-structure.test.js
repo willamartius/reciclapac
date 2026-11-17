@@ -74,7 +74,8 @@ test('emissão de fichas fica dentro do Registro express e não na navegação s
   assert.match(views, /\[\.\.\.NAV_ITEMS_BASE, NAV_ITEM_TRASH, NAV_ITEM_CONFIG\]/);
   assert.doesNotMatch(views, /NAV_ITEMS_BASE\.slice\(0, 4\), NAV_ITEM_FOLHAS/);
   assert.doesNotMatch(views, /folhas: renderFolhaEntrega/);
-  assert.match(views, /label:'Emissão de fichas'/);
+  assert.match(views, /label:'Registro express'/);
+  assert.doesNotMatch(views, /label:'Emissão de fichas'|NAV_ITEM_FOLHAS/);
   assert.match(registro, /registro-express-emissao/);
   assert.match(registro, /\$\{renderFolhaEntrega\(\)\}/);
   assert.match(registro, /registroExpressTabRegistrar/);
@@ -109,6 +110,45 @@ test('Histórico e Entregas permitem filtrar registros por colaborador sem alter
   assert.match(auth, /filtroEntregaStatus/);
 });
 
+test('filtro do Histórico atualiza indicadores, linha do tempo e exportação', () => {
+  const main = read('js/main.js');
+  assert.match(main, /e\.colaboradorId===colaboradorId/);
+  assert.match(main, /transferenciasDoMes\(campanhaId,m,a\)\.filter/);
+  assert.match(main, /trocasDoMes\(campanhaId,m,a\)\.filter/);
+  assert.match(main, /exportarCsvEntregas\(\$\{mes\},\$\{ano\},'\$\{escapeHtml\(colaboradorId\)\}'\)/);
+  assert.match(main, /function exportarCsvEntregas\(mes,ano,colaboradorId=''\)/);
+});
+
+test('Painel geral separa pontuação de cumprimento e Relatórios preserva o indicador de excedentes', () => {
+  const auth = read('js/auth.js');
+  const main = read('js/main.js');
+  const views = read('js/views.js');
+  const dashboard = auth.slice(auth.indexOf('function renderDashboard()'), auth.indexOf('function renderSeletorPainelPeriodo'));
+  const reports = main.slice(main.indexOf('function renderRelatorios()'), main.indexOf('function exportarCsvResumoMateriais'));
+  assert.match(dashboard, /<div class="stat-label">Pontuação média<\/div>/);
+  assert.match(dashboard, /\$\{mediaGeral\.toFixed\(0\)\} pts/);
+  assert.match(dashboard, /Evolução da pontuação média/);
+  assert.match(dashboard, /Entregas validadas/);
+  assert.match(dashboard, /const primeiro = resultados\.find\(r=>r\.pontuacao>0 \|\| r\.totalMateriais>0\)/);
+  assert.doesNotMatch(dashboard, /Cumprimento médio/);
+  assert.match(reports, /Relatórios para baixar/);
+  assert.match(reports, /const totalExcedentes=dadosExcedentesDoMes\(campanhaId,mes,ano\)\.reduce/);
+  assert.match(reports, /<div class="stat-label">Excedentes trazidos<\/div>/);
+  assert.match(reports, /Math\.round\(totalExcedentes\)\.toLocaleString\('pt-BR'\)/);
+  assert.doesNotMatch(reports, /Materiais computados|Entregas registradas|Colaboradores participantes/);
+  assert.match(reports, /Exportar ranking/);
+  assert.match(reports, /Exportar entregas/);
+  assert.doesNotMatch(views, /NAV_ITEM_FOLHAS/);
+  assert.doesNotMatch(main, /function renderTabelaEntregasHistorico/);
+});
+test('ações da seção Entregas são exibidas apenas nos contextos correspondentes', () => {
+  const auth = read('js/auth.js');
+  const main = read('js/main.js');
+  assert.match(auth, /\['entregas','excedentes'\]\.includes\(STATE\.entregasSecao\)/);
+  assert.match(auth, /STATE\.entregasSecao==='entregas'\?'<button class="btn btn-primary"/);
+  assert.match(main, /data-settings-tab="manutencao"[^>]*>Sistema<\/button>/);
+});
+
 test('histórico padroniza registro e coleta; navegação usa Registro express', () => {
   const main = read('js/main.js');
   const auth = read('js/auth.js');
@@ -118,7 +158,8 @@ test('histórico padroniza registro e coleta; navegação usa Registro express',
   assert.match(views, /label:'Registro express'/);
   assert.ok(read('js/registro-express.js').includes('<h1>Registro express</h1>'));
   assert.match(main, /Coleta:/);
-  assert.match(main, /const rotuloData = 'Coleta';/);
+  assert.match(main, /dataSecundaria=ev\.tipo==='Entrega'\?'<div class="small-note">Coleta: /);
+  assert.doesNotMatch(main, /function renderTabelaEntregasHistorico/);
   assert.match(auth, /const rotuloData = 'Coleta';/);
   assert.doesNotMatch(main + auth, /Data informada|Data coleta/);
   assert.match(views, /<th>MATERIAIS<\/th><th>Necessário<\/th><th>Disponível<\/th>/);

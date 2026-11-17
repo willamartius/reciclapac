@@ -81,15 +81,15 @@ function renderHistorico(){
   const chaveSel = chaveMA(mes,ano);
   const resumoMes = chave=>{
     const [a,m] = chave.split('-').map(Number);
-    const entregas = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave);
+    const entregas = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave && (!colaboradorId || e.colaboradorId===colaboradorId));
     const validadas = entregas.filter(e=>e.statusValidacao==='validado');
     return {
       mes:m, ano:a, chave,
       entregas:entregas.length,
       validadas:validadas.length,
       participantes:new Set(validadas.map(e=>e.colaboradorId)).size,
-      transferencias:transferenciasDoMes(campanhaId,m,a).length,
-      resgates:trocasDoMes(campanhaId,m,a).length,
+      transferencias:transferenciasDoMes(campanhaId,m,a).filter(t=>!colaboradorId || [t.colaboradorOrigemId||t.colaboradorOrigemNomeId,t.colaboradorDestinoId||t.colaboradorDestinoNomeId].includes(colaboradorId)).length,
+      resgates:trocasDoMes(campanhaId,m,a).filter(t=>!colaboradorId || t.colaboradorId===colaboradorId).length,
     };
   };
   const linhasMeses = meses.map(resumoMes);
@@ -109,7 +109,7 @@ function renderHistorico(){
         extra:e.statusValidacao==='validado'?'Validada':'Pendente',
       };
     }),
-    ...transferenciasDoMes(campanhaId,mes,ano).map(t=>{
+    ...transferenciasDoMes(campanhaId,mes,ano).filter(t=>!colaboradorId || [t.colaboradorOrigemId||t.colaboradorOrigemNomeId,t.colaboradorDestinoId||t.colaboradorDestinoNomeId].includes(colaboradorId)).map(t=>{
       const {origem:o,destino:d,catOrigem,catDestino,campanhaOrigem,campanhaDestino}=partesTransferencia(t);
       const nomeCat=c=>c?c.label.split(' (')[0]:'material';
       const texto=t.entreCampanhas
@@ -117,7 +117,7 @@ function renderHistorico(){
         :`${o?o.nome:'(removido)'} para ${d?d.nome:'(removido)'}: ${t.quantidade} de ${nomeCat(catOrigem)}`;
       return {data:t.data,criadoEm:t.criadoEm,colaboradorIds:[t.colaboradorOrigemId||t.colaboradorOrigemNomeId,t.colaboradorDestinoId||t.colaboradorDestinoNomeId].filter(Boolean),tipo:'Transferência',cor:'badge-amber',texto,extra:t.motivo||''};
     }),
-    ...trocasDoMes(campanhaId,mes,ano).map(t=>{
+    ...trocasDoMes(campanhaId,mes,ano).filter(t=>!colaboradorId || t.colaboradorId===colaboradorId).map(t=>{
       const c = STATE.colaboradores.find(x=>x.id===t.colaboradorId);
       return {data:t.data,colaboradorIds:[t.colaboradorId],tipo:'Resgate',cor:'badge-green',texto:`${c?c.nome:'(removido)'} resgatou ${t.cartelasEmitidas||0} item(ns)`,extra:t.quantidadeKits?`${t.quantidadeKits} kit(s)`:''};
     }),
@@ -184,7 +184,7 @@ function renderHistorico(){
   return `
     <div class="toolbar">
       <div class="toolbar-left filters">${seletorMesAno('hist', mes, ano)}<select aria-label="Filtrar histórico por colaborador" onchange="mudarFiltroHistoricoColaborador(this.value)"><option value="">Todos os colaboradores</option>${opcoesColaboradores}</select></div>
-      ${STATE.isAdmin? `<div class="toolbar-right"><button class="btn btn-outline btn-sm" onclick="exportarCsvEntregas(${mes},${ano})">${icon('download',15)}Exportar entregas</button></div>` : ''}
+      ${STATE.isAdmin? `<div class="toolbar-right"><button class="btn btn-outline btn-sm" onclick="exportarCsvEntregas(${mes},${ano},'${escapeHtml(colaboradorId)}')">${icon('download',15)}Exportar entregas</button></div>` : ''}
     </div>
     ${meses.length===0? `<div class="card"><div class="empty-state">Nenhum histórico registrado ainda nesta campanha.</div></div>` : `
     <div class="grid grid-4">
@@ -217,19 +217,6 @@ function mudarFiltroHistoricoColaborador(colaboradorId){
   renderApp();
 }
 window.mudarFiltroHistoricoColaborador=mudarFiltroHistoricoColaborador;
-function renderTabelaEntregasHistorico(mes,ano){
-  const campanhaId = STATE.campanhaSelecionadaId;
-  const chave = chaveMA(mes,ano);
-  const lista = ordenarEntregasPorRegistro(STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave));
-  if(lista.length===0) return `<div class="table-empty">Nenhuma entrega neste mês.</div>`;
-  return `<table><thead><tr><th>Registro no sistema</th><th>Colaborador</th><th>Material</th><th>Qtd.</th><th>Status</th></tr></thead>
-    <tbody>${lista.map(e=>{
-      const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
-      const cat = resolverCategoria(campanhaId, e.tipo);
-      const rotuloData = 'Coleta';
-      return `<tr><td><span>${formatarDataHoraRegistro(e.criadoEm)}</span><div class="small-note">${rotuloData}: ${formatarData(e.data)}</div></td><td>${escapeHtml(c?c.nome:'(removido)')}</td><td>${cat?escapeHtml(cat.label.split(' (')[0]):'Outros'}</td><td>${e.quantidade}</td><td>${e.statusValidacao==='validado'?'<span class="badge badge-green">Validado</span>':'<span class="badge badge-amber">Pendente</span>'}</td></tr>`;
-    }).join('')}</tbody></table>`;
-}
 function baixarArquivo(conteudo, nome, tipo){
   const partes = /^text\/csv/.test(tipo) ? ['\ufeff',conteudo] : [conteudo];
   const blob = new Blob(partes,{type:tipo.replace(/;\s*$/,'')});
@@ -243,11 +230,11 @@ function baixarArquivo(conteudo, nome, tipo){
   },0);
 }
 window.baixarArquivo=baixarArquivo;
-function exportarCsvEntregas(mes,ano){
+function exportarCsvEntregas(mes,ano,colaboradorId=''){
   if(!exigirAdmin()) return;
   const campanhaId = STATE.campanhaSelecionadaId;
   const chave = chaveMA(mes,ano);
-  const lista = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave);
+  const lista = STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave && (!colaboradorId || e.colaboradorId===colaboradorId));
   let csv = 'Data,Colaborador,Setor,Material,Quantidade,Unidade,Status,ResponsavelContagem,Observacoes\n';
   lista.forEach(e=>{
     const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
@@ -266,12 +253,8 @@ function renderRelatorios(){
   if(!STATE.isAdmin) return `<div class="card"><div class="empty-state">Entre como administrador para acessar as exportações.</div></div>`;
   const mes=STATE.rankMes, ano=STATE.rankAno;
   const campanhaId=STATE.campanhaSelecionadaId;
-  const campanha = campanhaPorId(STATE.campanhaSelecionadaId);
+  const campanha = campanhaPorId(campanhaId);
   const cfgTroca = campanha && campanha.trocaCartela && campanha.trocaCartela.ativo ? campanha.trocaCartela : null;
-  const entregasMes=STATE.entregas.filter(item=>item.campanhaId===campanhaId&&item.data&&item.data.slice(0,7)===chaveMA(mes,ano));
-  const entregasValidadas=entregasValidadasDoMes(campanhaId,mes,ano);
-  const participantes=new Set(entregasValidadas.map(item=>item.colaboradorId)).size;
-  const totalMateriais=calcularResultadosMes(campanhaId,mes,ano).reduce((total,item)=>total+item.totalMateriais,0);
   const totalExcedentes=dadosExcedentesDoMes(campanhaId,mes,ano).reduce((total,item)=>total+item.total,0);
   const cardRelatorio=(titulo,descricao,acao,rotulo)=>`
     <article class="card report-card">
@@ -283,12 +266,11 @@ function renderRelatorios(){
     <div class="card report-period">
       <div><div class="stat-label">Período de referência</div><p class="small-note" style="margin:4px 0 0;">${escapeHtml(campanha?campanha.nome:'Nenhuma campanha selecionada')}</p></div>
       <div class="filters" style="flex:1;min-width:min(100%,260px);">${seletorMesAno('rank', mes, ano)}</div>
-    </div>
-    <div class="grid grid-4" style="margin-top:12px;">
-      <div class="card stat-card"><div class="stat-label">Entregas registradas</div><div class="stat-value">${entregasMes.length}</div><div class="stat-sub">${entregasValidadas.length} validadas</div></div>
-      <div class="card stat-card"><div class="stat-label">Colaboradores participantes</div><div class="stat-value">${participantes}</div><div class="stat-sub">com entrega validada</div></div>
-      <div class="card stat-card"><div class="stat-label">Materiais computados</div><div class="stat-value">${Math.round(totalMateriais).toLocaleString('pt-BR')}</div><div class="stat-sub">unidades equivalentes</div></div>
-      <div class="card stat-card"><div class="stat-label">Excedentes trazidos</div><div class="stat-value">${Math.round(totalExcedentes).toLocaleString('pt-BR')}</div><div class="stat-sub">unidades equivalentes</div></div>
+      <div class="stat-card" style="gap:2px;min-width:140px;">
+        <div class="stat-label">Excedentes trazidos</div>
+        <div class="stat-value small">${Math.round(totalExcedentes).toLocaleString('pt-BR')}</div>
+        <div class="stat-sub">unidades equivalentes</div>
+      </div>
     </div>
     <div class="section-title">Relatórios para baixar</div>
     <div class="grid report-grid">
@@ -645,7 +627,7 @@ function renderConfig(){
       <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='perfil'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='perfil'?'true':'false'}" data-settings-tab="perfil" onclick="selecionarAbaConfiguracoes('perfil')">Perfil</button>
       <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='campanhas'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='campanhas'?'true':'false'}" data-settings-tab="campanhas" onclick="selecionarAbaConfiguracoes('campanhas')">Campanhas</button>
       <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='backup'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='backup'?'true':'false'}" data-settings-tab="backup" onclick="selecionarAbaConfiguracoes('backup')">Backup</button>
-      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='manutencao'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='manutencao'?'true':'false'}" data-settings-tab="manutencao" onclick="selecionarAbaConfiguracoes('manutencao')">Manutenção</button>
+      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='manutencao'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='manutencao'?'true':'false'}" data-settings-tab="manutencao" onclick="selecionarAbaConfiguracoes('manutencao')">Sistema</button>
       <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='tecnica'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='tecnica'?'true':'false'}" data-settings-tab="tecnica" onclick="selecionarAbaConfiguracoes('tecnica')">Desenvolvedor</button>
     </div>
     <div class="settings-panel" data-settings-panel="perfil" ${abaConfiguracoesAtiva!=='perfil'?'hidden':''}>
@@ -672,7 +654,7 @@ function renderConfig(){
 
     </div>
     <div class="settings-panel" data-settings-panel="manutencao" ${abaConfiguracoesAtiva!=='manutencao'?'hidden':''}>
-    <div class="section-title">Segurança</div>
+    <div class="section-title">Acesso e segurança</div>
     <div class="card">
       <p class="small-note">A autenticação é gerenciada pelo Firebase Authentication e as permissões são controladas pelos papéis definidos no Firestore. Para alterar sua senha, solicite um link de redefinição por e-mail.</p>
       <button class="btn btn-outline" onclick="enviarRedefinicaoSenha()">Enviar link de redefinição de senha</button>
@@ -692,7 +674,7 @@ function renderConfig(){
 
     <div class="card" style="display:grid;gap:18px;">
       <section class="public-notice-editor">
-        <h3>Manutenção</h3>
+        <h3>Aviso de manutenção</h3>
         <div class="field"><label for="avisoManutencaoPublicaInput">Mensagem extra na página de manutenção</label>
           <div class="rich-text-toolbar" role="toolbar" aria-label="Formatação da mensagem de manutenção">
             <button class="btn btn-outline btn-sm" type="button" aria-label="Negrito" title="Negrito" onclick="formatarAvisoPublico('avisoManutencaoPublicaInput','bold')"><b>B</b></button>

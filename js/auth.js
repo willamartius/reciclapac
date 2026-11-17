@@ -403,7 +403,7 @@ function renderDashboard(){
   const totalMateriais = resultados.reduce((a,r)=>a+r.totalMateriais,0);
   const atingiramMeta = resultados.filter(r=>r.metaAtingida).length;
   const mediaGeral = resultados.length? (resultados.reduce((a,r)=>a+r.pontuacao,0)/resultados.length) : 0;
-  const primeiro = resultados[0];
+  const primeiro = resultados.find(r=>r.pontuacao>0 || r.totalMateriais>0);
 
   const { campanha: campanhaPainel, meses: mesesPainel } = calcularJanelaPainel();
   const ultimoMesPainel = mesesPainel[mesesPainel.length-1];
@@ -422,9 +422,9 @@ function renderDashboard(){
     </div>
     <div class="grid grid-4">
       <div class="card stat-card"><div class="stat-label">Colaboradores ativos</div><div class="stat-value">${ativos}</div><div class="stat-sub">${STATE.colaboradores.length} cadastrados no total</div></div>
-      <div class="card stat-card"><div class="stat-label">Materiais arrecadados</div><div class="stat-value">${totalMateriais.toLocaleString('pt-BR')}</div><div class="stat-sub">unidades equivalentes em ${nomeMes(mes)}</div></div>
-      <div class="card stat-card"><div class="stat-label">Atingiram a meta</div><div class="stat-value">${atingiramMeta}</div><div class="stat-sub">de ${resultados.length} participantes</div></div>
-      <div class="card stat-card"><div class="stat-label">Cumprimento médio</div><div class="stat-value">${mediaGeral.toFixed(0)}%</div><div class="stat-sub">média geral de pontuação, já com excedente acumulado</div></div>
+      <div class="card stat-card"><div class="stat-label">Materiais computados</div><div class="stat-value">${totalMateriais.toLocaleString('pt-BR')}</div><div class="stat-sub">unidades equivalentes consideradas no ranking de ${nomeMes(mes)}</div></div>
+      <div class="card stat-card"><div class="stat-label">Atingiram a meta</div><div class="stat-value">${atingiramMeta}</div><div class="stat-sub">de ${resultados.length} colaboradores considerados</div></div>
+      <div class="card stat-card"><div class="stat-label">Pontuação média</div><div class="stat-value">${mediaGeral.toFixed(0)} pts</div><div class="stat-sub">média de pontos no mês, com excedentes limitados a 100% por categoria</div></div>
     </div>
     <div class="grid grid-2" style="margin-top:14px;">
       <div class="card">
@@ -435,12 +435,12 @@ function renderDashboard(){
             <div><div style="font-weight:800;font-size:15px;">${escapeHtml(primeiro.colaborador.nome)}</div><div class="small-note">${escapeHtml(primeiro.colaborador.setor||'—')} · ${primeiro.pontuacao.toFixed(0)} pontos</div></div>
           </div>` : `<div class="small-note" style="margin-top:8px;">Nenhum colaborador com entregas validadas neste mês.</div>`}
         <div style="margin-top:14px;">
-          <div class="stat-label">Total de entregas registradas</div>
+          <div class="stat-label">Entregas validadas</div>
           <div class="stat-value small">${entregasMes.length}</div>
         </div>
       </div>
       <div class="card">
-        <div class="stat-label">Evolução do cumprimento médio</div>
+        <div class="stat-label">Evolução da pontuação média</div>
         <div style="overflow-x:auto;">${renderMiniBarChart(evolucao)}</div>
       </div>
     </div>
@@ -763,8 +763,8 @@ function renderEntregas(){
       </div>
       ${podeEditarDados()? `
       <div class="toolbar-right">
-        <button class="btn btn-outline" onclick="abrirFormTransferencia()">${icon('ranking')}Transferir material</button>
-        <button class="btn btn-primary" onclick="abrirFormEntrega()">${icon('plus')}Nova entrega</button>
+        ${['entregas','excedentes'].includes(STATE.entregasSecao)?'<button class="btn btn-outline" onclick="abrirFormTransferencia()">'+icon('ranking')+'Transferir material</button>':''}
+        ${STATE.entregasSecao==='entregas'?'<button class="btn btn-primary" onclick="abrirFormEntrega()">'+icon('plus')+'Nova entrega</button>':''}
       </div>` : ''}
     </div>
     ${STATE.entregasSecao==='entregas' && podeEditarDados()?`

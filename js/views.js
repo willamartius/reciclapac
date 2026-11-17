@@ -1,7 +1,6 @@
 /* ---------- ÍCONES (inline SVG, stroke=currentColor) ---------- */
 const ICONS = {
   dashboard:'<path d="M4 13h6V4H4v9zM14 20h6v-9h-6v9zM14 4v5h6V4h-6zM4 20h6v-5H4v5z"/>',
-  folhas:'<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h4M9 12h7M9 16h7"/>',
   colaboradores:'<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15 20c.2-2.6 1.8-4.4 4-4.9"/>',
   entregas:'<path d="M4 8l8-4 8 4-8 4-8-4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/>',
   registro:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
@@ -39,7 +38,6 @@ const NAV_ITEMS_BASE = [
   {key:'relatorios', label:'Relatórios', icon:'relatorios'},
 ];
 const NAV_ITEM_TRASH = {key:'lixeira', label:'Itens apagados', icon:'trash'};
-const NAV_ITEM_FOLHAS = {key:'folhas', label:'Emissão de fichas', icon:'folhas'};
 const NAV_ITEM_CONFIG = {key:'config', label:'Configurações', icon:'config'};
 function navItemsVisiveis(){
   const itens = STATE.isAdmin
