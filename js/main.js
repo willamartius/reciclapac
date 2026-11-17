@@ -1028,6 +1028,11 @@ async function salvarCampanha(id){
         erroEl.style.display='block';
         return;
       }
+      if(valor>0 && categoriasDesativadas.includes(cat.key)){
+        erroEl.textContent=`O material "${cat.label}" está desativado nesta campanha. Ative-o ou retire-o da composição do kit.`;
+        erroEl.style.display='block';
+        return;
+      }
       if(valor>0) kit[cat.key] = valor;
     }
     if(Object.keys(kit).length===0){ erroEl.textContent='Informe a quantidade exigida de pelo menos um material para o kit de troca.'; erroEl.style.display='block'; return; }

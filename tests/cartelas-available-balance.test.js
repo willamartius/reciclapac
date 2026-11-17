@@ -83,3 +83,33 @@ test('saldo disponível no formulário continua sendo calculado pela função ce
   assert.match(helper, /calcularSaldosAcumulados\(campanhaId, mes, ano\)/);
   assert.match(helper, /\[chaveAtual\]\?\.totalDisponivel/);
 });
+
+
+test('resgate consulta o saldo do mês informado na data do próprio resgate', () => {
+  const helper = extractFunction(transfers, 'totaisAcumuladosColaborador');
+  let periodoConsultado = null;
+  const sandbox = {
+    mesAnoAtual: () => ({mes: 11, ano: 2026}),
+    calcularSaldosAcumulados: (campanhaId, mes, ano) => {
+      periodoConsultado = {campanhaId, mes, ano};
+      return {colaborador1: {papelao: {'2026-09': {totalDisponivel: 12}}}};
+    },
+    categoriasDaCampanha: () => [{key: 'papelao'}],
+    campanhaPorId: () => ({id: 'campanha1'}),
+    chaveMA: (mes, ano) => String(ano) + '-' + String(mes).padStart(2, '0'),
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(helper, sandbox);
+  const totais = sandbox.totaisAcumuladosColaborador('campanha1', 'colaborador1', '2026-09-18');
+  assert.deepEqual(periodoConsultado, {campanhaId: 'campanha1', mes: 9, ano: 2026});
+  assert.deepEqual(JSON.parse(JSON.stringify(totais)), {papelao: 12});
+});
+
+test('falha ao persistir resgate não pode emitir cartelas nem fechar o formulário', () => {
+  const salvar = extractFunction(transfers, 'salvarTroca');
+  assert.match(salvar, /const salvo = await salvarTrocas\(\)/);
+  assert.match(salvar, /if\(!salvo\)/);
+  assert.match(salvar, /STATE\.trocas = STATE\.trocas\.filter\(t=>t\.id!==novoResgate\.id\)/);
+  assert.match(salvar, /formatarMensagemErroFirestore/);
+  assert.ok(salvar.indexOf('if(!salvo)') < salvar.indexOf('fecharModal()'));
+});
