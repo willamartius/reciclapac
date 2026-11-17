@@ -119,7 +119,7 @@ test('filtro do Histórico atualiza indicadores, linha do tempo e exportação',
   assert.match(main, /function exportarCsvEntregas\(mes,ano,colaboradorId=''\)/);
 });
 
-test('Painel geral separa pontuação de cumprimento e Relatórios prioriza exportações', () => {
+test('Painel geral separa pontuação de cumprimento e Relatórios preserva o indicador de excedentes', () => {
   const auth = read('js/auth.js');
   const main = read('js/main.js');
   const views = read('js/views.js');
@@ -132,13 +132,15 @@ test('Painel geral separa pontuação de cumprimento e Relatórios prioriza expo
   assert.match(dashboard, /const primeiro = resultados\.find\(r=>r\.pontuacao>0 \|\| r\.totalMateriais>0\)/);
   assert.doesNotMatch(dashboard, /Cumprimento médio/);
   assert.match(reports, /Relatórios para baixar/);
-  assert.doesNotMatch(reports, /Materiais computados|Entregas registradas|Colaboradores participantes|Excedentes trazidos/);
+  assert.match(reports, /const totalExcedentes=dadosExcedentesDoMes\(campanhaId,mes,ano\)\.reduce/);
+  assert.match(reports, /<div class="stat-label">Excedentes trazidos<\/div>/);
+  assert.match(reports, /Math\.round\(totalExcedentes\)\.toLocaleString\('pt-BR'\)/);
+  assert.doesNotMatch(reports, /Materiais computados|Entregas registradas|Colaboradores participantes/);
   assert.match(reports, /Exportar ranking/);
   assert.match(reports, /Exportar entregas/);
   assert.doesNotMatch(views, /NAV_ITEM_FOLHAS/);
   assert.doesNotMatch(main, /function renderTabelaEntregasHistorico/);
 });
-
 test('ações da seção Entregas são exibidas apenas nos contextos correspondentes', () => {
   const auth = read('js/auth.js');
   const main = read('js/main.js');

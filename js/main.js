@@ -252,8 +252,10 @@ window.exportarCsvEntregas = exportarCsvEntregas;
 function renderRelatorios(){
   if(!STATE.isAdmin) return `<div class="card"><div class="empty-state">Entre como administrador para acessar as exportações.</div></div>`;
   const mes=STATE.rankMes, ano=STATE.rankAno;
-  const campanha = campanhaPorId(STATE.campanhaSelecionadaId);
+  const campanhaId=STATE.campanhaSelecionadaId;
+  const campanha = campanhaPorId(campanhaId);
   const cfgTroca = campanha && campanha.trocaCartela && campanha.trocaCartela.ativo ? campanha.trocaCartela : null;
+  const totalExcedentes=dadosExcedentesDoMes(campanhaId,mes,ano).reduce((total,item)=>total+item.total,0);
   const cardRelatorio=(titulo,descricao,acao,rotulo)=>`
     <article class="card report-card">
       <div class="stat-label">${titulo}</div>
@@ -264,6 +266,11 @@ function renderRelatorios(){
     <div class="card report-period">
       <div><div class="stat-label">Período de referência</div><p class="small-note" style="margin:4px 0 0;">${escapeHtml(campanha?campanha.nome:'Nenhuma campanha selecionada')}</p></div>
       <div class="filters" style="flex:1;min-width:min(100%,260px);">${seletorMesAno('rank', mes, ano)}</div>
+      <div class="stat-card" style="gap:2px;min-width:140px;">
+        <div class="stat-label">Excedentes trazidos</div>
+        <div class="stat-value small">${Math.round(totalExcedentes).toLocaleString('pt-BR')}</div>
+        <div class="stat-sub">unidades equivalentes</div>
+      </div>
     </div>
     <div class="section-title">Relatórios para baixar</div>
     <div class="grid report-grid">
