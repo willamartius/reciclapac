@@ -440,7 +440,7 @@ window.confirmarExcluirTransferencia=confirmarExcluirTransferencia; window.exclu
 
 /* ---------- TROCA DE MATERIAL POR ITEM (ex.: cartelas de bingo) ---------- */
 function totaisAcumuladosColaborador(campanhaId, colaboradorId, dataReferencia){
-  const referencia = dataReferencia && /^\\d{4}-\\d{2}-\\d{2}$/.test(dataReferencia)
+  const referencia = dataReferencia && /^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)
     ? {mes:Number(dataReferencia.slice(5,7)),ano:Number(dataReferencia.slice(0,4))}
     : mesAnoAtual();
   const {mes,ano} = referencia;
