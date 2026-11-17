@@ -118,6 +118,34 @@ test('filtro do Histórico atualiza indicadores, linha do tempo e exportação',
   assert.match(main, /function exportarCsvEntregas\(mes,ano,colaboradorId=''\)/);
 });
 
+test('Painel geral separa pontuação de cumprimento e Relatórios prioriza exportações', () => {
+  const auth = read('js/auth.js');
+  const main = read('js/main.js');
+  const views = read('js/views.js');
+  const dashboard = auth.slice(auth.indexOf('function renderDashboard()'), auth.indexOf('function renderSeletorPainelPeriodo'));
+  const reports = main.slice(main.indexOf('function renderRelatorios()'), main.indexOf('function exportarCsvResumoMateriais'));
+  assert.match(dashboard, /<div class="stat-label">Pontuação média<\/div>/);
+  assert.match(dashboard, /\$\{mediaGeral\.toFixed\(0\)\} pts/);
+  assert.match(dashboard, /Evolução da pontuação média/);
+  assert.match(dashboard, /Entregas validadas/);
+  assert.match(dashboard, /const primeiro = resultados\.find\(r=>r\.pontuacao>0 \|\| r\.totalMateriais>0\)/);
+  assert.doesNotMatch(dashboard, /Cumprimento médio/);
+  assert.match(reports, /Relatórios para baixar/);
+  assert.doesNotMatch(reports, /Materiais computados|Entregas registradas|Colaboradores participantes|Excedentes trazidos/);
+  assert.match(reports, /Exportar ranking/);
+  assert.match(reports, /Exportar entregas/);
+  assert.doesNotMatch(views, /NAV_ITEM_FOLHAS/);
+  assert.doesNotMatch(main, /function renderTabelaEntregasHistorico/);
+});
+
+test('ações da seção Entregas são exibidas apenas nos contextos correspondentes', () => {
+  const auth = read('js/auth.js');
+  const main = read('js/main.js');
+  assert.match(auth, /\['entregas','excedentes'\]\.includes\(STATE\.entregasSecao\)/);
+  assert.match(auth, /STATE\.entregasSecao==='entregas'\?'<button class="btn btn-primary"/);
+  assert.match(main, /data-settings-tab="manutencao"[^>]*>Sistema<\/button>/);
+});
+
 test('histórico padroniza registro e coleta; navegação usa Registro express', () => {
   const main = read('js/main.js');
   const auth = read('js/auth.js');

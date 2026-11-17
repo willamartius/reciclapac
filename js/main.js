@@ -217,19 +217,6 @@ function mudarFiltroHistoricoColaborador(colaboradorId){
   renderApp();
 }
 window.mudarFiltroHistoricoColaborador=mudarFiltroHistoricoColaborador;
-function renderTabelaEntregasHistorico(mes,ano){
-  const campanhaId = STATE.campanhaSelecionadaId;
-  const chave = chaveMA(mes,ano);
-  const lista = ordenarEntregasPorRegistro(STATE.entregas.filter(e=>e.campanhaId===campanhaId && e.data && e.data.slice(0,7)===chave));
-  if(lista.length===0) return `<div class="table-empty">Nenhuma entrega neste mês.</div>`;
-  return `<table><thead><tr><th>Registro no sistema</th><th>Colaborador</th><th>Material</th><th>Qtd.</th><th>Status</th></tr></thead>
-    <tbody>${lista.map(e=>{
-      const c = STATE.colaboradores.find(x=>x.id===e.colaboradorId);
-      const cat = resolverCategoria(campanhaId, e.tipo);
-      const rotuloData = 'Coleta';
-      return `<tr><td><span>${formatarDataHoraRegistro(e.criadoEm)}</span><div class="small-note">${rotuloData}: ${formatarData(e.data)}</div></td><td>${escapeHtml(c?c.nome:'(removido)')}</td><td>${cat?escapeHtml(cat.label.split(' (')[0]):'Outros'}</td><td>${e.quantidade}</td><td>${e.statusValidacao==='validado'?'<span class="badge badge-green">Validado</span>':'<span class="badge badge-amber">Pendente</span>'}</td></tr>`;
-    }).join('')}</tbody></table>`;
-}
 function baixarArquivo(conteudo, nome, tipo){
   const partes = /^text\/csv/.test(tipo) ? ['\ufeff',conteudo] : [conteudo];
   const blob = new Blob(partes,{type:tipo.replace(/;\s*$/,'')});
@@ -265,14 +252,8 @@ window.exportarCsvEntregas = exportarCsvEntregas;
 function renderRelatorios(){
   if(!STATE.isAdmin) return `<div class="card"><div class="empty-state">Entre como administrador para acessar as exportações.</div></div>`;
   const mes=STATE.rankMes, ano=STATE.rankAno;
-  const campanhaId=STATE.campanhaSelecionadaId;
   const campanha = campanhaPorId(STATE.campanhaSelecionadaId);
   const cfgTroca = campanha && campanha.trocaCartela && campanha.trocaCartela.ativo ? campanha.trocaCartela : null;
-  const entregasMes=STATE.entregas.filter(item=>item.campanhaId===campanhaId&&item.data&&item.data.slice(0,7)===chaveMA(mes,ano));
-  const entregasValidadas=entregasValidadasDoMes(campanhaId,mes,ano);
-  const participantes=new Set(entregasValidadas.map(item=>item.colaboradorId)).size;
-  const totalMateriais=calcularResultadosMes(campanhaId,mes,ano).reduce((total,item)=>total+item.totalMateriais,0);
-  const totalExcedentes=dadosExcedentesDoMes(campanhaId,mes,ano).reduce((total,item)=>total+item.total,0);
   const cardRelatorio=(titulo,descricao,acao,rotulo)=>`
     <article class="card report-card">
       <div class="stat-label">${titulo}</div>
@@ -283,12 +264,6 @@ function renderRelatorios(){
     <div class="card report-period">
       <div><div class="stat-label">Período de referência</div><p class="small-note" style="margin:4px 0 0;">${escapeHtml(campanha?campanha.nome:'Nenhuma campanha selecionada')}</p></div>
       <div class="filters" style="flex:1;min-width:min(100%,260px);">${seletorMesAno('rank', mes, ano)}</div>
-    </div>
-    <div class="grid grid-4" style="margin-top:12px;">
-      <div class="card stat-card"><div class="stat-label">Entregas registradas</div><div class="stat-value">${entregasMes.length}</div><div class="stat-sub">${entregasValidadas.length} validadas</div></div>
-      <div class="card stat-card"><div class="stat-label">Colaboradores participantes</div><div class="stat-value">${participantes}</div><div class="stat-sub">com entrega validada</div></div>
-      <div class="card stat-card"><div class="stat-label">Materiais computados</div><div class="stat-value">${Math.round(totalMateriais).toLocaleString('pt-BR')}</div><div class="stat-sub">unidades equivalentes</div></div>
-      <div class="card stat-card"><div class="stat-label">Excedentes trazidos</div><div class="stat-value">${Math.round(totalExcedentes).toLocaleString('pt-BR')}</div><div class="stat-sub">unidades equivalentes</div></div>
     </div>
     <div class="section-title">Relatórios para baixar</div>
     <div class="grid report-grid">
@@ -645,7 +620,7 @@ function renderConfig(){
       <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='perfil'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='perfil'?'true':'false'}" data-settings-tab="perfil" onclick="selecionarAbaConfiguracoes('perfil')">Perfil</button>
       <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='campanhas'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='campanhas'?'true':'false'}" data-settings-tab="campanhas" onclick="selecionarAbaConfiguracoes('campanhas')">Campanhas</button>
       <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='backup'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='backup'?'true':'false'}" data-settings-tab="backup" onclick="selecionarAbaConfiguracoes('backup')">Backup</button>
-      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='manutencao'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='manutencao'?'true':'false'}" data-settings-tab="manutencao" onclick="selecionarAbaConfiguracoes('manutencao')">Manutenção</button>
+      <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='manutencao'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='manutencao'?'true':'false'}" data-settings-tab="manutencao" onclick="selecionarAbaConfiguracoes('manutencao')">Sistema</button>
       <button type="button" class="settings-tab ${abaConfiguracoesAtiva==='tecnica'?'is-active':''}" role="tab" aria-selected="${abaConfiguracoesAtiva==='tecnica'?'true':'false'}" data-settings-tab="tecnica" onclick="selecionarAbaConfiguracoes('tecnica')">Desenvolvedor</button>
     </div>
     <div class="settings-panel" data-settings-panel="perfil" ${abaConfiguracoesAtiva!=='perfil'?'hidden':''}>

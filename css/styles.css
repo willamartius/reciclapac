@@ -550,8 +550,6 @@ select{text-overflow:ellipsis;}
 .registro-express-progresso-texto span{font-weight:700;}
 .registro-express-progresso-texto b{white-space:nowrap;color:var(--text-muted);font-size:12px;}
 .registro-express-progresso progress{width:100%;height:8px;accent-color:var(--verde);}
-.registro-express-id-form{display:flex;align-items:end;gap:12px;max-width:560px;}
-.registro-express-id-form .field{flex:1;min-width:0;}
 .registro-express-quantidade{max-width:360px;}
 .registro-express-acoes{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px;}
 .registro-express-resumo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0;}
@@ -579,8 +577,6 @@ select{text-overflow:ellipsis;}
 @keyframes registro-express-entrada{from{opacity:.55;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
 @media(max-width:600px){
   .registro-express-shell{gap:10px;}
-  .registro-express-id-form{align-items:stretch;flex-direction:column;}
-  .registro-express-id-form .btn{width:100%;justify-content:center;}
   .registro-express-resumo{grid-template-columns:1fr;}
   .registro-express-resumo .registro-express-total{grid-column:auto;}
   .registro-express-acoes>*{flex:1 1 130px;justify-content:center;}
@@ -594,6 +590,7 @@ select{text-overflow:ellipsis;}
   grid-template-columns:minmax(0,1fr) auto;
   align-items:end;
   gap:12px;
+  max-width:560px;
 }
 .registro-express-id-form .field{
   margin:0;
