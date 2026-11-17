@@ -492,7 +492,7 @@ function abrirFormTrocaCartela(){
   abrirModal(`
     <div class="modal-head"><h3>Resgatar ${escapeHtml(cfgTroca.nomeItem)}</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
     <div class="field"><label>Colaborador</label><select id="tcColab" onchange="atualizarKitsDisponiveisForm()">${opcoesColab}</select></div>
-    <div class="field"><label>Data</label><input type="date" id="tcData" value="${new Date().toISOString().slice(0,10)}"></div>
+    <div class="field"><label>Data</label><input type="date" id="tcData" value="${new Date().toISOString().slice(0,10)}" onchange="atualizarKitsDisponiveisForm()"></div>
     <div class="banner" id="tcInfoKits" style="margin-bottom:14px;"><span>${icon('ranking')}</span><div>—</div></div>
     <div class="field"><label>Quantidade de kits para resgatar</label><input type="number" min="1" id="tcQuantidadeKits" value="1" oninput="atualizarPreviaTroca()"></div>
     <p class="small-note" id="tcPrevia"></p>
@@ -513,7 +513,15 @@ function atualizarKitsDisponiveisForm(){
   const totais = totaisAcumuladosColaborador(campanhaId, colaboradorId, dataReferencia);
   const kits = kitsDisponiveis(campanha, totais);
   const itens= kits*cfgTroca.cartelasPorKit;
-  document.getElementById('tcInfoKits').innerHTML = `<span>${icon('ranking')}</span><div>Disponível para resgate: <b>${kits} kit${kits===1?'':'s'}</b>, equivalente${kits===1?'':'s'} a <b>${itens} ${escapeHtml(cfgTroca.nomeItem)}${itens===1?'':'s'}</b>.</div>`;
+  const categoriasTodas=todasCategoriasDaCampanha(campanha);
+  const resumoMateriais=Object.entries(cfgTroca.kit||{}).filter(([,qtd])=>Number(qtd)>0).map(([key,necessario])=>{
+    const categoriaAtiva= categoriasTodas.find(cat=>cat.key===key)
+      && categoriasDaCampanha(campanha).some(cat=>cat.key===key);
+    const categoria=categoriasTodas.find(cat=>cat.key===key);
+    const disponivel=Number(totais[key])||0;
+    return `<span>${escapeHtml(categoria?categoria.label.split(' (')[0]:key)}: <b>${disponivel}/${Number(necessario)}</b>${categoriaAtiva?'':' (material desativado)'}</span>`;
+  }).join(' · ');
+  document.getElementById('tcInfoKits').innerHTML = `<span>${icon('ranking')}</span><div>Disponível para resgate: <b>${kits} kit${kits===1?'':'s'}</b>, equivalente${kits===1?'':'s'} a <b>${itens} ${escapeHtml(cfgTroca.nomeItem)}${itens===1?'':'s'}</b>.<div class="small-note" style="margin-top:5px;">Saldo por material (disponível/necessário): ${resumoMateriais||'Kit sem materiais configurados'}.</div></div>`;
   document.getElementById('tcQuantidadeKits').max = kits || 1;
   atualizarPreviaTroca();
 }
