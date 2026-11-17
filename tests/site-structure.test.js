@@ -165,6 +165,16 @@ test('histórico padroniza registro e coleta; navegação usa Registro express',
   assert.match(views, /<th>MATERIAIS<\/th><th>Necessário<\/th><th>Disponível<\/th>/);
 });
 
+test('ranking público oculta tags de folga em campanhas de troca de itens', () => {
+  const views = read('js/views.js');
+  const inicio = views.indexOf('function renderRankingPublico()');
+  const fim = views.indexOf('function selecionarCampanhaRankingPublico(', inicio);
+  assert.ok(inicio >= 0 && fim > inicio);
+  const ranking = views.slice(inicio, fim);
+  assert.match(ranking, /!item\.kit&&\(item\.meiaFolga\?/);
+  assert.match(ranking, /item\.folga\?/);
+});
+
 test('modo de manutenção pública não exibe solicitação de troca nem rodapé legal', () => {
   const views = read('js/views.js');
   const maintenanceStart = views.indexOf('function renderAvisoManutencaoPublica()');
