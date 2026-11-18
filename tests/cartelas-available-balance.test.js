@@ -137,3 +137,9 @@ test('resgates contam kits, enquanto cartelas emitidas permanecem como quantidad
   assert.equal(resumo.resgatesTotal, 6);
   assert.equal(resumo.cartelasPorKit, 2);
 });
+
+
+test('seletor do formulário de resgate ordena funcionários por nome em pt-BR', () => {
+  const form = extractFunction(transfers, 'abrirFormTrocaCartela');
+  assert.match(form, /STATE\\.colaboradores\\.slice\\(\\)\\.sort\\(\\(a,b\\)=>String\\(a\\.nome\\|\\|''\\)\\.localeCompare\\(String\\(b\\.nome\\|\\|''\\),'pt-BR'/);
+});
