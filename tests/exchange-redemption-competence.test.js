@@ -105,3 +105,10 @@ test('cálculo de outubro desconta resgate feito em novembro quando a competênc
   assert.equal(saldos.marcilio.papelao['2026-10'].totalDisponivel, 28);
   assert.equal(saldos.marcilio.pet['2026-10'].totalDisponivel, 26);
 });
+
+
+test('ranking público da campanha de resgate usa a mesma competência fechada do formulário no mês atual', () => {
+  const auth = fs.readFileSync(path.join(__dirname, '..', 'js', 'auth.js'), 'utf8');
+  assert.match(auth, /const competenciaRanking=cfgTroca&&chave===chaveMA\\(atual\\.mes,atual\\.ano\\)[\\s\\S]*?competenciaSaldoTroca\\(chave\\+'-01'\\)/);
+  assert.match(auth, /calcularResultadosMes\\(campanha\\.id,competenciaRanking\\.mes,competenciaRanking\\.ano\\)/);
+});
