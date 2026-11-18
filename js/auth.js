@@ -250,12 +250,8 @@ async function sincronizarRankingsPublicos(){
         const [ano,mes]=chave.split('-').map(Number);
         const cfgTroca=campanha.trocaCartela&&campanha.trocaCartela.ativo
           ?campanha.trocaCartela:null;
-        // Em campanhas de resgate, o ranking do mês corrente precisa usar
-        // a mesma competência fechada usada pelo formulário de resgate.
-        const competenciaRanking=cfgTroca&&chave===chaveMA(atual.mes,atual.ano)
-          ?competenciaSaldoTroca(chave+'-01')
-          :{mes,ano};
-        const ranking=calcularResultadosMes(campanha.id,competenciaRanking.mes,competenciaRanking.ano)
+        // O ranking e o formulário usam o saldo acumulado até o mês exibido.
+        const ranking=calcularResultadosMes(campanha.id,mes,ano)
           .map(resultado=>({
             resultado,
             itensTrocados:cfgTroca?ReciclarRankingLogic.somarItensTrocados(
