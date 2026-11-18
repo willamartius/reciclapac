@@ -885,8 +885,8 @@ function renderDetalhesKit(kit,unidadeItem){
   return `
       <div class="kit-detail-grid">
         <div class="kit-detail-side">
-          <div class="card stat-card"><div class="stat-label">Resgates no mês</div><div class="stat-value">${fmt(kit.resgatesMes||0)} ${escapeHtml(unidadeItem)}</div></div>
-          ${metaMensal?`<div class="card stat-card"><div class="stat-label">Meta mensal</div><div class="stat-value">${fmt(metaMensal)} ${escapeHtml(unidadeItem)}</div></div>`:''}
+          <div class="card stat-card"><div class="stat-label">Resgates no mês</div><div class="stat-value">${fmt(kit.resgatesMes||0)} resgates</div></div>
+          ${metaMensal?`<div class="card stat-card"><div class="stat-label">Meta mensal</div><div class="stat-value">${fmt(metaMensal)} resgates</div></div>`:''}
           ${kit.disponiveis==null?'':`<div class="card stat-card"><div class="stat-label">${escapeHtml(rotuloItem)} disponíveis</div><div class="stat-value">${fmt(kit.disponiveis*(Number(kit.cartelasPorKit)||1))}</div></div>`}
         </div>
         ${kit.materiais.length?`<div class="card kit-detail-materials">        <div class="kit-detail-scroll" style="margin-top:0;"><table class="kit-materials-table"><thead><tr><th>MATERIAIS</th><th>Necessário</th><th>Disponível</th></tr></thead>
