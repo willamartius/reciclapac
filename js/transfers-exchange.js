@@ -486,7 +486,7 @@ function abrirFormTrocaCartela(){
   const cfgTroca = campanha && campanha.trocaCartela;
   if(!cfgTroca || !cfgTroca.ativo){ alert('Esta campanha não tem resgate por itens ativado.'); return; }
   if(STATE.colaboradores.length===0){ alert('Cadastre ao menos um colaborador antes de registrar um resgate.'); return; }
-  const opcoesColab = STATE.colaboradores.map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+  const opcoesColab = STATE.colaboradores.slice().sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR',{sensitivity:'base'})).map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
   abrirModal(`
     <div class="modal-head"><h3>Resgatar ${escapeHtml(cfgTroca.nomeItem)}</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
     <div class="field"><label>Colaborador</label><select id="tcColab" onchange="atualizarKitsDisponiveisForm()">${opcoesColab}</select></div>
