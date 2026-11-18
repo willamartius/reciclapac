@@ -14,7 +14,7 @@ function extractFunction(source, name) {
   return match[0];
 }
 
-test('saldo usado no formulário de resgate é o disponível no último mês fechado, não a soma de créditos históricos', () => {
+test('saldo usado no formulário inclui a competência corrente e não soma créditos históricos', () => {
   const helper = extractFunction(transfers, 'totaisAcumuladosColaborador');
   const sandbox = {
     mesAnoAtual: () => ({mes: 10, ano: 2026}),
@@ -22,11 +22,11 @@ test('saldo usado no formulário de resgate é o disponível no último mês fec
       colaborador1: {
         papelao: {
           '2026-08': {creditos: 8, totalDisponivel: 0, leftover: 0},
-          '2026-09': {creditos: 2, totalDisponivel: 6, leftover: 0},
+          '2026-10': {creditos: 2, totalDisponivel: 6, leftover: 0},
         },
         latinhas: {
           '2026-08': {creditos: 10, totalDisponivel: 0, leftover: 0},
-          '2026-09': {creditos: 0, totalDisponivel: 4, leftover: 0},
+          '2026-10': {creditos: 0, totalDisponivel: 4, leftover: 0},
         },
       },
     }),
@@ -79,7 +79,7 @@ test('nome configurado do item é pluralizado no cabeçalho do ranking', () => {
   assert.equal(sandbox.pluralizar('Cartelas de bingo'), 'Cartelas de bingo');
 });
 
-test('saldo disponível no formulário continua sendo calculado pela função central de saldo acumulado', () => {
+test('saldo disponível no formulário continua usando a competência da data informada', () => {
   const helper = extractFunction(transfers, 'totaisAcumuladosColaborador');
   assert.match(helper, /competenciaSaldoTroca\(dataReferencia\)/);
   assert.match(helper, /calcularSaldosAcumulados\(campanhaId, mes, ano\)/);
@@ -87,7 +87,7 @@ test('saldo disponível no formulário continua sendo calculado pela função ce
 });
 
 
-test('resgate consulta o saldo do mês informado na data do próprio resgate', () => {
+test('resgate consulta o saldo do mês informado na data do próprio resgate, inclusive mês corrente', () => {
   const helper = extractFunction(transfers, 'totaisAcumuladosColaborador');
   let periodoConsultado = null;
   const sandbox = {
