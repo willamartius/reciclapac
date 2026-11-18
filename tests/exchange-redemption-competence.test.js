@@ -56,7 +56,8 @@ test('consumo do resgate é lançado na competência do saldo e mantém compatib
 
   assert.deepEqual(JSON.parse(JSON.stringify(sandbox.consultar('c1', 11, 2026)))
     .map(item => item.id), ['novo']);
-  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.consultar('c1', 10, 2026))), []);
+  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.consultar('c1', 10, 2026)))
+    .map(item => item.id), ['antigo']);
 });
 
 test('cálculo de novembro desconta resgate feito em novembro na própria competência', () => {
