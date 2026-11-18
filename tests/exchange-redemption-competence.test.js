@@ -55,7 +55,7 @@ test('consumo do resgate é lançado na competência do saldo e mantém compatib
     '\nglobalThis.consultar = trocasDoMes;', sandbox);
 
   assert.deepEqual(JSON.parse(JSON.stringify(sandbox.consultar('c1', 11, 2026)))
-    .map(item => item.id), ['novo', 'antigo']);
+    .map(item => item.id), ['novo']);
   assert.deepEqual(JSON.parse(JSON.stringify(sandbox.consultar('c1', 10, 2026))), []);
 });
 
@@ -68,7 +68,7 @@ test('cálculo de novembro desconta resgate feito em novembro na própria compet
       entregas: [], transferencias: [],
       trocas: [{
         id: 'resgate-1', campanhaId: 'c1', colaboradorId: 'marcilio',
-        data: '2026-11-17', competencia: '2026-10',
+        data: '2026-11-17', competencia: '2026-11',
         kitConsumido: {papelao: 75, pet: 150},
       }],
       fechamentosMensais: [],
@@ -107,8 +107,8 @@ test('cálculo de novembro desconta resgate feito em novembro na própria compet
 });
 
 
-test('ranking público da campanha de resgate usa a mesma competência fechada do formulário no mês atual', () => {
+test('ranking público da campanha de resgate calcula o saldo do mês exibido', () => {
   const auth = fs.readFileSync(path.join(__dirname, '..', 'js', 'auth.js'), 'utf8');
-  assert.match(auth, /const competenciaRanking=cfgTroca&&chave===chaveMA\\(atual\\.mes,atual\\.ano\\)[\\s\\S]*?competenciaSaldoTroca\\(chave\\+'-01'\\)/);
-  assert.match(auth, /calcularResultadosMes\\(campanha\\.id,competenciaRanking\\.mes,competenciaRanking\\.ano\\)/);
+  assert.match(auth, /const ranking=calcularResultadosMes\(campanha\.id,mes,ano\)/);
+  assert.doesNotMatch(auth, /competenciaRanking|competenciaSaldoTroca\(chave\+'-01'\)/);
 });
