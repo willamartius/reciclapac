@@ -3,7 +3,7 @@ function abrirFormTransferencia(){
   if(!exigirOperador()) return;
   if(STATE.colaboradores.length===0){ alert('Cadastre ao menos um colaborador antes de transferir material.'); return; }
   const campanha = campanhaPorId(STATE.campanhaSelecionadaId);
-  const opcoesColab = STATE.colaboradores.map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+  const opcoesColab = STATE.colaboradores.slice().sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR',{sensitivity:'base'})).map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
   const opcoesCategoria = categoriasDaCampanha(campanha).map(c=>`<option value="${c.key}">${escapeHtml(c.label.split(' (')[0])}</option>`).join('');
   abrirModal(`
     <div class="modal-head"><h3>Transferir material</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
@@ -486,7 +486,7 @@ function abrirFormTrocaCartela(){
   const cfgTroca = campanha && campanha.trocaCartela;
   if(!cfgTroca || !cfgTroca.ativo){ alert('Esta campanha não tem resgate por itens ativado.'); return; }
   if(STATE.colaboradores.length===0){ alert('Cadastre ao menos um colaborador antes de registrar um resgate.'); return; }
-  const opcoesColab = STATE.colaboradores.map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+  const opcoesColab = STATE.colaboradores.slice().sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR',{sensitivity:'base'})).map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
   abrirModal(`
     <div class="modal-head"><h3>Resgatar ${escapeHtml(cfgTroca.nomeItem)}</h3><button class="modal-close" onclick="fecharModal()">${icon('x')}</button></div>
     <div class="field"><label>Colaborador</label><select id="tcColab" onchange="atualizarKitsDisponiveisForm()">${opcoesColab}</select></div>
@@ -508,6 +508,7 @@ function atualizarKitsDisponiveisForm(){
   const cfgTroca = campanha.trocaCartela;
   const colaboradorId = document.getElementById('tcColab').value;
   const dataReferencia = document.getElementById('tcData')?.value;
+  const competencia = competenciaSaldoTroca(dataReferencia);
   const totais = totaisAcumuladosColaborador(campanhaId, colaboradorId, dataReferencia);
   const kits = kitsDisponiveis(campanha, totais);
   const itens= kits*cfgTroca.cartelasPorKit;
@@ -519,7 +520,7 @@ function atualizarKitsDisponiveisForm(){
     const disponivel=Number(totais[key])||0;
     return `<span>${escapeHtml(categoria?categoria.label.split(' (')[0]:key)}: <b>${disponivel}/${Number(necessario)}</b>${categoriaAtiva?'':' (material desativado)'}</span>`;
   }).join(' · ');
-  document.getElementById('tcInfoKits').innerHTML = `<span>${icon('ranking')}</span><div>Disponível para resgate: <b>${kits} kit${kits===1?'':'s'}</b>, equivalente${kits===1?'':'s'} a <b>${itens} ${escapeHtml(cfgTroca.nomeItem)}${itens===1?'':'s'}</b>.<div class="small-note" style="margin-top:5px;">Saldo por material (disponível/necessário): ${resumoMateriais||'Kit sem materiais configurados'}.</div></div>`;
+  document.getElementById('tcInfoKits').innerHTML = `<span>${icon('ranking')}</span><div>Disponível para resgate: <b>${kits} kit${kits===1?'':'s'}</b>, equivalente${kits===1?'':'s'} a <b>${itens} ${escapeHtml(cfgTroca.nomeItem)}${itens===1?'':'s'}</b>.<div class="small-note" style="margin-top:5px;">Saldo considerado: ${nomeMes(competencia.mes)}/${competencia.ano} (último mês fechado). Saldo por material (disponível/necessário): ${resumoMateriais||'Kit sem materiais configurados'}.</div></div>`;
   document.getElementById('tcQuantidadeKits').max = kits || 1;
   atualizarPreviaTroca();
 }
