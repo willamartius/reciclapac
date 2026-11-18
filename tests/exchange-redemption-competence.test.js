@@ -13,7 +13,7 @@ function extrair(nome, proximo) {
   return core.slice(inicio, fim);
 }
 
-test('resgate na competência atual usa o último mês encerrado', () => {
+test('resgate na competência atual usa o próprio mês corrente', () => {
   const sandbox = {
     mesAnoAtual: () => ({mes: 11, ano: 2026}),
     chaveMA: (mes, ano) => ano + '-' + String(mes).padStart(2, '0'),
@@ -23,12 +23,12 @@ test('resgate na competência atual usa o último mês encerrado', () => {
     '\nglobalThis.calcular = competenciaSaldoTroca;', sandbox);
 
   assert.deepEqual(JSON.parse(JSON.stringify(sandbox.calcular('2026-11-17'))),
-    {mes: 10, ano: 2026, chave: '2026-10'});
-  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.calcular('2026-12-03'))),
     {mes: 11, ano: 2026, chave: '2026-11'});
+  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.calcular('2026-12-03'))),
+    {mes: 12, ano: 2026, chave: '2026-12'});
 });
 
-test('data de resgate retroativa mantém a competência do próprio mês', () => {
+test('data de resgate mantém a competência do próprio mês', () => {
   const sandbox = {
     mesAnoAtual: () => ({mes: 11, ano: 2026}),
     chaveMA: (mes, ano) => ano + '-' + String(mes).padStart(2, '0'),
@@ -44,7 +44,7 @@ test('data de resgate retroativa mantém a competência do próprio mês', () =>
 test('consumo do resgate é lançado na competência do saldo e mantém compatibilidade com registros antigos', () => {
   const sandbox = {
     STATE: {trocas: [
-      {id: 'novo', campanhaId: 'c1', data: '2026-11-17', competencia: '2026-10'},
+      {id: 'novo', campanhaId: 'c1', data: '2026-11-17', competencia: '2026-11'},
       {id: 'antigo', campanhaId: 'c1', data: '2026-10-28'},
       {id: 'outro', campanhaId: 'c2', data: '2026-11-17', competencia: '2026-10'},
     ]},
@@ -54,12 +54,13 @@ test('consumo do resgate é lançado na competência do saldo e mantém compatib
   vm.runInContext(extrair('trocasDoMes', 'kitsDisponiveis') +
     '\nglobalThis.consultar = trocasDoMes;', sandbox);
 
+  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.consultar('c1', 11, 2026)))
+    .map(item => item.id), ['novo']);
   assert.deepEqual(JSON.parse(JSON.stringify(sandbox.consultar('c1', 10, 2026)))
-    .map(item => item.id), ['novo', 'antigo']);
-  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.consultar('c1', 11, 2026))), []);
+    .map(item => item.id), ['antigo']);
 });
 
-test('cálculo de outubro desconta resgate feito em novembro quando a competência é outubro', () => {
+test('cálculo de novembro desconta resgate feito em novembro na própria competência', () => {
   const calc = extrair('calcularSaldosAcumulados', 'saldoDisponivelAntes');
   const trocas = extrair('trocasDoMes', 'kitsDisponiveis');
   const sandbox = {
@@ -68,7 +69,7 @@ test('cálculo de outubro desconta resgate feito em novembro quando a competênc
       entregas: [], transferencias: [],
       trocas: [{
         id: 'resgate-1', campanhaId: 'c1', colaboradorId: 'marcilio',
-        data: '2026-11-17', competencia: '2026-10',
+        data: '2026-11-17', competencia: '2026-11',
         kitConsumido: {papelao: 75, pet: 150},
       }],
       fechamentosMensais: [],
@@ -87,7 +88,7 @@ test('cálculo de outubro desconta resgate feito em novembro quando a competênc
       }),
     },
     normalizarQuantidadeUnidades: value => value,
-    todosMesesDaCampanhaAte: () => [{mes: 10, ano: 2026}],
+    todosMesesDaCampanhaAte: () => [{mes: 11, ano: 2026}],
     categoriasDaCampanha: () => [
       {key: 'papelao', metaDefault: 75},
       {key: 'pet', metaDefault: 150},
@@ -101,7 +102,14 @@ test('cálculo de outubro desconta resgate feito em novembro quando a competênc
   vm.createContext(sandbox);
   vm.runInContext(trocas + '\n' + calc +
     '\nglobalThis.calcular = calcularSaldosAcumulados;', sandbox);
-  const saldos = sandbox.calcular('c1', 10, 2026);
-  assert.equal(saldos.marcilio.papelao['2026-10'].totalDisponivel, 28);
-  assert.equal(saldos.marcilio.pet['2026-10'].totalDisponivel, 26);
+  const saldos = sandbox.calcular('c1', 11, 2026);
+  assert.equal(saldos.marcilio.papelao['2026-11'].totalDisponivel, 28);
+  assert.equal(saldos.marcilio.pet['2026-11'].totalDisponivel, 26);
+});
+
+
+test('ranking público da campanha de resgate calcula o saldo do mês exibido', () => {
+  const auth = fs.readFileSync(path.join(__dirname, '..', 'js', 'auth.js'), 'utf8');
+  assert.match(auth, /const ranking=calcularResultadosMes\(campanha\.id,mes,ano\)/);
+  assert.doesNotMatch(auth, /competenciaRanking|competenciaSaldoTroca\(chave\+'-01'\)/);
 });

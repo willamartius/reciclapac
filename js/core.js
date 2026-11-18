@@ -645,14 +645,10 @@ async function salvarTrocas(){ await storageSet('trocas', STATE.trocas); }
 function competenciaSaldoTroca(dataISO){
   const partes=typeof dataISO==='string'&&/^\d{4}-(\d{2})-\d{2}$/.exec(dataISO);
   const atual=mesAnoAtual();
-  let ano=partes?Number(dataISO.slice(0,4)):atual.ano;
-  let mes=partes?Number(dataISO.slice(5,7)):atual.mes;
-  // A competência corrente ainda está em andamento. Resgates feitos nela
-  // utilizam o saldo do último mês encerrado, sem alterar a data do registro.
-  if(ano*12+mes>=atual.ano*12+atual.mes){
-    mes--;
-    if(mes<1){mes=12;ano--;}
-  }
+  const ano=partes?Number(dataISO.slice(0,4)):atual.ano;
+  const mes=partes?Number(dataISO.slice(5,7)):atual.mes;
+  // O resgate pode usar entregas validadas do próprio mês corrente.
+  // O cálculo mensal já considera transferências e resgates anteriores.
   return {mes,ano,chave:chaveMA(mes,ano)};
 }
 function trocasDoMes(campanhaId, mes, ano){

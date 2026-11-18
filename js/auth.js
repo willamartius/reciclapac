@@ -250,6 +250,7 @@ async function sincronizarRankingsPublicos(){
         const [ano,mes]=chave.split('-').map(Number);
         const cfgTroca=campanha.trocaCartela&&campanha.trocaCartela.ativo
           ?campanha.trocaCartela:null;
+        // O ranking e o formulário usam o saldo acumulado até o mês exibido.
         const ranking=calcularResultadosMes(campanha.id,mes,ano)
           .map(resultado=>({
             resultado,
