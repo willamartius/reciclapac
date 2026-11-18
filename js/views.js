@@ -863,8 +863,8 @@ function montarResumoKitColaborador(campanha,cfgTroca,resultado,chave,categorias
   return {
     trocadosMes:trocas.filter(t=>t.data.slice(0,7)===chave).reduce((total,t)=>total+kitsDe(t),0),
     trocadosTotal:trocas.reduce((total,t)=>total+kitsDe(t),0),
-    resgatesMes:trocas.filter(t=>t.data.slice(0,7)===chave).reduce((total,t)=>total+(Number(t.cartelasEmitidas)||0),0),
-    resgatesTotal:trocas.reduce((total,t)=>total+(Number(t.cartelasEmitidas)||0),0),
+    resgatesMes:trocas.filter(t=>t.data.slice(0,7)===chave).reduce((total,t)=>total+kitsDe(t),0),
+    resgatesTotal:trocas.reduce((total,t)=>total+kitsDe(t),0),
     metaMensalResgates:Number(cfgTroca.metaMensalResgates)||0,
     disponiveis:kitsDisponiveis(campanha,resultado.totais),
     cartelasPorKit:Number(cfgTroca.cartelasPorKit)||1,
