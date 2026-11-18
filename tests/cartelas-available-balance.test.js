@@ -115,3 +115,25 @@ test('falha ao persistir resgate não pode emitir cartelas nem fechar o formulá
   assert.match(salvar, /formatarMensagemErroFirestore/);
   assert.ok(salvar.indexOf('if(!salvo)') < salvar.indexOf('fecharModal()'));
 });
+
+
+test('resgates contam kits, enquanto cartelas emitidas permanecem como quantidade separada', () => {
+  const helper = extractFunction(fs.readFileSync(path.join(root, 'js', 'views.js'), 'utf8'), 'montarResumoKitColaborador');
+  const sandbox = {
+    STATE: {trocas: [
+      {campanhaId:'c1',colaboradorId:'marcilio',data:'2026-11-05',quantidadeKits:6,cartelasEmitidas:12},
+    ]},
+    kitsDisponiveis: () => 0,
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(helper + '\\nglobalThis.resumo = montarResumoKitColaborador;', sandbox);
+  const resumo = sandbox.resumo(
+    {id:'c1'}, {kit:{},cartelasPorKit:2},
+    {colaborador:{id:'marcilio'},totais:{},carryInsPorCategoria:{}},
+    '2026-11', []
+  );
+  assert.equal(resumo.trocadosMes, 6);
+  assert.equal(resumo.resgatesMes, 6);
+  assert.equal(resumo.resgatesTotal, 6);
+  assert.equal(resumo.cartelasPorKit, 2);
+});
