@@ -126,7 +126,7 @@ test('resgates contam kits, enquanto cartelas emitidas permanecem como quantidad
     kitsDisponiveis: () => 0,
   };
   vm.createContext(sandbox);
-  vm.runInContext(helper + '\\nglobalThis.resumo = montarResumoKitColaborador;', sandbox);
+  vm.runInContext(helper + '\nglobalThis.resumo = montarResumoKitColaborador;', sandbox);
   const resumo = sandbox.resumo(
     {id:'c1'}, {kit:{},cartelasPorKit:2},
     {colaborador:{id:'marcilio'},totais:{},carryInsPorCategoria:{}},
