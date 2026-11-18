@@ -279,7 +279,7 @@ async function sincronizarRankingsPublicos(){
               resumoTroca:(()=>{
                 const nomeItem=String(cfgTroca.nomeItem||'item').trim();
                 return {
-                  quantidade:itensTrocados,
+                  quantidade:montarResumoKitColaborador(campanha,cfgTroca,resultado,chave,categorias).trocadosMes,
                   unidade:itensTrocados===1||/s$/i.test(nomeItem)?nomeItem:nomeItem+'s',
                 };
               })(),
