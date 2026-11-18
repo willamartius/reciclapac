@@ -508,6 +508,7 @@ function atualizarKitsDisponiveisForm(){
   const cfgTroca = campanha.trocaCartela;
   const colaboradorId = document.getElementById('tcColab').value;
   const dataReferencia = document.getElementById('tcData')?.value;
+  const competencia = competenciaSaldoTroca(dataReferencia);
   const totais = totaisAcumuladosColaborador(campanhaId, colaboradorId, dataReferencia);
   const kits = kitsDisponiveis(campanha, totais);
   const itens= kits*cfgTroca.cartelasPorKit;
@@ -519,7 +520,7 @@ function atualizarKitsDisponiveisForm(){
     const disponivel=Number(totais[key])||0;
     return `<span>${escapeHtml(categoria?categoria.label.split(' (')[0]:key)}: <b>${disponivel}/${Number(necessario)}</b>${categoriaAtiva?'':' (material desativado)'}</span>`;
   }).join(' · ');
-  document.getElementById('tcInfoKits').innerHTML = `<span>${icon('ranking')}</span><div>Disponível para resgate: <b>${kits} kit${kits===1?'':'s'}</b>, equivalente${kits===1?'':'s'} a <b>${itens} ${escapeHtml(cfgTroca.nomeItem)}${itens===1?'':'s'}</b>.<div class="small-note" style="margin-top:5px;">Saldo por material (disponível/necessário): ${resumoMateriais||'Kit sem materiais configurados'}.</div></div>`;
+  document.getElementById('tcInfoKits').innerHTML = `<span>${icon('ranking')}</span><div>Disponível para resgate: <b>${kits} kit${kits===1?'':'s'}</b>, equivalente${kits===1?'':'s'} a <b>${itens} ${escapeHtml(cfgTroca.nomeItem)}${itens===1?'':'s'}</b>.<div class="small-note" style="margin-top:5px;">Saldo considerado: ${nomeMes(competencia.mes)}/${competencia.ano} (último mês fechado). Saldo por material (disponível/necessário): ${resumoMateriais||'Kit sem materiais configurados'}.</div></div>`;
   document.getElementById('tcQuantidadeKits').max = kits || 1;
   atualizarPreviaTroca();
 }
