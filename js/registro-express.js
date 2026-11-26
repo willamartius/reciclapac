@@ -10,6 +10,23 @@ const REGISTRO_EXPRESS_MATERIAIS = Object.freeze([
   { tipo: 'latas', label: 'Latas em geral' },
 ]);
 
+function incorporarEntregasExpressNoEstado(entregas) {
+  if (!Array.isArray(entregas)) return false;
+  // Só dispensamos a releitura integral quando a coleção já foi carregada
+  // nesta sessão e seu baseline permite manter o controle de concorrência.
+  if (STORAGE_MODE === 'firestore' && !FIRESTORE_BASELINES.has('entregas')) return false;
+  const atuais = Array.isArray(STATE.entregas) ? STATE.entregas : [];
+  const ids = new Set(atuais.map(entrega => entrega?.id).filter(Boolean));
+  const novas = entregas.filter(entrega => entrega && typeof entrega.id === 'string' && !ids.has(entrega.id));
+  STATE.entregas = atuais.concat(novas);
+  if (STORAGE_MODE === 'firestore') {
+    const baseline = FIRESTORE_BASELINES.get('entregas');
+    novas.forEach(entrega => baseline.set(entrega.id, serializarEstavel(entrega)));
+    FIRESTORE_BASELINES.set('entregas', baseline);
+  }
+  return true;
+}
+
 function quantidadesFichaValidas(quantidades) {
   return Array.isArray(quantidades)
     && quantidades.length === REGISTRO_EXPRESS_MATERIAIS.length
@@ -403,8 +420,10 @@ async function registrarFichaExpress() {
     };
     estado.entregas = entregas;
     estado.sucesso = `Ficha registrada. ${entregas.length} entrega(s) com quantidade positiva foram salvas e vinculadas.`;
-    try { STATE.entregas = await storageGet('entregas', []); }
-    catch (erroAtualizacao) { estado.sucesso += ' Atualize a tela Entregas para carregar a lista.'; }
+    if (!incorporarEntregasExpressNoEstado(entregas)) {
+      try { STATE.entregas = await storageGet('entregas', []); }
+      catch (erroAtualizacao) { estado.sucesso += ' Atualize a tela Entregas para carregar a lista.'; }
+    }
   } catch (erro) {
     estado.erro = erro.message || 'Não foi possível registrar a ficha. Nenhuma entrega foi salva.';
   } finally {
