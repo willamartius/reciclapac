@@ -186,18 +186,23 @@ async function sincronizarRankingsPublicos(){
   if(rankingPublicoSyncPromise) return rankingPublicoSyncPromise;
   rankingPublicoSyncPendente=false;
   rankingPublicoSyncPromise=(async()=>{
-    // carregarDados() já hidrata estas coleções ao autenticar. Reutilize o estado
-    // em memória para publicar o ranking, evitando reler todas as coleções após
-    // cada gravação que agenda esta sincronização.
+    const [colaboradores,entregas,transferencias,trocas,fechamentosMensais,campanhasCarregadas,metasSnapshots]=await Promise.all([
+      storageGet('colaboradores',[]),
+      storageGet('entregas',[]),
+      storageGet('transferencias',[]),
+      storageGet('trocas',[]),
+      storageGet('fechamentos',[]),
+      storageGet('campanhas',[]),
+      storageGet('metas',[]),
+    ]);
     if(!rankingPublicoSyncAtivo || !podeEditarDados()) return;
-    const colaboradores=STATE.colaboradores;
-    const entregas=STATE.entregas;
-    const transferencias=STATE.transferencias;
-    const trocas=STATE.trocas;
-    const fechamentosMensais=Array.isArray(STATE.fechamentosMensais)?STATE.fechamentosMensais:[];
-    const campanhasCarregadas=Array.isArray(STATE.campanhas)?STATE.campanhas:[];
-    const metasSnapshots=Array.isArray(STATE.metasSnapshots)?STATE.metasSnapshots:[];
-    if(!rankingPublicoSyncAtivo || !podeEditarDados()) return;
+    STATE.colaboradores=colaboradores;
+    STATE.entregas=entregas;
+    STATE.transferencias=transferencias;
+    STATE.trocas=trocas;
+    STATE.fechamentosMensais=Array.isArray(fechamentosMensais)?fechamentosMensais:[];
+    STATE.campanhas=Array.isArray(campanhasCarregadas)?campanhasCarregadas:[];
+    STATE.metasSnapshots=metasSnapshots;
     const colecao=FIREBASE_DB.collection('reciclar-apac-public-ranking');
     const snapshot=await colecao.get();
     const documentos=new Map(snapshot.docs.map(doc=>[doc.id,doc.data()]));
