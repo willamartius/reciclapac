@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const authSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'auth.js'), 'utf8');
 
-test('public ranking reuses already-loaded state without rereading source collections', async () => {
+test('public ranking reloads source collections before publishing to avoid stale data from concurrent sessions', async () => {
   const remote = {
     colaboradores: [{id: 'remoto', nome: 'Ana Remota', status: 'ativo'}],
     entregas: [{id: 'entrega-remota', campanhaId: 'campanha', data: '2026-10-01'}],
@@ -99,10 +99,10 @@ test('public ranking reuses already-loaded state without rereading source collec
 
   await sandbox.executarSync();
 
-  assert.deepEqual(reads, []);
-  assert.equal(sandbox.estado.colaboradores[0].nome, 'Ana em memória');
+  assert.deepEqual(reads, ['colaboradores', 'entregas', 'transferencias', 'trocas', 'fechamentos', 'campanhas', 'metas']);
+  assert.equal(sandbox.estado.colaboradores[0].nome, 'Ana Remota');
   assert.equal(published.length, 1);
-  assert.equal(published[0].documento.ranking[0].nome, 'Ana em memória');
-  assert.equal(published[0].documento.campanhaNome, 'Campanha em memória');
+  assert.equal(published[0].documento.ranking[0].nome, 'Ana Remota');
+  assert.equal(published[0].documento.campanhaNome, 'Campanha remota');
   assert.equal(published[0].documento.ranking[0].meiaFolgaAnterior, true);
 });
