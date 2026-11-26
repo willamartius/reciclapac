@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const authSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'auth.js'), 'utf8');
 
-test('public ranking reloads all source collections before publishing', async () => {
+test('public ranking reuses already-loaded state without rereading source collections', async () => {
   const remote = {
     colaboradores: [{id: 'remoto', nome: 'Ana Remota', status: 'ativo'}],
     entregas: [{id: 'entrega-remota', campanhaId: 'campanha', data: '2026-10-01'}],
@@ -43,8 +43,14 @@ test('public ranking reloads all source collections before publishing', async ()
     const STORAGE_MODE = 'firestore';
     const PUBLIC_RANKING_SOURCE_KEYS = new Set();
     const STATE = {
-      colaboradores: [{id: 'antigo', nome: 'Cache antigo', status: 'ativo'}],
-      entregas: [], transferencias: [], trocas: [], fechamentosMensais: [], campanhas: [], metasSnapshots: [],
+      colaboradores: [{id: 'em-memoria', nome: 'Ana em memória', status: 'ativo'}],
+      entregas: [{id: 'entrega-local', campanhaId: 'campanha', data: '2026-10-02'}],
+      transferencias: [], trocas: [], fechamentosMensais: [{campanhaId:'campanha',mes:9,ano:2026,colaboradorId:'em-memoria',decisao:'meia-folga'}],
+      campanhas: [{
+        id: 'campanha', nome: 'Campanha em memória', mesInicio: 10, anoInicio: 2026,
+        mesFim: null, anoFim: null, status: 'ativa', trocaCartela: {ativo: false},
+      }],
+      metasSnapshots: [{id: 'meta-local', campanhaId: 'campanha', chave: '2026-10', metas: {papel: 1}}],
       isAdmin: true, isOperator: false, authUser: null,
     };
     const FIREBASE_DB = {
@@ -93,10 +99,10 @@ test('public ranking reloads all source collections before publishing', async ()
 
   await sandbox.executarSync();
 
-  assert.deepEqual(reads, ['colaboradores', 'entregas', 'transferencias', 'trocas', 'fechamentos', 'campanhas', 'metas']);
-  assert.equal(sandbox.estado.colaboradores[0].nome, 'Ana Remota');
+  assert.deepEqual(reads, []);
+  assert.equal(sandbox.estado.colaboradores[0].nome, 'Ana em memória');
   assert.equal(published.length, 1);
-  assert.equal(published[0].documento.ranking[0].nome, 'Ana Remota');
-  assert.equal(published[0].documento.campanhaNome, 'Campanha remota');
+  assert.equal(published[0].documento.ranking[0].nome, 'Ana em memória');
+  assert.equal(published[0].documento.campanhaNome, 'Campanha em memória');
   assert.equal(published[0].documento.ranking[0].meiaFolgaAnterior, true);
 });
