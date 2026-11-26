@@ -1,0 +1,70 @@
+/* Fundação visual minimalista do Reciclapac.
+   Camada de apresentação isolada. Não altera lógica, dados ou consultas. */
+:root{
+  --verde-900:#12301f;
+  --verde-800:#173b27;
+  --verde-700:#1f5d3f;
+  --verde-600:#2c7350;
+  --verde-500:#3e8e5a;
+  --verde-300:#8fcb9e;
+  --verde-100:#e4f1e6;
+  --bg:#f6f8f6;
+  --card:#fff;
+  --border:#e2e9e3;
+  --text:#182420;
+  --text-muted:#64736a;
+  --sombra:0 2px 12px rgba(18,48,31,.055);
+  --sombra-elevada:0 12px 32px rgba(18,48,31,.10);
+  --raio-card:16px;
+  --raio-controle:11px;
+}
+html{scroll-behavior:smooth;scroll-padding-top:88px}
+body{background:var(--bg);color:var(--text);line-height:1.5}
+button,input,select,textarea{font:inherit}
+button{transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{
+  outline:3px solid rgba(62,142,90,.38);outline-offset:2px
+}
+a{ text-underline-offset:3px }
+::selection{background:#cfe8d4;color:var(--verde-900)}
+/* Superfícies e contêineres comuns */
+.card,.panel,.stat-card,.table-card,.section-card,.modal-content,.settings-card{
+  border-color:var(--border);
+  border-radius:var(--raio-card);
+  box-shadow:var(--sombra)
+}
+.card:hover,.stat-card:hover{box-shadow:0 5px 18px rgba(18,48,31,.075)}
+/* Controles */
+input:not([type=checkbox]):not([type=radio]),select,textarea{
+  border-radius:var(--raio-controle)
+}
+button:not(.nav button):not(.app-select-trigger){
+  -webkit-tap-highlight-color:transparent
+}
+button:disabled{cursor:not-allowed;opacity:.58}
+button:not(:disabled):active{transform:translateY(1px)}
+/* Tabelas com leitura mais confortável */
+table{border-collapse:separate;border-spacing:0}
+th{font-weight:750;letter-spacing:.025em}
+td,th{line-height:1.45}
+tbody tr{transition:background-color .12s ease}
+tbody tr:hover{background:rgba(228,241,230,.42)}
+/* Navegação */
+.sidebar{box-shadow:3px 0 18px rgba(10,35,21,.07)}
+.topbar{box-shadow:0 2px 10px rgba(18,48,31,.025);backdrop-filter:saturate(140%)}
+.nav button{border-radius:11px}
+.nav button.active{box-shadow:inset 3px 0 0 var(--verde-300)}
+/* Modais */
+.modal,.modal-overlay{backdrop-filter:blur(3px)}
+/* Respeita a preferência do sistema por movimento reduzido */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+/* Ajustes de densidade e navegação em telas pequenas */
+@media(max-width:760px){
+  html{scroll-padding-top:72px}
+  .topbar{padding:12px 16px}
+  .topbar h1{font-size:18px}
+  .card,.panel,.stat-card,.table-card,.section-card{border-radius:14px}
+  table{font-size:13px}
+}
